@@ -1,0 +1,131 @@
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "linux-musl-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Contact {
+  id           String   @id @default(uuid())
+  nome         String
+  telefone     String
+  email        String?
+  tags         String[] // Array of strings for tags
+  observacoes  String?
+  criadoEm     DateTime @default(now())
+  atualizadoEm DateTime @updatedAt
+
+  // Relacionamentos removidos - contatos agora estão em arquivo JSON
+
+  @@map("contacts")
+}
+
+model WhatsAppSession {
+  id             String   @id @default(uuid())
+  name           String   @unique
+  status         String   // WORKING, SCAN_QR_CODE, STOPPED, FAILED
+  config         String?  // JSON string for session config
+  meId           String?  @map("me_id") // WhatsApp user ID
+  mePushName     String?  @map("me_push_name") // WhatsApp display name
+  meLid          String?  @map("me_lid") // WhatsApp LID
+  meJid          String?  @map("me_jid") // WhatsApp JID
+  qr             String?  // QR Code data
+  qrExpiresAt    DateTime? @map("qr_expires_at")
+  assignedWorker String?  @map("assigned_worker")
+  criadoEm       DateTime @default(now()) @map("criado_em")
+  atualizadoEm   DateTime @updatedAt @map("atualizado_em")
+
+  // Relacionamentos
+  campaigns Campaign[]
+
+  @@map("whatsapp_sessions")
+}
+
+model Campaign {
+  id               String   @id @default(uuid())
+  nome             String
+  targetTags       String   // JSON string - array de tags dos contatos
+  sessionNames     String?  @map("session_names") // JSON string - array de nomes das sessões WhatsApp
+  sessionName      String?  @map("session_name") // DEPRECATED - mantido para compatibilidade
+  messageType      String   @map("message_type") // text, image, video, audio, document, sequence
+  messageContent   String   @map("message_content") // JSON string com conteúdo das mensagens
+  randomDelay      Int      @map("random_delay") // Tempo de randomização em segundos
+  startImmediately Boolean  @map("start_immediately") // Se deve iniciar imediatamente
+  scheduledFor     DateTime? @map("scheduled_for") // Data/hora agendada
+  status           String   @default("PENDING") // PENDING, RUNNING, COMPLETED, PAUSED, FAILED
+  totalContacts    Int      @default(0) @map("total_contacts")
+  sentCount        Int      @default(0) @map("sent_count")
+  failedCount      Int      @default(0) @map("failed_count")
+  startedAt        DateTime? @map("started_at")
+  completedAt      DateTime? @map("completed_at")
+  createdBy        String?  @map("created_by") // ID do usuário que criou a campanha
+  createdByName    String?  @map("created_by_name") // Nome do usuário que criou a campanha
+  criadoEm         DateTime @default(now()) @map("criado_em")
+  atualizadoEm     DateTime @updatedAt @map("atualizado_em")
+
+  // Relacionamentos
+  session WhatsAppSession? @relation(fields: [sessionName], references: [name])
+  messages CampaignMessage[]
+  // creator  User?            @relation(fields: [createdBy], references: [id]) // Temporarily disabled
+
+  @@map("campaigns")
+}
+
+model CampaignMessage {
+  id           String   @id @default(uuid())
+  campaignId   String   @map("campaign_id")
+  contactId    String   @map("contact_id")
+  contactPhone String   @map("contact_phone")
+  contactName  String   @map("contact_name")
+  sessionName  String?  @map("session_name") // Sessão usada para enviar esta mensagem
+  status       String   @default("PENDING") // PENDING, SENT, FAILED, DELIVERED, READ
+  sentAt       DateTime? @map("sent_at")
+  deliveredAt  DateTime? @map("delivered_at")
+  readAt       DateTime? @map("read_at")
+  errorMessage String?  @map("error_message")
+  messageId    String?  @map("message_id") // ID da mensagem no WhatsApp
+  criadoEm     DateTime @default(now()) @map("criado_em")
+  atualizadoEm DateTime @updatedAt @map("atualizado_em")
+
+  // Relacionamentos
+  campaign Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+
+  @@map("campaign_messages")
+}
+
+model User {
+  id           String   @id @default(uuid())
+  nome         String
+  email        String   @unique
+  senha        String   // bcrypt hash
+  role         String   @default("USER") // ADMIN, USER
+  ativo        Boolean  @default(true)
+  ultimoLogin  DateTime? @map("ultimo_login")
+  criadoEm     DateTime @default(now()) @map("criado_em")
+  atualizadoEm DateTime @updatedAt @map("atualizado_em")
+
+  // Relacionamentos
+  // campaigns Campaign[] // Temporarily disabled
+
+  @@map("users")
+}
+
+model Settings {
+  id           String   @id @default(uuid())
+  wahaHost     String   @map("waha_host") @default("")
+  wahaApiKey   String   @map("waha_api_key") @default("")
+  logoUrl      String?  @map("logo_url") // URL da logo carregada
+  companyName  String?  @map("company_name") // Nome da empresa
+  faviconUrl   String?  @map("favicon_url") // URL do favicon carregado
+  pageTitle    String?  @map("page_title") // Título da aba do navegador
+  iconUrl      String?  @map("icon_url") // URL do ícone geral interno
+  openaiApiKey String?  @map("openai_api_key") // Chave API da OpenAI
+  groqApiKey   String?  @map("groq_api_key") // Chave API da Groq
+  criadoEm     DateTime @default(now()) @map("criado_em")
+  atualizadoEm DateTime @updatedAt @map("atualizado_em")
+
+  @@map("settings")
+}
