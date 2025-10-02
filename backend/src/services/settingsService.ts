@@ -15,17 +15,20 @@ export class SettingsService {
 
   async getSettings() {
     try {
-      // Buscar configurações do banco
-      let settings = await prisma.settings.findFirst();
+      // Buscar configurações globais do banco
+      let settings = await prisma.globalSettings.findFirst();
 
       // Se não existir, criar configuração padrão
       if (!settings) {
-        settings = await prisma.settings.create({
+        settings = await prisma.globalSettings.create({
           data: {
+            singleton: true,
             wahaHost: '',
             wahaApiKey: '',
-            companyName: '',
-            pageTitle: '',
+            evolutionHost: '',
+            evolutionApiKey: '',
+            companyName: 'Astra Campaign',
+            pageTitle: 'Sistema de Gestão de Contatos',
             iconUrl: '/api/uploads/default_icon.png',
             faviconUrl: '/api/uploads/default_favicon.png'
           }
@@ -40,13 +43,13 @@ export class SettingsService {
       return {
         wahaHost: '',
         wahaApiKey: '',
+        evolutionHost: '',
+        evolutionApiKey: '',
         companyName: '',
         logoUrl: null,
         faviconUrl: '/api/uploads/default_favicon.png',
         pageTitle: 'Sistema de Gestão de Contatos',
-        iconUrl: '/api/uploads/default_icon.png',
-        openaiApiKey: null,
-        groqApiKey: null
+        iconUrl: '/api/uploads/default_icon.png'
       };
     }
   }
@@ -54,47 +57,48 @@ export class SettingsService {
   async updateSettings(data: {
     wahaHost?: string;
     wahaApiKey?: string;
+    evolutionHost?: string;
+    evolutionApiKey?: string;
     logoUrl?: string | null;
     companyName?: string;
     faviconUrl?: string | null;
     pageTitle?: string;
     iconUrl?: string | null;
-    openaiApiKey?: string | null;
-    groqApiKey?: string | null;
   }) {
     try {
       // Buscar configuração existente
-      let settings = await prisma.settings.findFirst();
+      let settings = await prisma.globalSettings.findFirst();
 
       if (settings) {
         // Atualizar configuração existente
-        settings = await prisma.settings.update({
+        settings = await prisma.globalSettings.update({
           where: { id: settings.id },
           data: {
             wahaHost: data.wahaHost || settings.wahaHost,
             wahaApiKey: data.wahaApiKey || settings.wahaApiKey,
+            evolutionHost: data.evolutionHost || settings.evolutionHost,
+            evolutionApiKey: data.evolutionApiKey || settings.evolutionApiKey,
             logoUrl: data.logoUrl !== undefined ? data.logoUrl : settings.logoUrl,
             companyName: data.companyName || settings.companyName,
             faviconUrl: data.faviconUrl !== undefined ? data.faviconUrl : settings.faviconUrl,
             pageTitle: data.pageTitle || settings.pageTitle,
-            iconUrl: data.iconUrl !== undefined ? data.iconUrl : settings.iconUrl,
-            openaiApiKey: data.openaiApiKey !== undefined ? data.openaiApiKey : settings.openaiApiKey,
-            groqApiKey: data.groqApiKey !== undefined ? data.groqApiKey : settings.groqApiKey
+            iconUrl: data.iconUrl !== undefined ? data.iconUrl : settings.iconUrl
           }
         });
       } else {
         // Criar nova configuração
-        settings = await prisma.settings.create({
+        settings = await prisma.globalSettings.create({
           data: {
+            singleton: true,
             wahaHost: data.wahaHost || '',
             wahaApiKey: data.wahaApiKey || '',
+            evolutionHost: data.evolutionHost || '',
+            evolutionApiKey: data.evolutionApiKey || '',
             logoUrl: data.logoUrl || null,
-            companyName: data.companyName || 'Sua Empresa',
+            companyName: data.companyName || 'Astra Campaign',
             faviconUrl: data.faviconUrl || '/api/uploads/default_favicon.png',
             pageTitle: data.pageTitle || 'Sistema de Gestão de Contatos',
-            iconUrl: data.iconUrl || '/api/uploads/default_icon.png',
-            openaiApiKey: data.openaiApiKey || null,
-            groqApiKey: data.groqApiKey || null
+            iconUrl: data.iconUrl || '/api/uploads/default_icon.png'
           }
         });
       }
@@ -120,6 +124,15 @@ export class SettingsService {
     return {
       host: settings.wahaHost,
       apiKey: settings.wahaApiKey
+    };
+  }
+
+  // Método para obter configurações Evolution especificamente
+  async getEvolutionConfig() {
+    const settings = await this.getSettings();
+    return {
+      host: settings.evolutionHost,
+      apiKey: settings.evolutionApiKey
     };
   }
 }

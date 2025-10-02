@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
+import { TenantProvider } from './contexts/TenantContext';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { Navigation } from './components/Navigation';
 import { ContactsPage } from './pages/ContactsPage';
@@ -10,11 +11,14 @@ import { CampaignsPage } from './pages/CampaignsPage';
 import { SettingsPage } from './pages/SettingsPage';
 import { UsersPage } from './pages/UsersPage';
 import { LoginPage } from './pages/LoginPage';
+import { SuperAdminPage } from './pages/SuperAdminPage';
+import { SuperAdminDashboard } from './pages/SuperAdminDashboard';
+import { SuperAdminManagerPage } from './pages/SuperAdminManagerPage';
 import { useGlobalSettings } from './hooks/useGlobalSettings';
 import './styles/globals.css';
 
 function AppContent() {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, isLoading } = useAuth();
   const { settings } = useGlobalSettings();
 
   // Aplicar meta tags dinâmicas (título e favicon)
@@ -69,6 +73,18 @@ function AppContent() {
     };
   }, []);
 
+  // Mostrar loading enquanto verifica autenticação
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
+          <p className="text-gray-600">Carregando...</p>
+        </div>
+      </div>
+    );
+  }
+
   if (!isAuthenticated) {
     return (
       <Routes>
@@ -119,6 +135,30 @@ function AppContent() {
             }
           />
           <Route
+            path="/super-admin"
+            element={
+              <ProtectedRoute superAdminOnly={true}>
+                <SuperAdminManagerPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/superadmin/dashboard"
+            element={
+              <ProtectedRoute superAdminOnly={true}>
+                <SuperAdminDashboard />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/superadmin/tenants"
+            element={
+              <ProtectedRoute superAdminOnly={true}>
+                <SuperAdminPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
             path="/usuarios"
             element={
               <ProtectedRoute adminOnly={true}>
@@ -136,30 +176,32 @@ function App() {
   return (
     <Router>
       <AuthProvider>
-        <AppContent />
-        <Toaster
-          position="top-right"
-          toastOptions={{
-            duration: 4000,
-            style: {
-              background: '#1e293b',
-              color: '#fff',
-              borderRadius: '12px',
-              fontSize: '14px',
-              padding: '12px 16px',
-            },
-            success: {
+        <TenantProvider>
+          <AppContent />
+          <Toaster
+            position="top-right"
+            toastOptions={{
+              duration: 4000,
               style: {
-                background: '#10b981',
+                background: '#1e293b',
+                color: '#fff',
+                borderRadius: '12px',
+                fontSize: '14px',
+                padding: '12px 16px',
               },
-            },
-            error: {
-              style: {
-                background: '#ef4444',
+              success: {
+                style: {
+                  background: '#10b981',
+                },
               },
-            },
-          }}
-        />
+              error: {
+                style: {
+                  background: '#ef4444',
+                },
+              },
+            }}
+          />
+        </TenantProvider>
       </AuthProvider>
     </Router>
   );

@@ -1,64 +1,54 @@
 import { CategoryInput, CategoriesResponse } from '../types';
-import * as fs from 'fs';
-import * as path from 'path';
+import { PrismaClient } from '@prisma/client';
 
-const CATEGORIES_FILE = '/app/data/categories.json';
-
-const defaultCategories: any[] = [];
-
-function loadCategories(): any[] {
-  try {
-    const dir = path.dirname(CATEGORIES_FILE);
-    if (!fs.existsSync(dir)) {
-      fs.mkdirSync(dir, { recursive: true });
-    }
-
-    if (fs.existsSync(CATEGORIES_FILE)) {
-      const data = fs.readFileSync(CATEGORIES_FILE, 'utf8');
-      return JSON.parse(data, (key, value) => {
-        if (key === 'criadoEm' || key === 'atualizadoEm') {
-          return new Date(value);
-        }
-        return value;
-      });
-    }
-  } catch (error) {
-    console.error('Erro ao carregar categorias:', error);
-  }
-  return [...defaultCategories];
-}
-
-function saveCategories(categories: any[]): void {
-  try {
-    fs.writeFileSync(CATEGORIES_FILE, JSON.stringify(categories, null, 2));
-  } catch (error) {
-    console.error('Erro ao salvar categorias:', error);
-  }
-}
+const prisma = new PrismaClient();
 
 export class CategoryService {
   static async getCategories(
     search?: string,
     page: number = 1,
-    pageSize: number = 10
+    pageSize: number = 10,
+    tenantId?: string
   ): Promise<CategoriesResponse> {
-    const categories = loadCategories();
-    let filteredCategories = [...categories];
+    const where: any = {};
+
+    // Apply tenant filter (SUPERADMIN can see all if tenantId is undefined)
+    if (tenantId !== undefined) {
+      where.tenantId = tenantId;
+    }
 
     if (search) {
       const searchLower = search.toLowerCase();
-      filteredCategories = filteredCategories.filter(category =>
-        category.nome.toLowerCase().includes(searchLower) ||
-        (category.descricao && category.descricao.toLowerCase().includes(searchLower))
-      );
+      where.OR = [
+        {
+          nome: {
+            contains: searchLower,
+            mode: 'insensitive'
+          }
+        },
+        {
+          descricao: {
+            contains: searchLower,
+            mode: 'insensitive'
+          }
+        }
+      ];
     }
 
-    const total = filteredCategories.length;
-    const skip = (page - 1) * pageSize;
-    const paginatedCategories = filteredCategories.slice(skip, skip + pageSize);
+    const [categories, total] = await Promise.all([
+      prisma.category.findMany({
+        where,
+        orderBy: {
+          criadoEm: 'desc'
+        },
+        skip: (page - 1) * pageSize,
+        take: pageSize,
+      }),
+      prisma.category.count({ where })
+    ]);
 
     return {
-      categories: paginatedCategories,
+      categories,
       total,
       page,
       pageSize,
@@ -66,9 +56,15 @@ export class CategoryService {
     };
   }
 
-  static async getCategoryById(id: string) {
-    const categories = loadCategories();
-    const category = categories.find(c => c.id === id);
+  static async getCategoryById(id: string, tenantId?: string) {
+    const where: any = { id };
+
+    // Apply tenant filter (SUPERADMIN can see all if tenantId is undefined)
+    if (tenantId !== undefined) {
+      where.tenantId = tenantId;
+    }
+
+    const category = await prisma.category.findFirst({ where });
 
     if (!category) {
       throw new Error('Categoria não encontrada');
@@ -77,56 +73,79 @@ export class CategoryService {
     return category;
   }
 
-  static async createCategory(data: CategoryInput) {
-    const categories = loadCategories();
-    const newCategory = {
-      id: Math.random().toString(36).substr(2, 9),
-      nome: data.nome,
-      cor: data.cor,
-      descricao: data.descricao || null,
-      criadoEm: new Date(),
-      atualizadoEm: new Date()
-    };
+  static async createCategory(data: CategoryInput, tenantId?: string) {
+    const newCategory = await prisma.category.create({
+      data: {
+        nome: data.nome,
+        cor: data.cor,
+        descricao: data.descricao || null,
+        tenantId
+      }
+    });
 
-    categories.unshift(newCategory);
-    saveCategories(categories);
     return newCategory;
   }
 
-  static async updateCategory(id: string, data: CategoryInput) {
-    const categories = loadCategories();
-    const categoryIndex = categories.findIndex(c => c.id === id);
+  static async updateCategory(id: string, data: CategoryInput, tenantId?: string) {
+    const where: any = { id };
 
-    if (categoryIndex === -1) {
+    // Apply tenant filter (SUPERADMIN can see all if tenantId is undefined)
+    if (tenantId !== undefined) {
+      where.tenantId = tenantId;
+    }
+
+    // Check if category exists and belongs to tenant
+    const existingCategory = await prisma.category.findFirst({ where });
+
+    if (!existingCategory) {
       throw new Error('Categoria não encontrada');
     }
 
-    const updatedCategory = {
-      ...categories[categoryIndex],
-      nome: data.nome,
-      cor: data.cor,
-      descricao: data.descricao || null,
-      atualizadoEm: new Date()
-    };
+    const updatedCategory = await prisma.category.update({
+      where: { id },
+      data: {
+        nome: data.nome,
+        cor: data.cor,
+        descricao: data.descricao || null,
+      }
+    });
 
-    categories[categoryIndex] = updatedCategory;
-    saveCategories(categories);
     return updatedCategory;
   }
 
-  static async deleteCategory(id: string) {
-    const categories = loadCategories();
-    const categoryIndex = categories.findIndex(c => c.id === id);
+  static async deleteCategory(id: string, tenantId?: string) {
+    const where: any = { id };
 
-    if (categoryIndex === -1) {
+    // Apply tenant filter (SUPERADMIN can see all if tenantId is undefined)
+    if (tenantId !== undefined) {
+      where.tenantId = tenantId;
+    }
+
+    // Check if category exists and belongs to tenant
+    const existingCategory = await prisma.category.findFirst({ where });
+
+    if (!existingCategory) {
       throw new Error('Categoria não encontrada');
     }
 
-    categories.splice(categoryIndex, 1);
-    saveCategories(categories);
+    await prisma.category.delete({
+      where: { id }
+    });
   }
 
-  static async getAllCategories() {
-    return loadCategories();
+  static async getAllCategories(tenantId?: string) {
+    const where: any = {};
+
+    // Apply tenant filter (SUPERADMIN can see all if tenantId is undefined)
+    if (tenantId !== undefined) {
+      where.tenantId = tenantId;
+    }
+
+    return prisma.category.findMany({
+      where,
+      orderBy: {
+        criadoEm: 'desc'
+      }
+    });
   }
 }

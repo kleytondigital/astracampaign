@@ -1,5 +1,6 @@
 import { useSettings } from '../hooks/useSettings';
 import { useAuth } from '../contexts/AuthContext';
+import { TenantSelector } from './TenantSelector';
 
 interface HeaderProps {
   title: string;
@@ -45,6 +46,8 @@ export function Header({ title, subtitle, actions }: HeaderProps) {
 
         {/* Ações da direita */}
         <div className="flex items-center space-x-4">
+          {/* Tenant Selector */}
+          <TenantSelector />
 
           {/* Avatar do usuário */}
           <div className="flex items-center space-x-3">

@@ -10,9 +10,9 @@ const prisma = new PrismaClient();
 // Validation rules
 export const campaignValidation = [
   body('nome').notEmpty().withMessage('Nome da campanha é obrigatório'),
-  body('targetTags').isArray().withMessage('Tags dos contatos devem ser um array'),
+  body('targetTags').isArray().withMessage('Categorias dos contatos devem ser um array'),
   body('sessionNames').isArray({ min: 1 }).withMessage('Pelo menos uma sessão WhatsApp deve ser selecionada'),
-  body('messageType').isIn(['text', 'image', 'video', 'audio', 'document', 'sequence', 'openai', 'groq']).withMessage('Tipo de mensagem inválido'),
+  body('messageType').isIn(['text', 'image', 'video', 'audio', 'document', 'sequence', 'openai', 'groq', 'wait']).withMessage('Tipo de mensagem inválido'),
   body('messageContent').notEmpty().withMessage('Conteúdo da mensagem é obrigatório'),
   body('randomDelay').isInt({ min: 0 }).withMessage('Delay deve ser um número positivo'),
   body('startImmediately').isBoolean().withMessage('StartImmediately deve ser boolean'),
@@ -25,13 +25,21 @@ export const listCampaigns = async (req: AuthenticatedRequest, res: Response) =>
     const { page = 1, limit = 10, search = '' } = req.query;
     const skip = (Number(page) - 1) * Number(limit);
 
-    const where = search
-      ? {
-          nome: {
-            contains: String(search)
-          }
-        }
-      : {};
+    // Filtros base
+    const where: any = {};
+
+    // Filtro por tenant (sempre aplicar quando tenantId existe)
+    if (req.tenantId) {
+      where.tenantId = req.tenantId;
+    }
+
+    // Filtro de busca
+    if (search) {
+      where.nome = {
+        contains: String(search),
+        mode: 'insensitive'
+      };
+    }
 
     const [campaigns, total] = await Promise.all([
       prisma.campaign.findMany({
@@ -40,8 +48,10 @@ export const listCampaigns = async (req: AuthenticatedRequest, res: Response) =>
           session: {
             select: {
               name: true,
+              displayName: true,
               status: true,
-              mePushName: true
+              mePushName: true,
+              provider: true
             }
           },
           _count: {
@@ -85,14 +95,21 @@ export const getCampaign = async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { id } = req.params;
 
-    const campaign = await prisma.campaign.findUnique({
-      where: { id },
+    // Construir where com tenant isolation
+    const where: any = { id };
+    if (req.user?.role !== 'SUPERADMIN') {
+      where.tenantId = req.tenantId;
+    }
+
+    const campaign = await prisma.campaign.findFirst({
+      where,
       include: {
         session: {
           select: {
             name: true,
             status: true,
-            mePushName: true
+            mePushName: true,
+            provider: true
           }
         },
         messages: {
@@ -141,12 +158,18 @@ export const createCampaign = async (req: AuthenticatedRequest, res: Response) =
       scheduledFor
     } = req.body;
 
-    // Verificar se todas as sessões existem e estão ativas
+    // Verificar se todas as sessões existem e estão ativas (com tenant isolation)
+    const sessionWhere: any = {
+      name: { in: sessionNames },
+      status: 'WORKING'
+    };
+
+    if (req.user?.role !== 'SUPERADMIN') {
+      sessionWhere.tenantId = req.tenantId;
+    }
+
     const sessions = await prisma.whatsAppSession.findMany({
-      where: {
-        name: { in: sessionNames },
-        status: 'WORKING'
-      }
+      where: sessionWhere
     });
 
     if (sessions.length === 0) {
@@ -161,21 +184,22 @@ export const createCampaign = async (req: AuthenticatedRequest, res: Response) =
       });
     }
 
-    // Buscar contatos usando ContactService
-    const contactsResponse = await ContactService.getContacts();
+    // Buscar contatos usando ContactService com tenant isolation
+    const tenantId = req.tenantId;
+    const contactsResponse = await ContactService.getContacts(undefined, 1, 10000, tenantId);
     const allContacts = contactsResponse.contacts;
 
-    // Filtrar contatos que têm pelo menos uma tag que corresponde às tags solicitadas
+    // Filtrar contatos que têm categoriaId correspondente aos IDs selecionados
     const filteredContacts = allContacts.filter((contact: any) => {
-      // Verificar se a categoriaId está nas tags solicitadas
       if (!contact.categoriaId) {
         return false;
       }
+      // Verificar se a categoria do contato está nas categorias solicitadas
       return targetTags.includes(contact.categoriaId);
     });
 
     if (filteredContacts.length === 0) {
-      return res.status(400).json({ error: 'Nenhum contato encontrado com as tags selecionadas' });
+      return res.status(400).json({ error: 'Nenhum contato encontrado com as categorias selecionadas' });
     }
 
     // Criar campanha
@@ -194,16 +218,18 @@ export const createCampaign = async (req: AuthenticatedRequest, res: Response) =
         status: startImmediately ? 'RUNNING' : 'PENDING',
         startedAt: startImmediately ? new Date() : null,
         createdBy: req.user?.id,
-        createdByName: req.user?.nome
+        createdByName: req.user?.nome,
+        tenantId: req.tenantId
       }
     });
 
-    // Criar mensagens para cada contato
+    // Criar mensagens para cada contato filtrado
     const campaignMessages = filteredContacts.map((contact: any) => ({
       campaignId: campaign.id,
       contactId: contact.id,
       contactPhone: contact.telefone,
-      contactName: contact.nome
+      contactName: contact.nome,
+      tenantId: campaign.tenantId
     }));
 
     await prisma.campaignMessage.createMany({
@@ -276,6 +302,17 @@ export const deleteCampaign = async (req: AuthenticatedRequest, res: Response) =
   try {
     const { id } = req.params;
 
+    // Verificar se a campanha existe e pertence ao tenant
+    const where: any = { id };
+    if (req.user?.role !== 'SUPERADMIN') {
+      where.tenantId = req.tenantId;
+    }
+
+    const campaign = await prisma.campaign.findFirst({ where });
+    if (!campaign) {
+      return res.status(404).json({ error: 'Campanha não encontrada' });
+    }
+
     await prisma.campaign.delete({
       where: { id }
     });
@@ -326,6 +363,8 @@ export const getCampaignReport = async (req: AuthenticatedRequest, res: Response
   try {
     const { id } = req.params;
 
+    console.log(`🔍 Buscando relatório para campanha: ${id}`);
+
     // Buscar campanha com todas as mensagens e estatísticas
     const campaign = await prisma.campaign.findUnique({
       where: { id },
@@ -341,6 +380,7 @@ export const getCampaignReport = async (req: AuthenticatedRequest, res: Response
             sentAt: true,
             errorMessage: true,
             sessionName: true,
+            selectedVariation: true,
             criadoEm: true
           }
         },
@@ -348,47 +388,135 @@ export const getCampaignReport = async (req: AuthenticatedRequest, res: Response
           select: {
             name: true,
             mePushName: true,
-            status: true
+            status: true,
+            provider: true
           }
         }
       }
     });
 
     if (!campaign) {
+      console.log(`❌ Campanha ${id} não encontrada`);
       return res.status(404).json({ error: 'Campanha não encontrada' });
     }
 
+    console.log(`✅ Campanha encontrada: ${campaign.nome}`);
+    console.log(`📊 Total de mensagens na campanha: ${campaign.messages?.length || 0}`);
+
+    if (campaign.messages && campaign.messages.length > 0) {
+      console.log('🔍 Primeiras 3 mensagens:', campaign.messages.slice(0, 3));
+    }
+
+    // Buscar informações de todas as sessões utilizadas nas mensagens
+    const sessionNames = [...new Set(campaign.messages.map(m => m.sessionName).filter(Boolean))] as string[];
+
+    let sessionsInfo: any[] = [];
+    let sessionProviderMap: any = {};
+
+    if (sessionNames.length > 0) {
+      try {
+        sessionsInfo = await prisma.whatsAppSession.findMany({
+          where: {
+            name: { in: sessionNames }
+          },
+          select: {
+            name: true,
+            provider: true,
+            mePushName: true,
+            status: true
+          }
+        });
+
+        // Criar um mapa de sessão para provider
+        sessionProviderMap = sessionsInfo.reduce((acc: any, session) => {
+          acc[session.name] = {
+            provider: session.provider || 'WAHA',
+            mePushName: session.mePushName,
+            status: session.status
+          };
+          return acc;
+        }, {});
+      } catch (error) {
+        console.error('Erro ao buscar informações das sessões:', error);
+        // Em caso de erro, criar mapa vazio - as mensagens mostrarão provider como N/A
+      }
+    }
+
+    // Adicionar informações de provider às mensagens
+    const messagesWithProvider = campaign.messages.map(message => ({
+      ...message,
+      sessionProvider: message.sessionName ? sessionProviderMap[message.sessionName]?.provider || 'WAHA' : 'N/A',
+      sessionDisplayName: message.sessionName ? `${message.sessionName} (${sessionProviderMap[message.sessionName]?.provider || 'WAHA'})` : 'N/A'
+    }));
+
     // Estatísticas detalhadas
     const stats = {
-      total: campaign.messages.length,
-      sent: campaign.messages.filter(m => m.status === 'SENT').length,
-      failed: campaign.messages.filter(m => m.status === 'FAILED').length,
-      pending: campaign.messages.filter(m => m.status === 'PENDING').length
+      total: messagesWithProvider.length,
+      sent: messagesWithProvider.filter(m => m.status === 'SENT').length,
+      failed: messagesWithProvider.filter(m => m.status === 'FAILED').length,
+      pending: messagesWithProvider.filter(m => m.status === 'PENDING').length
     };
 
     // Agrupar por status
     const messagesByStatus = {
-      sent: campaign.messages.filter(m => m.status === 'SENT'),
-      failed: campaign.messages.filter(m => m.status === 'FAILED'),
-      pending: campaign.messages.filter(m => m.status === 'PENDING')
+      sent: messagesWithProvider.filter(m => m.status === 'SENT'),
+      failed: messagesWithProvider.filter(m => m.status === 'FAILED'),
+      pending: messagesWithProvider.filter(m => m.status === 'PENDING')
     };
 
-    // Agrupar por sessão utilizada
-    const messagesBySession = campaign.messages.reduce((acc: any, message) => {
-      const session = message.sessionName || 'N/A';
-      if (!acc[session]) {
-        acc[session] = [];
+    // Agrupar por sessão utilizada com informações de provider
+    const messagesBySession = messagesWithProvider.reduce((acc: any, message) => {
+      const sessionKey = message.sessionName || 'N/A';
+      const sessionInfo = sessionProviderMap[sessionKey];
+      const sessionDisplayKey = sessionKey === 'N/A' ? 'N/A' : `${sessionKey} (${sessionInfo?.provider || 'WAHA'})`;
+
+      if (!acc[sessionDisplayKey]) {
+        acc[sessionDisplayKey] = {
+          sessionName: sessionKey,
+          provider: sessionInfo?.provider || 'WAHA',
+          mePushName: sessionInfo?.mePushName || null,
+          status: sessionInfo?.status || null,
+          messages: []
+        };
       }
-      acc[session].push(message);
+      acc[sessionDisplayKey].messages.push(message);
       return acc;
     }, {});
 
-    // Parse JSON fields
+    // Parse JSON fields with error handling
+    let targetTags: any[] = [];
+    let sessionNamesArray: string[] = [];
+    let messageContent: any = {};
+
+    try {
+      targetTags = JSON.parse(campaign.targetTags);
+    } catch (error) {
+      console.error('Erro ao fazer parse das targetTags:', error);
+      targetTags = [];
+    }
+
+    try {
+      sessionNamesArray = campaign.sessionNames ? JSON.parse(campaign.sessionNames) : [];
+    } catch (error) {
+      console.error('Erro ao fazer parse dos sessionNames:', error);
+      sessionNamesArray = [];
+    }
+
+    try {
+      messageContent = JSON.parse(campaign.messageContent);
+      console.log('✅ MessageContent parsed successfully:', messageContent);
+    } catch (error) {
+      console.error('❌ Erro ao fazer parse do messageContent:', error);
+      console.error('❌ Original messageContent:', campaign.messageContent);
+      messageContent = {};
+    }
+
     const campaignWithParsedData = {
       ...campaign,
-      targetTags: JSON.parse(campaign.targetTags),
-      sessionNames: campaign.sessionNames ? JSON.parse(campaign.sessionNames) : [],
-      messageContent: JSON.parse(campaign.messageContent)
+      targetTags,
+      sessionNames: sessionNamesArray,
+      messageContent,
+      messages: messagesWithProvider // Substitui as mensagens originais pelas com informações de provider
     };
 
     const report = {
@@ -396,6 +524,7 @@ export const getCampaignReport = async (req: AuthenticatedRequest, res: Response
       stats,
       messagesByStatus,
       messagesBySession,
+      sessionsInfo: sessionProviderMap, // Adiciona informações das sessões
       generatedAt: new Date().toISOString()
     };
 
@@ -428,14 +557,24 @@ export const getContactTags = async (req: AuthenticatedRequest, res: Response) =
 // Get active WhatsApp sessions
 export const getActiveSessions = async (req: AuthenticatedRequest, res: Response) => {
   try {
+    // Filtro base
+    const where: any = {
+      status: 'WORKING'
+    };
+
+    // Filtrar por tenant (sempre aplicar quando tenantId existe)
+    if (req.tenantId) {
+      where.tenantId = req.tenantId;
+    }
+
     const sessions = await prisma.whatsAppSession.findMany({
-      where: {
-        status: 'WORKING'
-      },
+      where,
       select: {
         name: true,
+        displayName: true,
         mePushName: true,
-        meId: true
+        meId: true,
+        provider: true
       }
     });
 

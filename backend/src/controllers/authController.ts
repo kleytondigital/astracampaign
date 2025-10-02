@@ -20,8 +20,8 @@ interface UserResponse {
   criadoEm: Date;
 }
 
-const generateToken = (userId: string, email: string, role: string): string => {
-  const payload = { userId, email, role };
+const generateToken = (userId: string, email: string, role: string, tenantId?: string): string => {
+  const payload = { userId, email, role, tenantId };
   return jwt.sign(payload, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN } as jwt.SignOptions);
 };
 
@@ -75,9 +75,19 @@ export const login = async (req: Request, res: Response): Promise<void> => {
 
     const { email, senha } = req.body;
 
-    // Buscar usuário por email
+    // Buscar usuário por email com informações do tenant
     const user = await prisma.user.findUnique({
-      where: { email }
+      where: { email },
+      include: {
+        tenant: {
+          select: {
+            id: true,
+            slug: true,
+            name: true,
+            active: true
+          }
+        }
+      }
     });
 
     if (!user) {
@@ -96,8 +106,18 @@ export const login = async (req: Request, res: Response): Promise<void> => {
       return;
     }
 
+    // Verificar se o tenant está ativo (SUPERADMIN não tem tenant)
+    if (user.tenant && !user.tenant.active) {
+      res.status(401).json({
+        success: false,
+        message: 'Tenant inativo. Entre em contato com o suporte.'
+      });
+      return;
+    }
+
     // Verificar senha
     const isPasswordValid = await bcrypt.compare(senha, user.senha);
+
     if (!isPasswordValid) {
       res.status(401).json({
         success: false,
@@ -112,8 +132,8 @@ export const login = async (req: Request, res: Response): Promise<void> => {
       data: { ultimoLogin: new Date() }
     });
 
-    // Gerar token
-    const token = generateToken(user.id, user.email, user.role);
+    // Gerar token com tenantId (SUPERADMIN tem tenantId undefined)
+    const token = generateToken(user.id, user.email, user.role, user.tenantId || undefined);
 
     res.json({
       success: true,
@@ -146,6 +166,15 @@ export const register = async (req: AuthenticatedRequest, res: Response): Promis
 
     const { nome, email, senha, role = 'USER' } = req.body;
 
+    // Para usuários não-SUPERADMIN, é obrigatório ter tenantId
+    if (!req.user || (req.user.role !== 'SUPERADMIN' && !req.user.tenantId)) {
+      res.status(401).json({
+        success: false,
+        message: 'Acesso negado. Contexto de tenant necessário.'
+      });
+      return;
+    }
+
     // Verificar se o email já está em uso
     const existingUser = await prisma.user.findUnique({
       where: { email }
@@ -162,13 +191,25 @@ export const register = async (req: AuthenticatedRequest, res: Response): Promis
     // Hash da senha
     const hashedPassword = await bcrypt.hash(senha, 12);
 
+    // Determinar tenantId baseado no usuário criador
+    let tenantId: string | null = null;
+
+    if (req.user.role === 'SUPERADMIN') {
+      // SUPERADMIN pode especificar tenant ou criar usuário sem tenant (outro SUPERADMIN)
+      tenantId = req.body.tenantId || null;
+    } else {
+      // Usuários normais só podem criar usuários no seu próprio tenant
+      tenantId = req.user.tenantId || null;
+    }
+
     // Criar usuário
     const user = await prisma.user.create({
       data: {
         nome,
         email,
         senha: hashedPassword,
-        role
+        role,
+        tenantId
       }
     });
 
@@ -199,7 +240,17 @@ export const getProfile = async (req: AuthenticatedRequest, res: Response): Prom
     }
 
     const user = await prisma.user.findUnique({
-      where: { id: req.user.id }
+      where: { id: req.user.id },
+      include: {
+        tenant: {
+          select: {
+            id: true,
+            slug: true,
+            name: true,
+            active: true
+          }
+        }
+      }
     });
 
     if (!user) {
@@ -213,7 +264,8 @@ export const getProfile = async (req: AuthenticatedRequest, res: Response): Prom
     res.json({
       success: true,
       data: {
-        user: sanitizeUser(user)
+        user: sanitizeUser(user),
+        tenant: user.tenant
       }
     });
   } catch (error) {

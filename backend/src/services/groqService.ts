@@ -1,4 +1,5 @@
 import { settingsService } from './settingsService';
+import { tenantSettingsService } from './tenantSettingsService';
 
 export interface GroqMessage {
   model: string;
@@ -23,15 +24,22 @@ export class GroqService {
     return GroqService.instance;
   }
 
-  async generateMessage(messageConfig: GroqMessage, contactData: any = {}): Promise<GroqResponse> {
+  async generateMessage(messageConfig: GroqMessage, contactData: any = {}, tenantId?: string): Promise<GroqResponse> {
     try {
-      // Obter chave API das configurações
-      const settings = await settingsService.getSettings();
-
-      if (!settings.groqApiKey) {
+      // Obter chave API das configurações do tenant
+      if (!tenantId) {
         return {
           success: false,
-          error: 'Groq API Key não configurada. Configure a chave nas configurações de integração.'
+          error: 'TenantId é obrigatório para usar Groq.'
+        };
+      }
+
+      const tenantSettings = await tenantSettingsService.getTenantSettings(tenantId);
+
+      if (!tenantSettings.groqApiKey) {
+        return {
+          success: false,
+          error: 'Groq API Key não configurada para este tenant. Configure a chave nas configurações.'
         };
       }
 
@@ -71,7 +79,7 @@ export class GroqService {
       const response = await fetch(this.baseURL, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${settings.groqApiKey}`,
+          'Authorization': `Bearer ${tenantSettings.groqApiKey}`,
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
@@ -139,11 +147,11 @@ export class GroqService {
     }
   }
 
-  // Método para validar se a API Key está configurada
-  async validateApiKey(): Promise<boolean> {
+  // Método para validar se a API Key está configurada para um tenant
+  async validateApiKey(tenantId: string): Promise<boolean> {
     try {
-      const settings = await settingsService.getSettings();
-      return !!settings.groqApiKey && settings.groqApiKey.length > 0;
+      const tenantSettings = await tenantSettingsService.getTenantSettings(tenantId);
+      return !!tenantSettings.groqApiKey && tenantSettings.groqApiKey.length > 0;
     } catch (error) {
       return false;
     }

@@ -4,10 +4,17 @@ import { settingsService } from './settingsService';
 const fetch = require('node-fetch');
 
 const wahaRequest = async (endpoint: string, options: any = {}) => {
-  // Buscar configurações dinâmicas do banco
-  const settings = await settingsService.getSettings();
-  const WAHA_BASE_URL = settings.wahaHost || process.env.WAHA_BASE_URL || process.env.DEFAULT_WAHA_HOST || '';
-  const WAHA_API_KEY = settings.wahaApiKey || process.env.WAHA_API_KEY || process.env.DEFAULT_WAHA_API_KEY || '';
+  // Buscar configurações dinâmicas do banco usando o método específico
+  const config = await settingsService.getWahaConfig();
+  const WAHA_BASE_URL = config.host || process.env.WAHA_BASE_URL || process.env.DEFAULT_WAHA_HOST || '';
+  const WAHA_API_KEY = config.apiKey || process.env.WAHA_API_KEY || process.env.DEFAULT_WAHA_API_KEY || '';
+
+  console.log('🔍 WAHA Config Debug:', {
+    host: config.host,
+    apiKey: config.apiKey ? `${config.apiKey.substring(0, 8)}...` : 'undefined',
+    finalUrl: WAHA_BASE_URL,
+    finalKey: WAHA_API_KEY ? `${WAHA_API_KEY.substring(0, 8)}...` : 'undefined'
+  });
 
   if (!WAHA_BASE_URL || !WAHA_API_KEY) {
     throw new Error('Configurações WAHA não encontradas. Configure o Host e API Key nas configurações do sistema.');
@@ -60,13 +67,17 @@ export class WahaSyncService {
 
         await WhatsAppSessionService.createOrUpdateSession({
           name: wahaSession.name,
+          displayName: existingSession?.displayName || wahaSession.name, // Preservar displayName
           status: wahaSession.status || 'STOPPED',
+          provider: 'WAHA',
           config: wahaSession.config,
           me: wahaSession.me,
           assignedWorker: wahaSession.assignedWorker,
           // Preservar QR code existente se não expirou
           qr: existingSession?.qr || undefined,
-          qrExpiresAt: existingSession?.qrExpiresAt || undefined
+          qrExpiresAt: existingSession?.qrExpiresAt || undefined,
+          // Preservar tenantId existente
+          tenantId: existingSession?.tenantId || undefined
         });
 
         console.log(`✅ Sessão "${wahaSession.name}" sincronizada`);
@@ -105,13 +116,17 @@ export class WahaSyncService {
 
       await WhatsAppSessionService.createOrUpdateSession({
         name: wahaSession.name,
+        displayName: existingSession?.displayName || wahaSession.name, // Preservar displayName
         status: wahaSession.status || 'STOPPED',
+        provider: 'WAHA',
         config: wahaSession.config,
         me: wahaSession.me,
         assignedWorker: wahaSession.assignedWorker,
         // Preservar QR code existente se não expirou
         qr: existingSession?.qr || undefined,
-        qrExpiresAt: existingSession?.qrExpiresAt || undefined
+        qrExpiresAt: existingSession?.qrExpiresAt || undefined,
+        // Preservar tenantId existente
+        tenantId: existingSession?.tenantId || undefined
       });
 
       return WhatsAppSessionService.getSession(sessionName);
@@ -150,6 +165,7 @@ export class WahaSyncService {
       await WhatsAppSessionService.createOrUpdateSession({
         name,
         status: 'STOPPED',
+        provider: 'WAHA',
         config: sessionData.config
       });
 
@@ -168,6 +184,7 @@ export class WahaSyncService {
           await WhatsAppSessionService.createOrUpdateSession({
             name,
             status: existingSession.status || 'STOPPED',
+            provider: 'WAHA',
             config: existingSession.config || sessionData.config
           });
 

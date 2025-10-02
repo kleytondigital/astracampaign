@@ -8,12 +8,11 @@ interface CSVRow {
   telefone?: string;
   email?: string;
   observacoes?: string;
-  categoriaId?: string;
-  categoriaid?: string; // lowercase version from csv-parser mapHeaders
+  tags?: string;
 }
 
 export class CSVImportService {
-  static async importContacts(filePath: string): Promise<ImportResult> {
+  static async importContacts(filePath: string, tenantId: string): Promise<ImportResult> {
     const results: CSVRow[] = [];
     const errors: string[] = [];
     let successfulImports = 0;
@@ -28,7 +27,7 @@ export class CSVImportService {
           results.push(data);
         })
         .on('end', async () => {
-          console.log(`📊 CSVImportService - Processando ${results.length} linhas do CSV`);
+          console.log(`📊 CSVImportService - Processando ${results.length} linhas do CSV para tenantId: ${tenantId}`);
 
           for (let i = 0; i < results.length; i++) {
             const row = results[i];
@@ -46,22 +45,23 @@ export class CSVImportService {
                 continue;
               }
 
-              // Preparar dados do contato (corrigindo mapeamento do header categoriaId)
-              const categoriaId = row.categoriaId || row.categoriaid; // fallback para lowercase
+              // Preparar dados do contato incluindo tenantId
+              const tags = row.tags ? row.tags.split(',').map((tag: string) => tag.trim()) : [];
               const contactData: ContactInput = {
                 nome: row.nome.trim(),
                 telefone: row.telefone.trim(),
                 email: row.email?.trim() || undefined,
                 observacoes: row.observacoes?.trim() || undefined,
-                categoriaId: categoriaId?.trim() || undefined
+                tags: tags,
+                tenantId: tenantId
               };
 
-              console.log(`🏷️ Linha ${rowNumber} - CategoriaId extraído:`, { original: row.categoriaId, lowercase: row.categoriaid, final: contactData.categoriaId });
+              console.log(`🏷️ Linha ${rowNumber} - Tags extraídas:`, tags);
 
               // Criar contato
               await ContactService.createContact(contactData);
               successfulImports++;
-              console.log(`✅ Linha ${rowNumber} importada: ${contactData.nome}`);
+              console.log(`✅ Linha ${rowNumber} importada: ${contactData.nome} (tenant: ${tenantId})`);
 
             } catch (error) {
               const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido';

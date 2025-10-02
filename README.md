@@ -1,4 +1,4 @@
-# 🚀 Astra Campaign - Sistema Completo de Campanhas WhatsApp
+# 🚀 Astra Campaign - Plataforma SaaS Multi-Tenant para Campanhas WhatsApp
 
 <div align="center">
 
@@ -9,7 +9,7 @@
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-316192?style=for-the-badge&logo=postgresql&logoColor=white)
 ![Docker](https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white)
 
-**Sistema profissional para campanhas de WhatsApp em massa com inteligência artificial integrada**
+**Plataforma SaaS profissional multi-tenant para campanhas de WhatsApp em massa com IA integrada**
 
 [🎯 Recursos](#-recursos-principais) • [🛠️ Instalação](#️-instalação) • [📚 Documentação](#-documentação) • [🤝 Contribuição](#-contribuindo)
 
@@ -19,21 +19,44 @@
 
 ## 📋 Sobre o Projeto
 
-O **Astra Campaign** é uma plataforma completa e open-source para gerenciamento e execução de campanhas de WhatsApp em massa. Desenvolvido com tecnologias modernas, oferece recursos avançados como inteligência artificial para geração de mensagens personalizadas, multi-sessão com failover automático e interface intuitiva para gerenciamento de contatos e campanhas.
+O **Astra Campaign** é uma **plataforma SaaS multi-tenant** completa e open-source para gerenciamento e execução de campanhas de WhatsApp em massa. Desenvolvido com arquitetura moderna, oferece recursos enterprise como isolamento total de dados por empresa, sistema de quotas, backup/restore automatizado, inteligência artificial para personalização de mensagens e suporte a múltiplos provedores WhatsApp (WAHA e Evolution API).
 
-> 🔥 **Open Source**: Este projeto é totalmente gratuito e sem ligação alguma com o WhatsApp oficial. Utiliza a API [WAHA](https://waha.devlike.pro/) para integração.
+> 🔥 **Open Source & SaaS Ready**: Projeto totalmente gratuito com arquitetura multi-tenant pronta para comercialização. Sem ligação alguma com o WhatsApp oficial.
 
 ### ✨ Principais Diferenciais
 
+- 🏢 **Multi-Tenant (SaaS)**: Isolamento completo de dados por empresa
+- 🔌 **Dual Provider**: Integração com WAHA API e Evolution API
 - 🤖 **IA Integrada**: OpenAI e Groq para mensagens personalizadas
+- 🎲 **Randomização Inteligente**: Textos, imagens, vídeos e arquivos aleatórios
 - 🔄 **Multi-Sessão com Failover**: Distribuição inteligente de envios
+- 💾 **Backup & Restore**: Sistema automatizado de backup e restauração
 - 📊 **Analytics Completo**: Relatórios detalhados com exportação CSV
-- 🎨 **Interface Moderna**: React com Tailwind CSS responsivo
+- 👥 **Sistema de Roles**: SUPERADMIN, ADMIN e USER
+- ⚖️ **Sistema de Quotas**: Controle de limites por tenant
+- 🎨 **White Label**: Personalização completa da marca
 - 🐳 **Deploy Simplificado**: Docker Swarm com Traefik
 
 ---
 
 ## 🎯 Recursos Principais
+
+### 🏢 **Arquitetura Multi-Tenant (SaaS)**
+- ✅ Isolamento completo de dados por empresa (tenant)
+- ✅ Sistema de quotas personalizáveis (usuários, contatos, campanhas, conexões)
+- ✅ Gerenciamento centralizado via Super Admin
+- ✅ White Label: Logo, favicon, cores e títulos personalizáveis
+- ✅ Planos e limites configuráveis por tenant
+- ✅ Associação many-to-many usuário-tenant
+- ✅ Mensagens amigáveis para upgrade de plano
+
+### 💾 **Backup & Restore**
+- ✅ Backup automático agendado (cron configurável)
+- ✅ Backup manual sob demanda
+- ✅ Restauração completa do banco de dados
+- ✅ Histórico de backups com metadados
+- ✅ Armazenamento seguro em volumes Docker
+- ✅ Gerenciamento via interface web
 
 ### 👥 **Gerenciamento de Contatos**
 - ✅ CRUD completo de contatos
@@ -42,23 +65,37 @@ O **Astra Campaign** é uma plataforma completa e open-source para gerenciamento
 - ✅ Validação de números telefônicos (formato E.164)
 - ✅ Busca avançada e filtros inteligentes
 - ✅ Paginação otimizada
+- ✅ Isolamento por tenant
 
-### 📱 **Conexões WhatsApp**
-- ✅ Múltiplas sessões simultâneas
+### 📱 **Conexões WhatsApp (Dual Provider)**
+- ✅ **WAHA API**: Suporte completo com QR Code
+- ✅ **Evolution API**: Integração nativa com Evolution
+- ✅ Múltiplas sessões simultâneas por tenant
 - ✅ QR Code automático com expiração
 - ✅ Status em tempo real das conexões
 - ✅ Gerenciamento simplificado de sessões
 - ✅ Reconnect automático em falhas
+- ✅ Seleção de provedor ao criar sessão
 
 ### 🎯 **Campanhas Inteligentes**
 - ✅ **Tipos de Mensagem**: Texto, Imagem, Vídeo, Áudio, Documentos
 - ✅ **Sequências Complexas**: Múltiplas mensagens em ordem
-- ✅ **IA Generativa**: OpenAI e Groq para personalização
+- ✅ **Randomização**: Textos, imagens, vídeos e arquivos aleatórios
+- ✅ **IA Generativa**: OpenAI e Groq para personalização automática
 - ✅ **Variáveis Dinâmicas**: `{{nome}}`, `{{telefone}}`, `{{email}}`, `{{categoria}}`, `{{observacoes}}`
 - ✅ **Multi-Sessão**: Distribuição automática entre conexões
 - ✅ **Agendamento**: Execução imediata ou programada
 - ✅ **Controles**: Pausar, retomar, cancelar campanhas
 - ✅ **Rate Limiting**: Delays configuráveis para evitar bloqueios
+- ✅ **Preview em Tempo Real**: Visualização da mensagem antes do envio
+
+### 🎲 **Sistema de Randomização**
+- ✅ **Textos Aleatórios**: Pool de mensagens para variar conteúdo
+- ✅ **Imagens Aleatórias**: Múltiplas imagens no pool
+- ✅ **Vídeos Aleatórios**: Seleção aleatória de vídeos
+- ✅ **Arquivos Aleatórios**: Documentos variados por envio
+- ✅ **Legendas Variadas**: Textos diferentes para cada mídia
+- ✅ **Humanização**: Evita detecção de envios automatizados
 
 ### 📊 **Relatórios e Analytics**
 - ✅ Dashboard em tempo real
@@ -67,18 +104,33 @@ O **Astra Campaign** é uma plataforma completa e open-source para gerenciamento
 - ✅ Análise de erros categorizada
 - ✅ Exportação completa em CSV
 - ✅ Timeline de execução
+- ✅ Métricas por tenant
 
-### 👤 **Sistema de Usuários**
+### 👤 **Sistema de Usuários e Roles**
+- ✅ **SUPERADMIN**: Gerencia todos os tenants
+- ✅ **ADMIN**: Gerencia seu tenant
+- ✅ **USER**: Acesso limitado às funcionalidades
 - ✅ Autenticação JWT segura
-- ✅ Controle de acesso por roles
-- ✅ Gerenciamento de usuários admin
+- ✅ Controle de acesso por tenant
 - ✅ Hash bcrypt para senhas
+- ✅ Associação many-to-many com tenants
 
 ### ⚙️ **Configurações do Sistema**
+- ✅ Configurações globais (Super Admin)
+- ✅ Configurações por tenant
 - ✅ Integração WAHA configurável
-- ✅ Personalização visual (logo, favicon, títulos)
-- ✅ Chaves de API para IA (OpenAI/Groq)
-- ✅ Configuração via interface web
+- ✅ Integração Evolution API configurável
+- ✅ Personalização visual (logo, favicon, cores, títulos)
+- ✅ Chaves de API para IA (OpenAI/Groq) por tenant
+- ✅ Gerenciamento de quotas por tenant
+- ✅ Sistema de alertas e notificações
+
+### 🔔 **Sistema de Alertas e Monitoramento**
+- ✅ Alertas de quota (85% e 100% de uso)
+- ✅ Monitoramento de saúde do sistema
+- ✅ Notificações de falhas de conexão
+- ✅ Dashboard de alertas ativos
+- ✅ Auto-resolução de alertas antigos
 
 ---
 
@@ -102,9 +154,12 @@ O **Astra Campaign** é uma plataforma completa e open-source para gerenciamento
 - **jsonwebtoken** - Autenticação JWT
 - **express-validator** - Validação de dados
 - **libphonenumber-js** - Normalização de telefones
+- **node-cron** - Agendamento de tarefas
+- **socket.io** - WebSocket para real-time
 
 ### 🗄️ **Banco de Dados**
 - **PostgreSQL 16** - Banco de dados relacional
+- **Redis 7** - Cache e filas
 - **Prisma** - ORM com type-safety
 
 ### 🐳 **Infraestrutura**
@@ -114,7 +169,8 @@ O **Astra Campaign** é uma plataforma completa e open-source para gerenciamento
 - **Docker Hub** - Imagens oficiais pré-construídas
 
 ### 🔌 **Integrações**
-- **WAHA API** - Interface WhatsApp Web
+- **WAHA API** - WhatsApp Web API
+- **Evolution API** - API alternativa para WhatsApp
 - **OpenAI API** - GPT para geração de conteúdo
 - **Groq API** - IA ultra-rápida
 
@@ -126,7 +182,7 @@ O **Astra Campaign** é uma plataforma completa e open-source para gerenciamento
 - Docker 20.10+
 - Docker Compose/Swarm
 - Traefik configurado (para produção)
-- Instância WAHA rodando
+- Instância WAHA ou Evolution API rodando
 
 ### 🐳 **Instalação via Docker (Recomendado)**
 
@@ -136,26 +192,38 @@ git clone https://github.com/AstraOnlineWeb/astracampaign.git
 cd astracampaign
 ```
 
-2. **Baixe as imagens oficiais**
-```bash
-# Imagens pré-construídas no Docker Hub
-docker pull astraonline/astracampaignbackend:latest
-docker pull astraonline/astracampaignfrontend:latest
-```
-
-3. **Configure as variáveis de ambiente**
+2. **Configure as variáveis de ambiente**
 ```bash
 # Edite o docker-stack.yml com suas configurações
 nano docker-stack.yml
 ```
 
-4. **Deploy no Docker Swarm**
-```bash
-# Para produção
-docker stack deploy -c docker-stack.yml astra-campaign
+Principais variáveis:
+```yaml
+environment:
+  - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/contacts
+  - JWT_SECRET=sua-chave-secreta-muito-segura
+  - DEFAULT_WAHA_HOST=https://seu-waha.com
+  - DEFAULT_WAHA_API_KEY=sua-waha-api-key
+  - DEFAULT_EVOLUTION_HOST=https://seu-evolution.com
+  - DEFAULT_EVOLUTION_API_KEY=sua-evolution-api-key
+  - DEFAULT_COMPANY_NAME=Sua Empresa
+  - DEFAULT_PAGE_TITLE=Seu Sistema
+```
 
-# Para desenvolvimento local
+3. **Deploy no Docker Swarm**
+```bash
+# Produção
+docker stack deploy -c docker-stack.yml work
+
+# Desenvolvimento local
 docker-compose up -d
+```
+
+4. **Verificar serviços**
+```bash
+docker service ls
+docker service logs -f work_backend
 ```
 
 ### 🛠️ **Desenvolvimento Local**
@@ -177,12 +245,14 @@ npm run dev          # Servidor de desenvolvimento (porta 3000)
 
 ### ⚙️ **Configuração Inicial**
 
-1. **Acesse o sistema**: `http://localhost:3000`
-2. **Login padrão**: `admin@astra.com.br` / `Admin123!`
-3. **Configure WAHA**: Vá em Configurações e adicione host/API key
-4. **Crie uma sessão WhatsApp**: Na página de Conexões
-5. **Importe contatos**: Via CSV ou manualmente
-6. **Crie sua primeira campanha**: Na página de Campanhas
+1. **Acesse o sistema**: `http://localhost` ou seu domínio
+2. **Login padrão SUPERADMIN**: `superadmin@astraonline.com.br` / `Admin123`
+3. **Login padrão ADMIN**: `admin@astraonline.com.br` / `Admin123`
+4. **Configure provedores**: Vá em Configurações e adicione WAHA/Evolution
+5. **Crie empresas**: Como SUPERADMIN, crie novos tenants
+6. **Crie uma sessão WhatsApp**: Na página de Conexões
+7. **Importe contatos**: Via CSV ou manualmente
+8. **Crie sua primeira campanha**: Na página de Campanhas
 
 ---
 
@@ -193,6 +263,13 @@ npm run dev          # Servidor de desenvolvimento (porta 3000)
 #### **Autenticação**
 - `POST /api/auth/login` - Login do usuário
 - `POST /api/auth/logout` - Logout do usuário
+
+#### **Tenants (SUPERADMIN)**
+- `GET /api/tenants` - Listar todos os tenants
+- `POST /api/tenants` - Criar novo tenant
+- `PUT /api/tenants/:id` - Atualizar tenant
+- `DELETE /api/tenants/:id` - Excluir tenant
+- `GET /api/tenants/:id` - Detalhes do tenant
 
 #### **Contatos**
 - `GET /api/contatos` - Listar contatos (com paginação/busca)
@@ -210,33 +287,76 @@ npm run dev          # Servidor de desenvolvimento (porta 3000)
 
 #### **Sessões WhatsApp**
 - `GET /api/waha/sessions` - Listar sessões
-- `POST /api/waha/sessions` - Criar sessão
+- `POST /api/waha/sessions` - Criar sessão (WAHA ou Evolution)
 - `DELETE /api/waha/sessions/:name` - Remover sessão
 - `POST /api/waha/sessions/:name/restart` - Reiniciar
+
+#### **Backup & Restore**
+- `GET /api/backup/stats` - Estatísticas de backup
+- `POST /api/backup` - Criar backup manual
+- `POST /api/backup/restore/:filename` - Restaurar backup
+- `GET /api/backup/list` - Listar backups disponíveis
+
+#### **Analytics**
+- `GET /api/analytics/overview` - Visão geral do sistema
+- `GET /api/analytics/campaigns` - Métricas de campanhas
+- `GET /api/analytics/sessions` - Métricas de sessões
 
 ### 📊 **Modelo de Dados**
 
 ```typescript
+// Tenant (Empresa)
+interface Tenant {
+  id: string;
+  slug: string;
+  name: string;
+  active: boolean;
+  quotas: TenantQuota;
+  settings: TenantSettings;
+}
+
+// Quotas do Tenant
+interface TenantQuota {
+  maxUsers: number;
+  maxContacts: number;
+  maxCampaigns: number;
+  maxConnections: number;
+}
+
 // Contato
 interface Contact {
   id: string;
+  tenantId: string;
   nome: string;
   telefone: string; // E.164 format
   email?: string;
-  tags: string[];
+  categoriaId?: string;
   observacoes?: string;
 }
 
 // Campanha
 interface Campaign {
   id: string;
+  tenantId: string;
   nome: string;
-  targetTags: string[];
+  targetCategories: string[];
   sessionNames: string[];
   messageType: 'text' | 'image' | 'video' | 'audio' | 'document' | 'sequence';
   messageContent: MessageContent;
+  randomize: boolean; // Randomizar conteúdo
   randomDelay: number;
   status: 'PENDING' | 'RUNNING' | 'COMPLETED' | 'PAUSED' | 'FAILED';
+}
+
+// Sessão WhatsApp
+interface WhatsAppSession {
+  id: string;
+  tenantId: string;
+  name: string;
+  displayName?: string;
+  status: string;
+  provider: 'WAHA' | 'EVOLUTION';
+  qr?: string;
 }
 ```
 
@@ -247,10 +367,15 @@ interface Campaign {
 ```env
 # Backend (.env)
 DATABASE_URL=postgresql://user:pass@host:5432/db
+REDIS_URL=redis://redis:6379
 JWT_SECRET=sua-chave-secreta-muito-segura
 JWT_EXPIRES_IN=24h
 DEFAULT_WAHA_HOST=http://waha:3000
-DEFAULT_WAHA_API_KEY=sua-api-key
+DEFAULT_WAHA_API_KEY=sua-waha-api-key
+DEFAULT_EVOLUTION_HOST=http://evolution:8080
+DEFAULT_EVOLUTION_API_KEY=sua-evolution-api-key
+DEFAULT_COMPANY_NAME=Astra Campaign
+DEFAULT_PAGE_TITLE=Sistema de Gestão de Contatos
 ```
 
 ### 🐳 **Docker Swarm Labels**
@@ -260,15 +385,40 @@ DEFAULT_WAHA_API_KEY=sua-api-key
 labels:
   - traefik.enable=true
   - traefik.http.routers.app.rule=Host(`seu-dominio.com`)
+  - traefik.http.routers.app.tls=true
   - traefik.http.routers.app.tls.certresolver=letsencrypt
 ```
 
 ### 📝 **Formato CSV para Importação**
 
 ```csv
-nome,telefone,email,tags,observacoes
-João Silva,+5511999999999,joao@email.com,cliente;vip,Cliente preferencial
-Maria Santos,+5511888888888,maria@email.com,prospect,Interessada em produto X
+nome,telefone,email,categoria,observacoes
+João Silva,+5511999999999,joao@email.com,Cliente VIP,Cliente preferencial
+Maria Santos,+5511888888888,maria@email.com,Prospect,Interessada em produto X
+```
+
+### 🎲 **Randomização de Conteúdo**
+
+Para usar randomização de mensagens, configure múltiplos conteúdos:
+
+```json
+{
+  "texts": [
+    "Olá {{nome}}! Tudo bem?",
+    "Oi {{nome}}, como vai?",
+    "E aí {{nome}}?"
+  ],
+  "images": [
+    "/uploads/image1.jpg",
+    "/uploads/image2.jpg",
+    "/uploads/image3.jpg"
+  ],
+  "captions": [
+    "Confira essa promoção!",
+    "Veja essa novidade!",
+    "Aproveite essa oportunidade!"
+  ]
+}
 ```
 
 ---
@@ -278,16 +428,18 @@ Maria Santos,+5511888888888,maria@email.com,prospect,Interessada em produto X
 ### 🔧 **Build das Imagens**
 
 ```bash
-# Usar imagens oficiais do Docker Hub
-docker pull astraonline/astracampaignbackend:latest
-docker pull astraonline/astracampaignfrontend:latest
-
-# Ou fazer build personalizado (opcional)
+# Backend
 cd backend
-docker build -t astraonline/astracampaignbackend:latest .
+docker build --no-cache -t work-backend:latest .
 
-cd ../frontend
-docker build -t astraonline/astracampaignfrontend:latest .
+# Frontend
+cd frontend
+npm run build
+docker build -t work-frontend:latest .
+
+# Push para registry (opcional)
+docker tag work-backend:latest seu-registry/work-backend:latest
+docker push seu-registry/work-backend:latest
 ```
 
 ### 📊 **Monitoramento**
@@ -297,12 +449,23 @@ docker build -t astraonline/astracampaignfrontend:latest .
 docker service ls
 
 # Logs em tempo real
-docker service logs -f astra-campaign_backend
-docker service logs -f astra-campaign_frontend
+docker service logs -f work_backend
+docker service logs -f work_frontend
 
 # Restart de serviços
-docker service update --force astra-campaign_backend
+docker service update --force work_backend
+
+# Verificar health
+curl http://localhost:3001/api/health
 ```
+
+### 💾 **Backup Automatizado**
+
+Configure o cron de backup no painel de Super Admin:
+
+- Diário: `0 2 * * *` (02:00 AM)
+- Semanal: `0 2 * * 0` (Domingo 02:00 AM)
+- Mensal: `0 2 1 * *` (Dia 1 de cada mês 02:00 AM)
 
 ---
 
@@ -360,16 +523,19 @@ Este projeto está licenciado sob a **GNU Affero General Public License v3.0 (AG
 ### 🔒 **Recomendações de Uso**
 
 - ✅ Respeite os limites do WhatsApp
-- ✅ Use delays apropriados entre mensagens
+- ✅ Use delays apropriados entre mensagens (recomendado: 5-10 segundos)
+- ✅ Use randomização para humanizar os envios
 - ✅ Não envie spam
 - ✅ Obtenha consentimento dos destinatários
 - ✅ Mantenha o sistema atualizado
+- ✅ Faça backups regulares
 
 ---
 
 ## 🙏 Agradecimentos
 
 - **[WAHA](https://waha.devlike.pro/)** - API WhatsApp Web
+- **[Evolution API](https://evolution-api.com/)** - API alternativa para WhatsApp
 - **[Prisma](https://prisma.io/)** - ORM TypeScript
 - **[Tailwind CSS](https://tailwindcss.com/)** - Framework CSS
 - **[React](https://reactjs.org/)** - Biblioteca JavaScript
@@ -391,18 +557,20 @@ Este projeto está licenciado sob a **GNU Affero General Public License v3.0 (AG
 
 💼 Temos uma equipe especializada para:
 - ✅ Customizações e melhorias
-- ✅ Implementação e deploy
+- ✅ Implementação e deploy completo
+- ✅ Configuração de arquitetura SaaS
 - ✅ Integração com outras APIs
 - ✅ Desenvolvimento de features específicas
 - ✅ Suporte técnico dedicado
 - ✅ Consultoria em automação WhatsApp
+- ✅ Treinamento e documentação
 
 ### 📚 **Recursos Úteis**
 - 📖 [Documentação WAHA](https://waha.devlike.pro/docs/)
+- 📖 [Documentação Evolution API](https://doc.evolution-api.com/)
 - 📖 [Documentação Prisma](https://www.prisma.io/docs/)
 - 📖 [Documentação React](https://reactjs.org/docs/)
-- 🐳 [Docker Hub - Backend](https://hub.docker.com/r/astraonline/astracampaignbackend)
-- 🐳 [Docker Hub - Frontend](https://hub.docker.com/r/astraonline/astracampaignfrontend)
+- 📖 [Documentação Docker Swarm](https://docs.docker.com/engine/swarm/)
 
 ---
 

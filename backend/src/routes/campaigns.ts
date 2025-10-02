@@ -12,6 +12,7 @@ import {
   campaignValidation
 } from '../controllers/campaignController';
 import { authMiddleware } from '../middleware/auth';
+import { checkCampaignQuota } from '../middleware/quotaMiddleware';
 
 const router = Router();
 
@@ -21,7 +22,7 @@ router.get('/tags', authMiddleware, getContactTags);
 router.get('/sessions', authMiddleware, getActiveSessions);
 router.get('/:id', authMiddleware, getCampaign);
 router.get('/:id/report', authMiddleware, getCampaignReport);
-router.post('/', authMiddleware, campaignValidation, createCampaign);
+router.post('/', authMiddleware, campaignValidation, checkCampaignQuota, createCampaign);
 router.put('/:id', authMiddleware, updateCampaign);
 router.delete('/:id', authMiddleware, deleteCampaign);
 router.patch('/:id/toggle', authMiddleware, toggleCampaign);

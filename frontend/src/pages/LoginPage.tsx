@@ -17,8 +17,6 @@ export function LoginPage() {
   const { login } = useAuth();
   const { settings } = useGlobalSettings();
 
-  console.log('LoginPage settings:', settings);
-
   const {
     register,
     handleSubmit,

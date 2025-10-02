@@ -52,9 +52,7 @@ npx prisma db seed || echo "⚠️ Seed failed, continuing..."
 echo "🔧 Generating Prisma client..."
 npx prisma generate || echo "⚠️ Prisma generate failed, continuing..."
 
-# Criar usuário admin se não existir
-echo "👤 Creating admin user..."
-node dist/scripts/createAdminUser.js || echo "⚠️ Admin user creation failed, continuing..."
+# Skip admin user creation - now handled by setup process
 
 # Iniciar servidor
 echo "🎯 Starting server..."

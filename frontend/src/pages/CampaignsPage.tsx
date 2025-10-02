@@ -30,6 +30,7 @@ interface Campaign {
   criadoEm: string;
   session: {
     name: string;
+    displayName?: string;
     status: string;
     mePushName: string | null;
   };
@@ -39,7 +40,8 @@ interface Campaign {
 }
 
 interface WhatsAppSession {
-  name: string;
+  name: string; // Nome real usado na API
+  displayName?: string; // Nome exibido ao usuário
   mePushName: string | null;
   meId: string | null;
 }
@@ -248,8 +250,9 @@ export function CampaignsPage() {
     setFileInfos({});
   };
 
-  const handleFileUpload = async (file: File, messageIndex: number) => {
-    setUploadingFiles(prev => ({ ...prev, [messageIndex]: true }));
+  const handleFileUpload = async (file: File, messageIndex: number, variationIndex?: number) => {
+    const uploadKey = variationIndex !== undefined ? `${messageIndex}-${variationIndex}` : messageIndex.toString();
+    setUploadingFiles(prev => ({ ...prev, [uploadKey]: true }));
 
     try {
       const uploadFormData = new FormData();
@@ -275,34 +278,76 @@ export function CampaignsPage() {
 
       const data = await response.json();
 
-      setFileInfos(prev => ({
-        ...prev,
-        [messageIndex]: {
-          name: data.originalName,
-          size: data.size,
-          type: data.mimetype
-        }
-      }));
+      // Armazenar informações do arquivo
+      if (variationIndex !== undefined) {
+        setFileInfos(prev => ({
+          ...prev,
+          [`${messageIndex}-${variationIndex}`]: {
+            name: data.originalName,
+            size: data.size,
+            type: data.mimetype
+          }
+        }));
+      } else {
+        setFileInfos(prev => ({
+          ...prev,
+          [messageIndex]: {
+            name: data.originalName,
+            size: data.size,
+            type: data.mimetype
+          }
+        }));
+      }
 
       const currentSequence = ('sequence' in formData.messageContent) ? formData.messageContent.sequence : [];
-      const newSequence = currentSequence.map((seqItem, i) =>
-        i === messageIndex ? {
-          ...seqItem,
-          content: { ...seqItem.content, url: data.fileUrl }
-        } : seqItem
-      );
 
-      setFormData(prev => ({
-        ...prev,
-        messageContent: { sequence: newSequence }
-      }));
+      if (variationIndex !== undefined) {
+        // Upload para variação
+        const newSequence = currentSequence.map((seqItem, i) => {
+          if (i === messageIndex) {
+            const mediaVariations = [...(seqItem.content.mediaVariations || [])];
+            // Garantir que o array tenha o tamanho necessário
+            while (mediaVariations.length <= variationIndex) {
+              mediaVariations.push({ url: '', caption: '', fileName: '' });
+            }
+            mediaVariations[variationIndex] = {
+              ...mediaVariations[variationIndex],
+              url: data.fileUrl,
+              fileName: data.originalName
+            };
+            return {
+              ...seqItem,
+              content: { ...seqItem.content, mediaVariations }
+            };
+          }
+          return seqItem;
+        });
+
+        setFormData(prev => ({
+          ...prev,
+          messageContent: { sequence: newSequence }
+        }));
+      } else {
+        // Upload para modo single
+        const newSequence = currentSequence.map((seqItem, i) =>
+          i === messageIndex ? {
+            ...seqItem,
+            content: { ...seqItem.content, url: data.fileUrl }
+          } : seqItem
+        );
+
+        setFormData(prev => ({
+          ...prev,
+          messageContent: { sequence: newSequence }
+        }));
+      }
 
       toast.success('Arquivo carregado com sucesso!');
     } catch (error) {
       console.error('Erro ao fazer upload:', error);
       toast.error(error instanceof Error ? error.message : 'Erro ao fazer upload do arquivo');
     } finally {
-      setUploadingFiles(prev => ({ ...prev, [messageIndex]: false }));
+      setUploadingFiles(prev => ({ ...prev, [uploadKey]: false }));
     }
   };
 
@@ -805,9 +850,9 @@ export function CampaignsPage() {
                                 />
                                 <div>
                                   <span className="text-sm font-medium text-gray-700">
-                                    {session.mePushName || session.name}
+                                    {session.mePushName || session.displayName || session.name}
                                   </span>
-                                  <span className="text-xs text-gray-500 block">({session.name})</span>
+                                  <span className="text-xs text-gray-500 block">({session.displayName || session.name})</span>
                                 </div>
                               </div>
                               <span className="text-xs px-2 py-1 bg-green-100 text-green-800 rounded-full">
@@ -999,22 +1044,147 @@ export function CampaignsPage() {
 
                                 {item.type === 'text' && (
                                   <div className="space-y-2">
-                                    <textarea
-                                      placeholder="Digite sua mensagem... Use variáveis como {{nome}}, {{email}}, {{telefone}}, {{categoria}}, {{observacoes}}"
-                                      value={item.content.text || ''}
-                                      onChange={(e) => {
-                                        const currentSequence = ('sequence' in formData.messageContent) ? formData.messageContent.sequence : [];
-                                        const newSequence = currentSequence.map((seqItem, i) =>
-                                          i === index ? { ...seqItem, content: { text: e.target.value } } : seqItem
-                                        );
-                                        setFormData(prev => ({
-                                          ...prev,
-                                          messageContent: { sequence: newSequence }
-                                        }));
-                                      }}
-                                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                      rows={3}
-                                    />
+                                    {/* Checkbox para usar variações */}
+                                    <div className="flex items-center space-x-2">
+                                      <input
+                                        type="checkbox"
+                                        id={`useVariations-${index}`}
+                                        checked={item.content.useVariations || false}
+                                        onChange={(e) => {
+                                          const currentSequence = ('sequence' in formData.messageContent) ? formData.messageContent.sequence : [];
+                                          const newSequence = currentSequence.map((seqItem, i) =>
+                                            i === index ? {
+                                              ...seqItem,
+                                              content: {
+                                                ...seqItem.content,
+                                                useVariations: e.target.checked,
+                                                variations: e.target.checked ? [''] : undefined,
+                                                text: e.target.checked ? undefined : seqItem.content.text
+                                              }
+                                            } : seqItem
+                                          );
+                                          setFormData(prev => ({
+                                            ...prev,
+                                            messageContent: { sequence: newSequence }
+                                          }));
+                                        }}
+                                        className="rounded text-blue-600 focus:ring-blue-500"
+                                      />
+                                      <label htmlFor={`useVariations-${index}`} className="text-sm font-medium text-gray-700">
+                                        Usar variações de texto
+                                      </label>
+                                    </div>
+
+                                    {item.content.useVariations ? (
+                                      /* Modo variações */
+                                      <div className="space-y-2">
+                                        <label className="block text-sm font-medium text-gray-700">
+                                          Variações de texto
+                                        </label>
+                                        {(item.content.variations || ['']).map((variation: string, varIndex: number) => (
+                                          <div key={varIndex} className="flex gap-2">
+                                            <div className="flex-1">
+                                              <textarea
+                                                placeholder={`Variação ${varIndex + 1}... Use variáveis como {{nome}}, {{email}}, {{telefone}}, {{categoria}}, {{observacoes}}`}
+                                                value={variation}
+                                                onChange={(e) => {
+                                                  const currentSequence = ('sequence' in formData.messageContent) ? formData.messageContent.sequence : [];
+                                                  const newSequence = currentSequence.map((seqItem, i) => {
+                                                    if (i === index) {
+                                                      const newVariations = [...(seqItem.content.variations || [])];
+                                                      newVariations[varIndex] = e.target.value;
+                                                      return {
+                                                        ...seqItem,
+                                                        content: { ...seqItem.content, variations: newVariations }
+                                                      };
+                                                    }
+                                                    return seqItem;
+                                                  });
+                                                  setFormData(prev => ({
+                                                    ...prev,
+                                                    messageContent: { sequence: newSequence }
+                                                  }));
+                                                }}
+                                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                                rows={2}
+                                              />
+                                            </div>
+                                            {(item.content.variations || []).length > 1 && (
+                                              <button
+                                                type="button"
+                                                onClick={() => {
+                                                  const currentSequence = ('sequence' in formData.messageContent) ? formData.messageContent.sequence : [];
+                                                  const newSequence = currentSequence.map((seqItem, i) => {
+                                                    if (i === index) {
+                                                      const newVariations = [...(seqItem.content.variations || [])];
+                                                      newVariations.splice(varIndex, 1);
+                                                      return {
+                                                        ...seqItem,
+                                                        content: { ...seqItem.content, variations: newVariations }
+                                                      };
+                                                    }
+                                                    return seqItem;
+                                                  });
+                                                  setFormData(prev => ({
+                                                    ...prev,
+                                                    messageContent: { sequence: newSequence }
+                                                  }));
+                                                }}
+                                                className="px-2 py-1 text-red-600 hover:text-red-800"
+                                                title="Remover variação"
+                                              >
+                                                ✕
+                                              </button>
+                                            )}
+                                          </div>
+                                        ))}
+                                        <button
+                                          type="button"
+                                          onClick={() => {
+                                            const currentSequence = ('sequence' in formData.messageContent) ? formData.messageContent.sequence : [];
+                                            const newSequence = currentSequence.map((seqItem, i) => {
+                                              if (i === index) {
+                                                const newVariations = [...(seqItem.content.variations || []), ''];
+                                                return {
+                                                  ...seqItem,
+                                                  content: { ...seqItem.content, variations: newVariations }
+                                                };
+                                              }
+                                              return seqItem;
+                                            });
+                                            setFormData(prev => ({
+                                              ...prev,
+                                              messageContent: { sequence: newSequence }
+                                            }));
+                                          }}
+                                          className="px-3 py-1 bg-blue-100 text-blue-600 text-sm rounded hover:bg-blue-200 flex items-center gap-1"
+                                        >
+                                          <span>+</span>
+                                          Nova variação
+                                        </button>
+                                      </div>
+                                    ) : (
+                                      /* Modo texto único */
+                                      <div>
+                                        <textarea
+                                          placeholder="Digite sua mensagem... Use variáveis como {{nome}}, {{email}}, {{telefone}}, {{categoria}}, {{observacoes}}"
+                                          value={item.content.text || ''}
+                                          onChange={(e) => {
+                                            const currentSequence = ('sequence' in formData.messageContent) ? formData.messageContent.sequence : [];
+                                            const newSequence = currentSequence.map((seqItem, i) =>
+                                              i === index ? { ...seqItem, content: { text: e.target.value } } : seqItem
+                                            );
+                                            setFormData(prev => ({
+                                              ...prev,
+                                              messageContent: { sequence: newSequence }
+                                            }));
+                                          }}
+                                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                          rows={3}
+                                        />
+                                      </div>
+                                    )}
+
                                     <div className="flex flex-wrap gap-1">
                                       <span className="text-xs text-gray-500">Variáveis disponíveis:</span>
                                       {['{{nome}}', '{{email}}', '{{telefone}}', '{{categoria}}', '{{observacoes}}'].map((variable) => (
@@ -1023,14 +1193,38 @@ export function CampaignsPage() {
                                           type="button"
                                           onClick={() => {
                                             const currentSequence = ('sequence' in formData.messageContent) ? formData.messageContent.sequence : [];
-                                            const currentText = currentSequence[index]?.content?.text || '';
-                                            const newSequence = currentSequence.map((seqItem, i) =>
-                                              i === index ? { ...seqItem, content: { text: currentText + variable } } : seqItem
-                                            );
-                                            setFormData(prev => ({
-                                              ...prev,
-                                              messageContent: { sequence: newSequence }
-                                            }));
+                                            if (item.content.useVariations) {
+                                              // Adicionar à primeira variação vazia ou criar nova
+                                              const variations = item.content.variations || [''];
+                                              let targetIndex = variations.findIndex(v => !v.trim());
+                                              if (targetIndex === -1) targetIndex = 0;
+
+                                              const newSequence = currentSequence.map((seqItem, i) => {
+                                                if (i === index) {
+                                                  const newVariations = [...variations];
+                                                  newVariations[targetIndex] = (newVariations[targetIndex] || '') + variable;
+                                                  return {
+                                                    ...seqItem,
+                                                    content: { ...seqItem.content, variations: newVariations }
+                                                  };
+                                                }
+                                                return seqItem;
+                                              });
+                                              setFormData(prev => ({
+                                                ...prev,
+                                                messageContent: { sequence: newSequence }
+                                              }));
+                                            } else {
+                                              // Adicionar ao texto único
+                                              const currentText = currentSequence[index]?.content?.text || '';
+                                              const newSequence = currentSequence.map((seqItem, i) =>
+                                                i === index ? { ...seqItem, content: { text: currentText + variable } } : seqItem
+                                              );
+                                              setFormData(prev => ({
+                                                ...prev,
+                                                messageContent: { sequence: newSequence }
+                                              }));
+                                            }
                                           }}
                                           className="px-2 py-1 bg-blue-100 text-blue-600 text-xs rounded hover:bg-blue-200"
                                         >
@@ -1336,98 +1530,331 @@ export function CampaignsPage() {
                                 )}
 
                                 {['image', 'video', 'audio', 'document'].includes(item.type) && (
-                                  <div className="space-y-2">
-                                    <label className="block text-sm font-medium text-gray-700">
-                                      Arquivo
-                                    </label>
-
-                                    {!item.content.url ? (
-                                      <div className="flex items-center gap-3">
+                                  <div className="space-y-3">
+                                    <div className="flex items-center justify-between">
+                                      <label className="block text-sm font-medium text-gray-700">
+                                        Arquivo
+                                      </label>
+                                      <label className="flex items-center gap-2">
                                         <input
-                                          type="file"
-                                          id={`file-upload-${index}`}
-                                          className="hidden"
-                                          accept={
-                                            item.type === 'image' ? 'image/*' :
-                                            item.type === 'video' ? 'video/*' :
-                                            item.type === 'audio' ? 'audio/*' :
-                                            'application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/plain,application/zip'
-                                          }
+                                          type="checkbox"
+                                          checked={item.content.useMediaVariations || false}
                                           onChange={(e) => {
-                                            const file = e.target.files?.[0];
-                                            if (file) {
-                                              handleFileUpload(file, index);
-                                            }
+                                            const currentSequence = ('sequence' in formData.messageContent) ? formData.messageContent.sequence : [];
+                                            const newSequence = currentSequence.map((seqItem, i) => {
+                                              if (i === index) {
+                                                return {
+                                                  ...seqItem,
+                                                  content: {
+                                                    ...seqItem.content,
+                                                    useMediaVariations: e.target.checked,
+                                                    mediaVariations: e.target.checked ? Array.from({ length: 4 }, () => ({ url: '', caption: '', fileName: '' })) : undefined,
+                                                    // Limpar URL principal quando ativar variações
+                                                    url: e.target.checked ? '' : seqItem.content.url
+                                                  }
+                                                };
+                                              }
+                                              return seqItem;
+                                            });
+                                            setFormData(prev => ({
+                                              ...prev,
+                                              messageContent: { sequence: newSequence }
+                                            }));
                                           }}
-                                          disabled={uploadingFiles[index]}
+                                          className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                                         />
-                                        <label
-                                          htmlFor={`file-upload-${index}`}
-                                          className={`flex-1 cursor-pointer px-4 py-8 border-2 border-dashed border-gray-300 rounded-lg text-center text-sm font-medium transition-colors hover:border-blue-400 hover:bg-blue-50 ${
-                                            uploadingFiles[index]
-                                              ? 'bg-gray-100 text-gray-400 cursor-not-allowed border-gray-200'
-                                              : 'bg-white text-gray-700'
-                                          }`}
-                                        >
-                                          {uploadingFiles[index] ? (
-                                            <div className="flex flex-col items-center gap-2">
-                                              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
-                                              <span>Enviando arquivo...</span>
+                                        <span className="text-sm text-gray-600">Usar Variações</span>
+                                      </label>
+                                    </div>
+
+                                    {item.content.useMediaVariations ? (
+                                      // Grid horizontal de 4 variações
+                                      <div className="grid grid-cols-4 gap-3">
+                                        {Array.from({ length: 4 }, (_, varIndex) => {
+                                          const mediaVariations = item.content.mediaVariations || [];
+                                          const variation = mediaVariations[varIndex] || { url: '', caption: '', fileName: '' };
+                                          const hasFile = variation.url;
+
+                                          return (
+                                            <div key={varIndex} className="space-y-2">
+                                              {/* Header da variação */}
+                                              <div className="flex items-center justify-between">
+                                                <span className="text-xs font-medium text-gray-600">
+                                                  {varIndex === 0 ? 'Principal' : `Var. ${varIndex + 1}`}
+                                                </span>
+                                                {hasFile && varIndex > 0 && (
+                                                  <button
+                                                    type="button"
+                                                    onClick={() => {
+                                                      const currentSequence = ('sequence' in formData.messageContent) ? formData.messageContent.sequence : [];
+                                                      const newSequence = currentSequence.map((seqItem, i) => {
+                                                        if (i === index) {
+                                                          const newVariations = [...(seqItem.content.mediaVariations || [])];
+                                                          newVariations[varIndex] = { url: '', caption: '', fileName: '' };
+                                                          return {
+                                                            ...seqItem,
+                                                            content: { ...seqItem.content, mediaVariations: newVariations }
+                                                          };
+                                                        }
+                                                        return seqItem;
+                                                      });
+                                                      setFormData(prev => ({
+                                                        ...prev,
+                                                        messageContent: { sequence: newSequence }
+                                                      }));
+                                                    }}
+                                                    className="text-red-500 hover:text-red-700 text-xs p-0.5"
+                                                    title="Remover"
+                                                  >
+                                                    ✕
+                                                  </button>
+                                                )}
+                                              </div>
+
+                                              {/* Preview quadrado */}
+                                              <div className="aspect-square border-2 border-dashed border-gray-300 rounded-lg overflow-hidden bg-gray-50">
+                                                {!hasFile ? (
+                                                  <>
+                                                    <input
+                                                      type="file"
+                                                      id={`file-upload-${index}-${varIndex}`}
+                                                      className="hidden"
+                                                      accept={
+                                                        item.type === 'image' ? 'image/*' :
+                                                        item.type === 'video' ? 'video/*' :
+                                                        item.type === 'audio' ? 'audio/*' :
+                                                        'application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/plain,application/zip'
+                                                      }
+                                                      onChange={(e) => {
+                                                        const file = e.target.files?.[0];
+                                                        if (file) {
+                                                          handleFileUpload(file, index, varIndex);
+                                                        }
+                                                      }}
+                                                      disabled={uploadingFiles[`${index}-${varIndex}`]}
+                                                    />
+                                                    <label
+                                                      htmlFor={`file-upload-${index}-${varIndex}`}
+                                                      className={`w-full h-full flex flex-col items-center justify-center cursor-pointer transition-colors hover:border-blue-400 hover:bg-blue-50 ${
+                                                        uploadingFiles[`${index}-${varIndex}`]
+                                                          ? 'cursor-not-allowed bg-gray-100 text-gray-400'
+                                                          : 'text-gray-500 hover:text-blue-600'
+                                                      }`}
+                                                    >
+                                                      {uploadingFiles[`${index}-${varIndex}`] ? (
+                                                        <div className="flex flex-col items-center gap-1">
+                                                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+                                                          <span className="text-xs">Enviando</span>
+                                                        </div>
+                                                      ) : (
+                                                        <div className="flex flex-col items-center gap-1">
+                                                          <div className="text-2xl">
+                                                            {item.type === 'image' && '🖼️'}
+                                                            {item.type === 'video' && '🎥'}
+                                                            {item.type === 'audio' && '🎵'}
+                                                            {item.type === 'document' && '📄'}
+                                                          </div>
+                                                          <span className="text-xs text-center">
+                                                            Fazer upload
+                                                          </span>
+                                                        </div>
+                                                      )}
+                                                    </label>
+                                                  </>
+                                                ) : (
+                                                  <div className="w-full h-full relative group">
+                                                    {item.type === 'image' && (
+                                                      <img
+                                                        src={variation.url}
+                                                        alt={`Variação ${varIndex + 1}`}
+                                                        className="w-full h-full object-cover"
+                                                      />
+                                                    )}
+
+                                                    {item.type === 'video' && (
+                                                      <div className="w-full h-full relative">
+                                                        <video
+                                                          src={variation.url}
+                                                          className="w-full h-full object-cover"
+                                                          muted
+                                                        />
+                                                        <div className="absolute inset-0 bg-black bg-opacity-20 flex items-center justify-center">
+                                                          <div className="bg-white bg-opacity-90 p-1 rounded-full">
+                                                            <svg className="w-4 h-4 text-gray-800" fill="currentColor" viewBox="0 0 24 24">
+                                                              <path d="M8 5v14l11-7z"/>
+                                                            </svg>
+                                                          </div>
+                                                        </div>
+                                                      </div>
+                                                    )}
+
+                                                    {item.type === 'audio' && (
+                                                      <div className="w-full h-full bg-gradient-to-br from-green-100 to-green-200 flex flex-col items-center justify-center">
+                                                        <div className="text-3xl mb-1">🎵</div>
+                                                        <div className="text-xs text-center text-gray-700 px-1">
+                                                          Áudio
+                                                        </div>
+                                                      </div>
+                                                    )}
+
+                                                    {item.type === 'document' && (
+                                                      <div className="w-full h-full bg-gradient-to-br from-blue-100 to-blue-200 flex flex-col items-center justify-center p-2">
+                                                        <div className="text-3xl mb-1">📄</div>
+                                                        <div className="text-xs text-center text-gray-700 truncate w-full">
+                                                          {variation.fileName || 'Documento'}
+                                                        </div>
+                                                      </div>
+                                                    )}
+
+                                                    {/* Overlay de ações */}
+                                                    <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-10 transition-all duration-200 flex items-center justify-center opacity-0 group-hover:opacity-100">
+                                                      <a
+                                                        href={variation.url}
+                                                        target="_blank"
+                                                        rel="noopener noreferrer"
+                                                        className="bg-white bg-opacity-90 px-2 py-1 rounded text-xs font-medium"
+                                                      >
+                                                        Ver
+                                                      </a>
+                                                    </div>
+                                                  </div>
+                                                )}
+                                              </div>
+
+                                              {/* Campo de legenda para imagem e vídeo */}
+                                              {hasFile && ['image', 'video'].includes(item.type) && (
+                                                <input
+                                                  type="text"
+                                                  placeholder="Legenda..."
+                                                  value={variation.caption || ''}
+                                                  onChange={(e) => {
+                                                    const currentSequence = ('sequence' in formData.messageContent) ? formData.messageContent.sequence : [];
+                                                    const newSequence = currentSequence.map((seqItem, i) => {
+                                                      if (i === index) {
+                                                        const newVariations = [...(seqItem.content.mediaVariations || [])];
+                                                        // Garantir que o array tenha o tamanho necessário
+                                                        while (newVariations.length <= varIndex) {
+                                                          newVariations.push({ url: '', caption: '', fileName: '' });
+                                                        }
+                                                        newVariations[varIndex] = { ...newVariations[varIndex], caption: e.target.value };
+                                                        return {
+                                                          ...seqItem,
+                                                          content: { ...seqItem.content, mediaVariations: newVariations }
+                                                        };
+                                                      }
+                                                      return seqItem;
+                                                    });
+                                                    setFormData(prev => ({
+                                                      ...prev,
+                                                      messageContent: { sequence: newSequence }
+                                                    }));
+                                                  }}
+                                                  className="w-full px-2 py-1 border border-gray-300 rounded text-xs focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                                />
+                                              )}
+
+                                              {/* Nome do arquivo para não-imagens */}
+                                              {hasFile && !['image', 'video'].includes(item.type) && (
+                                                <div className="text-xs text-gray-600 truncate" title={variation.fileName}>
+                                                  {variation.fileName || 'Arquivo'}
+                                                </div>
+                                              )}
                                             </div>
-                                          ) : (
-                                            <div className="flex flex-col items-center gap-2">
-                                              <div className="text-2xl">📁</div>
-                                              <span>Clique para fazer upload do arquivo</span>
-                                              <span className="text-xs text-gray-500">
-                                                {item.type === 'image' && 'Imagens: JPG, PNG, GIF, WebP'}
-                                                {item.type === 'video' && 'Vídeos: MP4, AVI, MOV, WMV, MKV'}
-                                                {item.type === 'audio' && 'Áudios: MP3, WAV, OGG, AAC, M4A'}
-                                                {item.type === 'document' && 'Documentos: PDF, DOC, XLS, TXT, ZIP'}
-                                              </span>
-                                            </div>
-                                          )}
-                                        </label>
+                                          );
+                                        })}
                                       </div>
                                     ) : (
-                                      <div className="border border-gray-200 rounded-lg p-3 bg-gray-50">
-                                        <div className="flex items-center justify-between">
+                                      // Interface original de arquivo único
+                                      <>
+                                        {!item.content.url ? (
                                           <div className="flex items-center gap-3">
-                                            {item.type === 'image' && (
-                                              <img
-                                                src={item.content.url}
-                                                alt="Preview"
-                                                className="w-12 h-12 object-cover rounded"
-                                              />
-                                            )}
-                                            {item.type !== 'image' && (
-                                              <div className="w-12 h-12 bg-blue-100 rounded flex items-center justify-center text-2xl">
-                                                {getFileIcon(fileInfos[index]?.type || item.type)}
+                                            <input
+                                              type="file"
+                                              id={`file-upload-${index}`}
+                                              className="hidden"
+                                              accept={
+                                                item.type === 'image' ? 'image/*' :
+                                                item.type === 'video' ? 'video/*' :
+                                                item.type === 'audio' ? 'audio/*' :
+                                                'application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/plain,application/zip'
+                                              }
+                                              onChange={(e) => {
+                                                const file = e.target.files?.[0];
+                                                if (file) {
+                                                  handleFileUpload(file, index);
+                                                }
+                                              }}
+                                              disabled={uploadingFiles[index]}
+                                            />
+                                            <label
+                                              htmlFor={`file-upload-${index}`}
+                                              className={`flex-1 cursor-pointer px-4 py-8 border-2 border-dashed border-gray-300 rounded-lg text-center text-sm font-medium transition-colors hover:border-blue-400 hover:bg-blue-50 ${
+                                                uploadingFiles[index]
+                                                  ? 'bg-gray-100 text-gray-400 cursor-not-allowed border-gray-200'
+                                                  : 'bg-white text-gray-700'
+                                              }`}
+                                            >
+                                              {uploadingFiles[index] ? (
+                                                <div className="flex flex-col items-center gap-2">
+                                                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
+                                                  <span>Enviando arquivo...</span>
+                                                </div>
+                                              ) : (
+                                                <div className="flex flex-col items-center gap-2">
+                                                  <div className="text-2xl">📁</div>
+                                                  <span>Clique para fazer upload do arquivo</span>
+                                                  <span className="text-xs text-gray-500">
+                                                    {item.type === 'image' && 'Imagens: JPG, PNG, GIF, WebP'}
+                                                    {item.type === 'video' && 'Vídeos: MP4, AVI, MOV, WMV, MKV'}
+                                                    {item.type === 'audio' && 'Áudios: MP3, WAV, OGG, AAC, M4A'}
+                                                    {item.type === 'document' && 'Documentos: PDF, DOC, XLS, TXT, ZIP'}
+                                                  </span>
+                                                </div>
+                                              )}
+                                            </label>
+                                          </div>
+                                        ) : (
+                                          <div className="border border-gray-200 rounded-lg p-3 bg-gray-50">
+                                            <div className="flex items-center justify-between">
+                                              <div className="flex items-center gap-3">
+                                                {item.type === 'image' && (
+                                                  <img
+                                                    src={item.content.url}
+                                                    alt="Preview"
+                                                    className="w-12 h-12 object-cover rounded"
+                                                  />
+                                                )}
+                                                {item.type !== 'image' && (
+                                                  <div className="w-12 h-12 bg-blue-100 rounded flex items-center justify-center text-2xl">
+                                                    {getFileIcon(fileInfos[index]?.type || item.type)}
+                                                  </div>
+                                                )}
+                                                <div className="flex-1 min-w-0">
+                                                  <div className="text-sm font-medium text-gray-900 truncate">
+                                                    {fileInfos[index]?.name || 'Arquivo carregado'}
+                                                  </div>
+                                                  <div className="text-xs text-gray-500">
+                                                    {fileInfos[index]?.size ? formatFileSize(fileInfos[index].size) : ''}
+                                                  </div>
+                                                </div>
                                               </div>
-                                            )}
-                                            <div className="flex-1 min-w-0">
-                                              <div className="text-sm font-medium text-gray-900 truncate">
-                                                {fileInfos[index]?.name || 'Arquivo carregado'}
-                                              </div>
-                                              <div className="text-xs text-gray-500">
-                                                {fileInfos[index]?.size ? formatFileSize(fileInfos[index].size) : ''}
-                                              </div>
+                                              <button
+                                                type="button"
+                                                onClick={() => handleRemoveFile(index)}
+                                                className="text-red-600 hover:text-red-800 p-1"
+                                                title="Remover arquivo"
+                                              >
+                                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                                </svg>
+                                              </button>
                                             </div>
                                           </div>
-                                          <button
-                                            type="button"
-                                            onClick={() => handleRemoveFile(index)}
-                                            className="text-red-600 hover:text-red-800 p-1"
-                                            title="Remover arquivo"
-                                          >
-                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                            </svg>
-                                          </button>
-                                        </div>
-                                      </div>
+                                        )}
+                                      </>
                                     )}
 
-                                    {['image', 'video'].includes(item.type) && (
+                                    {['image', 'video'].includes(item.type) && !item.content.useMediaVariations && (
                                       <div className="space-y-2">
                                         <input
                                           type="text"
@@ -1477,7 +1904,7 @@ export function CampaignsPage() {
                                       </div>
                                     )}
 
-                                    {item.type === 'document' && (
+                                    {item.type === 'document' && !item.content.useMediaVariations && (
                                       <input
                                         type="text"
                                         placeholder="Nome do arquivo (opcional)"
@@ -1648,18 +2075,21 @@ export function CampaignsPage() {
                               </tr>
                             </thead>
                             <tbody className="bg-white divide-y divide-gray-200">
-                              {Object.entries(reportData.messagesBySession).map(([sessionName, messages]) => (
-                                <tr key={sessionName}>
-                                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{sessionName}</td>
-                                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{(messages as any[]).length}</td>
-                                  <td className="px-6 py-4 whitespace-nowrap text-sm text-green-600">
-                                    {(messages as any[]).filter(m => m.status === 'SENT').length}
-                                  </td>
-                                  <td className="px-6 py-4 whitespace-nowrap text-sm text-red-600">
-                                    {(messages as any[]).filter(m => m.status === 'FAILED').length}
-                                  </td>
-                                </tr>
-                              ))}
+                              {Object.entries(reportData.messagesBySession).map(([sessionName, sessionData]) => {
+                                const messages = (sessionData as any).messages || [];
+                                return (
+                                  <tr key={sessionName}>
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{sessionName}</td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{messages.length}</td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-green-600">
+                                      {messages.filter((m: any) => m.status === 'SENT').length}
+                                    </td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-red-600">
+                                      {messages.filter((m: any) => m.status === 'FAILED').length}
+                                    </td>
+                                  </tr>
+                                );
+                              })}
                             </tbody>
                           </table>
                         </div>

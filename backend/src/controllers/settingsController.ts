@@ -1,9 +1,14 @@
 import { Request, Response } from 'express';
 import { body, validationResult } from 'express-validator';
 import { settingsService } from '../services/settingsService';
+import { TenantSettingsService } from '../services/tenantSettingsService';
+import { AuthenticatedRequest } from '../middleware/auth';
 import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
+
+const tenantSettingsService = new TenantSettingsService();
+
 
 // Configuração do multer para upload de logos
 const storage = multer.diskStorage({
@@ -74,14 +79,54 @@ export const settingsValidation = [
       throw new Error('API Key da Groq deve ter pelo menos 10 caracteres');
     }
     return true;
+  }),
+  body('evolutionHost').optional().custom((value) => {
+    if (!value || value === '') return true;
+    if (!/^https?:\/\/.+/.test(value)) {
+      throw new Error('Host Evolution deve ser uma URL válida');
+    }
+    return true;
+  }),
+  body('evolutionApiKey').optional().custom((value) => {
+    if (!value || value === '') return true;
+    if (value.length < 10) {
+      throw new Error('API Key Evolution deve ter pelo menos 10 caracteres');
+    }
+    return true;
   })
 ];
 
 // Get settings
-export const getSettings = async (req: Request, res: Response) => {
+export const getSettings = async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const settings = await settingsService.getSettings();
-    res.json(settings);
+    // Buscar configurações globais
+    const globalSettings = await settingsService.getSettings();
+
+    // Para configurações AI, usar tenantId do usuário, ou parâmetro tenantId para SUPERADMIN
+    let effectiveTenantId = req.tenantId;
+    if (req.user?.role === 'SUPERADMIN') {
+      // SUPERADMIN pode gerenciar configurações de qualquer tenant
+      effectiveTenantId = (req.query.tenantId as string) || 'aa135abc-56bf-400a-b980-cc2a38f0a2b4';
+    }
+
+    // Buscar configurações do tenant (APIs de IA)
+    let tenantSettings = null;
+    if (effectiveTenantId) {
+      try {
+        tenantSettings = await tenantSettingsService.getTenantSettings(effectiveTenantId);
+      } catch (error) {
+        console.warn('Erro ao buscar configurações do tenant:', error);
+      }
+    }
+
+    // Combinar as configurações
+    const combinedSettings = {
+      ...globalSettings,
+      openaiApiKey: tenantSettings?.openaiApiKey || null,
+      groqApiKey: tenantSettings?.groqApiKey || null
+    };
+
+    res.json(combinedSettings);
   } catch (error) {
     console.error('Erro ao buscar configurações:', error);
     res.status(500).json({ error: 'Erro interno do servidor' });
@@ -105,27 +150,51 @@ export const getPublicSettings = async (req: Request, res: Response) => {
 };
 
 // Update settings
-export const updateSettings = async (req: Request, res: Response) => {
+export const updateSettings = async (req: AuthenticatedRequest, res: Response) => {
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       return res.status(400).json({ errors: errors.array() });
     }
 
-    const { wahaHost, wahaApiKey, companyName, pageTitle, openaiApiKey, groqApiKey } = req.body;
+    const { wahaHost, wahaApiKey, evolutionHost, evolutionApiKey, companyName, pageTitle, openaiApiKey, groqApiKey, tenantId } = req.body;
 
-    const settings = await settingsService.updateSettings({
+    // Atualizar configurações globais
+    const globalSettings = await settingsService.updateSettings({
       wahaHost,
       wahaApiKey,
+      evolutionHost,
+      evolutionApiKey,
       companyName,
-      pageTitle,
-      openaiApiKey,
-      groqApiKey
+      pageTitle
     });
+
+    // Para configurações AI, usar tenantId do usuário, ou parâmetro tenantId para SUPERADMIN
+    let effectiveTenantId = req.tenantId;
+    if (req.user?.role === 'SUPERADMIN') {
+      // SUPERADMIN pode gerenciar configurações de qualquer tenant
+      effectiveTenantId = tenantId || 'aa135abc-56bf-400a-b980-cc2a38f0a2b4';
+    }
+
+    // Atualizar configurações do tenant (APIs de IA)
+    let tenantSettings = null;
+    if (effectiveTenantId && (openaiApiKey !== undefined || groqApiKey !== undefined)) {
+      tenantSettings = await tenantSettingsService.updateTenantSettings(effectiveTenantId, {
+        openaiApiKey,
+        groqApiKey
+      });
+    }
+
+    // Combinar as configurações para resposta
+    const combinedSettings = {
+      ...globalSettings,
+      openaiApiKey: tenantSettings?.openaiApiKey || null,
+      groqApiKey: tenantSettings?.groqApiKey || null
+    };
 
     res.json({
       message: 'Configurações atualizadas com sucesso',
-      settings
+      settings: combinedSettings
     });
   } catch (error) {
     console.error('Erro ao atualizar configurações:', error);

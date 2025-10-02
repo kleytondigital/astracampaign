@@ -23,7 +23,16 @@ class ApiService {
 
     if (!response.ok) {
       const error = await response.json().catch(() => ({ error: 'Erro desconhecido' }));
-      throw new Error(error.error || `HTTP ${response.status}`);
+
+      // Detectar erro de quota e adicionar flag para tratamento especial
+      if (error.upgradeRequired || (error.message && error.message.includes('Limite'))) {
+        const quotaError = new Error(error.message || error.error || 'Limite atingido');
+        (quotaError as any).isQuotaError = true;
+        (quotaError as any).upgradeRequired = true;
+        throw quotaError;
+      }
+
+      throw new Error(error.error || error.message || `HTTP ${response.status}`);
     }
 
     // Handle empty responses (like 204 No Content)

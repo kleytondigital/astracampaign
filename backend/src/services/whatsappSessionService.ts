@@ -3,8 +3,10 @@ import { PrismaClient } from '@prisma/client';
 const prisma = new PrismaClient();
 
 export interface WhatsAppSessionData {
-  name: string;
+  name: string; // Nome real usado na API (ex: vendas_c52982e8)
+  displayName?: string; // Nome exibido ao usuário (ex: vendas)
   status: 'WORKING' | 'SCAN_QR_CODE' | 'STOPPED' | 'FAILED';
+  provider: 'WAHA' | 'EVOLUTION';
   config?: any;
   me?: {
     id: string;
@@ -15,17 +17,33 @@ export interface WhatsAppSessionData {
   qr?: string;
   qrExpiresAt?: Date;
   assignedWorker?: string;
+  tenantId?: string;
 }
 
 export class WhatsAppSessionService {
-  static async getAllSessions() {
+  static async getAllSessions(tenantId?: string) {
+    console.log('📋 WhatsAppSessionService.getAllSessions - tenantId:', tenantId);
+
+    // Construir filtros dinâmicos
+    const where: any = {};
+
+    // Filtro por tenant (SUPERADMIN vê todos se tenantId for undefined)
+    if (tenantId) {
+      where.tenantId = tenantId;
+    }
+
     const sessions = await prisma.whatsAppSession.findMany({
+      where,
       orderBy: { atualizadoEm: 'desc' }
     });
 
+    console.log('📋 WhatsAppSessionService.getAllSessions - sessões encontradas:', sessions.length);
+
     return sessions.map(session => ({
       name: session.name,
+      displayName: session.displayName || session.name,
       status: session.status,
+      provider: session.provider as 'WAHA' | 'EVOLUTION',
       config: session.config ? JSON.parse(session.config) : {},
       me: session.meId ? {
         id: session.meId,
@@ -35,22 +53,35 @@ export class WhatsAppSessionService {
       } : undefined,
       qr: session.qr,
       qrExpiresAt: session.qrExpiresAt,
-      assignedWorker: session.assignedWorker
+      assignedWorker: session.assignedWorker,
+      tenantId: session.tenantId
     }));
   }
 
-  static async getSession(name: string) {
-    const session = await prisma.whatsAppSession.findUnique({
-      where: { name }
-    });
+  static async getSession(name: string, tenantId?: string) {
+    console.log('🔍 WhatsAppSessionService.getSession - name:', name, 'tenantId:', tenantId);
+
+    // Construir where clause com tenant isolation
+    const where: any = { name };
+
+    // Se tenantId for fornecido, aplicar filtro de tenant
+    if (tenantId) {
+      where.tenantId = tenantId;
+    }
+
+    const session = await prisma.whatsAppSession.findFirst({ where });
 
     if (!session) {
       throw new Error('Sessão não encontrada');
     }
 
+    console.log('✅ WhatsAppSessionService.getSession - sessão encontrada:', session.name);
+
     return {
       name: session.name,
+      displayName: session.displayName || session.name,
       status: session.status,
+      provider: session.provider,
       config: session.config ? JSON.parse(session.config) : {},
       me: session.meId ? {
         id: session.meId,
@@ -60,14 +91,22 @@ export class WhatsAppSessionService {
       } : undefined,
       qr: session.qr,
       qrExpiresAt: session.qrExpiresAt,
-      assignedWorker: session.assignedWorker
+      assignedWorker: session.assignedWorker,
+      tenantId: session.tenantId
     };
   }
 
   static async createOrUpdateSession(data: WhatsAppSessionData) {
+    console.log('💾 WhatsAppSessionService.createOrUpdateSession - data:', {
+      name: data.name,
+      tenantId: data.tenantId
+    });
+
     const sessionData = {
       name: data.name,
+      displayName: data.displayName || data.name,
       status: data.status,
+      provider: data.provider,
       config: data.config ? JSON.stringify(data.config) : null,
       meId: data.me?.id || null,
       mePushName: data.me?.pushName || null,
@@ -75,7 +114,8 @@ export class WhatsAppSessionService {
       meJid: data.me?.jid || null,
       qr: data.qr || null,
       qrExpiresAt: data.qrExpiresAt || null,
-      assignedWorker: data.assignedWorker || null
+      assignedWorker: data.assignedWorker || null,
+      tenantId: data.tenantId || null
     };
 
     const session = await prisma.whatsAppSession.upsert({
@@ -94,13 +134,44 @@ export class WhatsAppSessionService {
     return session;
   }
 
-  static async deleteSession(name: string) {
+  static async deleteSession(name: string, tenantId?: string) {
+    console.log('🗑️ WhatsAppSessionService.deleteSession - name:', name, 'tenantId:', tenantId);
+
+    // Construir where clause com tenant isolation
+    const where: any = { name };
+
+    // Verificar se a sessão existe e pertence ao tenant (se aplicável)
+    if (tenantId) {
+      const session = await prisma.whatsAppSession.findFirst({
+        where: { name, tenantId }
+      });
+
+      if (!session) {
+        throw new Error('Sessão não encontrada ou não pertence ao tenant');
+      }
+    }
+
     await prisma.whatsAppSession.delete({
       where: { name }
     });
+
+    console.log('✅ WhatsAppSessionService.deleteSession - sessão deletada:', name);
   }
 
-  static async updateSessionStatus(name: string, status: string, additionalData?: Partial<WhatsAppSessionData>) {
+  static async updateSessionStatus(name: string, status: string, additionalData?: Partial<WhatsAppSessionData>, tenantId?: string) {
+    console.log('🔄 WhatsAppSessionService.updateSessionStatus - name:', name, 'tenantId:', tenantId);
+
+    // Verificar se a sessão existe e pertence ao tenant (se aplicável)
+    if (tenantId) {
+      const session = await prisma.whatsAppSession.findFirst({
+        where: { name, tenantId }
+      });
+
+      if (!session) {
+        throw new Error('Sessão não encontrada ou não pertence ao tenant');
+      }
+    }
+
     const updateData: any = {
       status,
       atualizadoEm: new Date()
@@ -125,9 +196,15 @@ export class WhatsAppSessionService {
       updateData.assignedWorker = additionalData.assignedWorker;
     }
 
+    if (additionalData?.tenantId !== undefined) {
+      updateData.tenantId = additionalData.tenantId;
+    }
+
     await prisma.whatsAppSession.update({
       where: { name },
       data: updateData
     });
+
+    console.log('✅ WhatsAppSessionService.updateSessionStatus - status atualizado:', name);
   }
 }

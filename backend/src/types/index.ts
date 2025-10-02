@@ -4,8 +4,8 @@ export interface Contact {
   telefone: string;
   email?: string | null;
   observacoes?: string | null;
-  categoriaId?: string | null;
-  categoria?: Category | null;
+  tags: string[];
+  tenantId?: string | null;
   criadoEm: Date;
   atualizadoEm: Date;
 }
@@ -15,7 +15,9 @@ export interface ContactInput {
   telefone: string;
   email?: string;
   observacoes?: string;
+  tags?: string[];
   categoriaId?: string;
+  tenantId?: string;
 }
 
 export interface ContactsResponse {

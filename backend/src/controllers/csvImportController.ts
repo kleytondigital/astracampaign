@@ -1,4 +1,5 @@
-import { Request, Response } from 'express';
+import { Response } from 'express';
+import { AuthenticatedRequest } from '../middleware/auth';
 import multer from 'multer';
 import * as path from 'path';
 import { CSVImportService } from '../services/csvImportService';
@@ -15,7 +16,7 @@ const storage = multer.diskStorage({
   }
 });
 
-const fileFilter = (req: Request, file: Express.Multer.File, cb: multer.FileFilterCallback) => {
+const fileFilter = (req: AuthenticatedRequest, file: Express.Multer.File, cb: multer.FileFilterCallback) => {
   if (file.mimetype === 'text/csv' ||
       file.mimetype === 'application/csv' ||
       path.extname(file.originalname).toLowerCase() === '.csv') {
@@ -34,7 +35,7 @@ export const upload = multer({
 });
 
 export class CSVImportController {
-  static async importContacts(req: Request, res: Response) {
+  static async importContacts(req: AuthenticatedRequest, res: Response) {
     try {
       if (!req.file) {
         const apiError: ApiError = {
@@ -43,9 +44,18 @@ export class CSVImportController {
         return res.status(400).json(apiError);
       }
 
-      console.log('📤 Upload recebido:', req.file.originalname, req.file.filename);
+      // Obter tenantId da requisição autenticada
+      const tenantId = req.tenantId;
+      if (!tenantId) {
+        const apiError: ApiError = {
+          error: 'Tenant não identificado'
+        };
+        return res.status(403).json(apiError);
+      }
 
-      const result = await CSVImportService.importContacts(req.file.path);
+      console.log('📤 Upload recebido:', req.file.originalname, req.file.filename, 'tenantId:', tenantId);
+
+      const result = await CSVImportService.importContacts(req.file.path, tenantId);
 
       if (result.success) {
         res.json({
@@ -68,7 +78,7 @@ export class CSVImportController {
     }
   }
 
-  static async downloadTemplate(req: Request, res: Response) {
+  static async downloadTemplate(req: AuthenticatedRequest, res: Response) {
     try {
       // CSV template com cabeçalhos em português
       const csvTemplate = `nome,telefone,email,observacoes,categoriaId

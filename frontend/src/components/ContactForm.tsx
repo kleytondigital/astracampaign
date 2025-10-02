@@ -92,7 +92,16 @@ export function ContactForm({ contact, onSuccess, onCancel }: ContactFormProps) 
       }
 
       onSuccess();
-    } catch (err) {
+    } catch (err: any) {
+      // Verificar se é erro de quota
+      if (err?.isQuotaError || err?.upgradeRequired) {
+        toast.error(err.message || 'Limite de contatos atingido. Faça upgrade do seu plano para continuar.', {
+          duration: 6000,
+          icon: '⚠️'
+        });
+        return;
+      }
+
       const errorMessage = err instanceof Error ? err.message : 'Erro ao salvar contato';
       toast.error(errorMessage);
     }

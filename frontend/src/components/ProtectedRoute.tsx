@@ -5,9 +5,10 @@ import { useAuth } from '../contexts/AuthContext';
 interface ProtectedRouteProps {
   children: ReactNode;
   adminOnly?: boolean;
+  superAdminOnly?: boolean;
 }
 
-export function ProtectedRoute({ children, adminOnly = false }: ProtectedRouteProps) {
+export function ProtectedRoute({ children, adminOnly = false, superAdminOnly = false }: ProtectedRouteProps) {
   const { isAuthenticated, isLoading, user } = useAuth();
 
   if (isLoading) {
@@ -25,7 +26,28 @@ export function ProtectedRoute({ children, adminOnly = false }: ProtectedRoutePr
     return <Navigate to="/login" replace />;
   }
 
-  if (adminOnly && user?.role !== 'ADMIN') {
+  if (superAdminOnly && user?.role !== 'SUPERADMIN') {
+    return (
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-16 h-16 bg-red-100 rounded-2xl mx-auto mb-4 flex items-center justify-center">
+            <svg className="w-8 h-8 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 15.5c-.77.833.192 2.5 1.732 2.5z" />
+            </svg>
+          </div>
+          <h2 className="text-2xl font-bold text-red-600 mb-4">Acesso Negado</h2>
+          <p className="text-gray-600 mb-4">
+            Você não tem permissão para acessar esta página.
+          </p>
+          <p className="text-sm text-gray-500">
+            Esta área é restrita a super administradores.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  if (adminOnly && !['ADMIN', 'TENANT_ADMIN', 'SUPERADMIN'].includes(user?.role || '')) {
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center">
         <div className="text-center">

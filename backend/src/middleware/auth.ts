@@ -10,6 +10,14 @@ export interface AuthenticatedRequest extends Request {
     email: string;
     nome: string;
     role: string;
+    tenantId?: string;
+  };
+  tenantId?: string; // For easier access
+  tenant?: {
+    id: string;
+    slug: string;
+    name: string;
+    active: boolean;
   };
 }
 
@@ -17,6 +25,7 @@ interface JWTPayload {
   userId: string;
   email: string;
   role: string;
+  tenantId?: string;
   iat?: number;
   exp?: number;
 }
@@ -66,8 +75,47 @@ export const authMiddleware = async (
       id: user.id,
       email: user.email,
       nome: user.nome,
-      role: user.role
+      role: user.role,
+      tenantId: decoded.tenantId
     };
+
+    // Para SuperAdmin, permitir override do tenantId via header X-Tenant-Id
+    let effectiveTenantId = decoded.tenantId;
+    if (user.role === 'SUPERADMIN') {
+      const headerTenantId = req.header('X-Tenant-Id');
+      if (headerTenantId) {
+        effectiveTenantId = headerTenantId;
+      }
+    }
+
+    // Adicionar tenantId diretamente para fácil acesso
+    req.tenantId = effectiveTenantId;
+
+    // Se não é SUPERADMIN ou tem tenantId definido, buscar dados do tenant
+    if (effectiveTenantId) {
+      const tenant = await prisma.tenant.findUnique({
+        where: {
+          id: effectiveTenantId,
+          active: true
+        },
+        select: {
+          id: true,
+          slug: true,
+          name: true,
+          active: true
+        }
+      });
+
+      if (!tenant) {
+        res.status(401).json({
+          success: false,
+          message: 'Tenant não encontrado ou inativo'
+        });
+        return;
+      }
+
+      req.tenant = tenant;
+    }
 
     next();
   } catch (error) {

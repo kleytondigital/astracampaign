@@ -6,13 +6,13 @@ COPY package*.json ./
 RUN npm install
 
 COPY . .
-RUN npm run build
 RUN npx prisma generate
+RUN npm run build
 RUN npm prune --production
 
 FROM node:20-alpine AS runtime
 
-RUN apk add --no-cache openssl
+RUN apk add --no-cache openssl postgresql-client
 
 WORKDIR /app
 
@@ -25,7 +25,7 @@ COPY --from=builder /app/package*.json ./
 COPY --from=builder /app/prisma ./prisma
 COPY start.sh ./start.sh
 
-RUN mkdir -p /app/data /app/uploads && chown -R nodejs:nodejs /app/data /app/uploads
+RUN mkdir -p /app/data /app/uploads /app/backups && chown -R nodejs:nodejs /app/data /app/uploads /app/backups
 COPY uploads/default_icon.png /app/uploads/default_icon.png
 COPY uploads/default_favicon.png /app/uploads/default_favicon.png
 RUN chmod +x start.sh && chown nodejs:nodejs start.sh

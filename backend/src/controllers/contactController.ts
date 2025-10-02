@@ -1,17 +1,22 @@
-import { Request, Response } from 'express';
+import { Response } from 'express';
 import { validationResult } from 'express-validator';
 import { ContactService } from '../services/contactService';
 import { ApiError } from '../types';
+import { AuthenticatedRequest } from '../middleware/auth';
 
 export class ContactController {
-  static async getContacts(req: Request, res: Response) {
+  static async getContacts(req: AuthenticatedRequest, res: Response) {
     try {
       const { search, page = '1', pageSize = '30' } = req.query;
+
+      // Sempre usar tenantId do token
+      const tenantId = req.tenantId;
 
       const result = await ContactService.getContacts(
         search as string,
         parseInt(page as string),
-        parseInt(pageSize as string)
+        parseInt(pageSize as string),
+        tenantId
       );
 
       res.json(result);
@@ -24,10 +29,11 @@ export class ContactController {
     }
   }
 
-  static async getContactById(req: Request, res: Response) {
+  static async getContactById(req: AuthenticatedRequest, res: Response) {
     try {
       const { id } = req.params;
-      const contact = await ContactService.getContactById(id);
+      const tenantId = req.tenantId;
+      const contact = await ContactService.getContactById(id, tenantId);
       res.json(contact);
     } catch (error) {
       const apiError: ApiError = {
@@ -38,7 +44,7 @@ export class ContactController {
     }
   }
 
-  static async createContact(req: Request, res: Response) {
+  static async createContact(req: AuthenticatedRequest, res: Response) {
     try {
       const errors = validationResult(req);
       if (!errors.isEmpty()) {
@@ -49,7 +55,11 @@ export class ContactController {
         return res.status(400).json(apiError);
       }
 
-      const contact = await ContactService.createContact(req.body);
+      // Usar tenantId do token
+      const tenantId = req.tenantId;
+      const contactData = { ...req.body, tenantId };
+
+      const contact = await ContactService.createContact(contactData);
       res.status(201).json(contact);
     } catch (error) {
       const apiError: ApiError = {
@@ -60,7 +70,7 @@ export class ContactController {
     }
   }
 
-  static async updateContact(req: Request, res: Response) {
+  static async updateContact(req: AuthenticatedRequest, res: Response) {
     try {
       const errors = validationResult(req);
       if (!errors.isEmpty()) {
@@ -72,7 +82,8 @@ export class ContactController {
       }
 
       const { id } = req.params;
-      const contact = await ContactService.updateContact(id, req.body);
+      const tenantId = req.tenantId;
+      const contact = await ContactService.updateContact(id, req.body, tenantId);
       res.json(contact);
     } catch (error) {
       const apiError: ApiError = {
@@ -83,10 +94,11 @@ export class ContactController {
     }
   }
 
-  static async deleteContact(req: Request, res: Response) {
+  static async deleteContact(req: AuthenticatedRequest, res: Response) {
     try {
       const { id } = req.params;
-      await ContactService.deleteContact(id);
+      const tenantId = req.tenantId;
+      await ContactService.deleteContact(id, tenantId);
       res.status(204).send();
     } catch (error) {
       const apiError: ApiError = {

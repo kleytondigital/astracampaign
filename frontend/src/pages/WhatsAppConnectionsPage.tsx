@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import toast from 'react-hot-toast';
 import { Header } from '../components/Header';
 import { useSettings } from '../hooks/useSettings';
+import { useTenant } from '../contexts/TenantContext';
 
 // Componente para exibir contador do QR Code
 function QRCountdown({ expiresAt }: { expiresAt: Date }) {
@@ -41,8 +42,10 @@ function QRCountdown({ expiresAt }: { expiresAt: Date }) {
 }
 
 interface WhatsAppSession {
-  name: string;
+  name: string; // Nome real usado na API (ex: vendas_c52982e8)
+  displayName?: string; // Nome exibido ao usuário (ex: vendas)
   status: 'WORKING' | 'SCAN_QR_CODE' | 'STOPPED' | 'FAILED';
+  provider: 'WAHA' | 'EVOLUTION';
   qr?: string;
   qrExpiresAt?: Date;
   me?: {
@@ -54,9 +57,11 @@ interface WhatsAppSession {
 
 export function WhatsAppConnectionsPage() {
   const { settings } = useSettings();
+  const { selectedTenantId, loading: tenantLoading } = useTenant();
   const [sessions, setSessions] = useState<WhatsAppSession[]>([]);
   const [loading, setLoading] = useState(true);
   const [newSessionName, setNewSessionName] = useState('');
+  const [newSessionProvider, setNewSessionProvider] = useState<'WAHA' | 'EVOLUTION'>('WAHA');
   const [isCreating, setIsCreating] = useState(false);
   const [loadingQR, setLoadingQR] = useState<string | null>(null);
   const [qrModalOpen, setQrModalOpen] = useState(false);
@@ -75,6 +80,11 @@ export function WhatsAppConnectionsPage() {
       (headers as Record<string, string>).Authorization = `Bearer ${token}`;
     }
 
+    // Adicionar tenant ID no header para SuperAdmin
+    if (selectedTenantId) {
+      (headers as Record<string, string>)['X-Tenant-Id'] = selectedTenantId;
+    }
+
     return fetch(url, {
       ...options,
       headers,
@@ -82,6 +92,12 @@ export function WhatsAppConnectionsPage() {
   };
 
   useEffect(() => {
+    // Não carregar sessões até que o tenant esteja definido
+    if (tenantLoading || !selectedTenantId) {
+      return;
+    }
+
+    // Recarregar sessões quando o tenant mudar
     loadSessions();
 
     // Iniciar polling a cada 5 segundos
@@ -94,15 +110,13 @@ export function WhatsAppConnectionsPage() {
         clearInterval(interval);
       }
     };
-  }, []);
+  }, [selectedTenantId, tenantLoading]); // Recarrega quando o tenant mudar ou terminar de carregar
 
   // Polling para verificar se a conexão foi estabelecida quando o modal QR está aberto
   useEffect(() => {
     if (!qrModalOpen || !currentQRSession) {
       return;
     }
-
-    console.log('🔄 Iniciando polling para verificar conexão da sessão:', currentQRSession.name);
 
     const checkConnection = async () => {
       try {
@@ -112,16 +126,8 @@ export function WhatsAppConnectionsPage() {
           const updatedSession = sessions.find((s: any) => s.name === currentQRSession.name);
 
           if (updatedSession) {
-            console.log('📡 Status atual da sessão:', {
-              name: updatedSession.name,
-              status: updatedSession.status,
-              hasMe: !!updatedSession.me
-            });
-
             // Se a sessão mudou para WORKING (conectada)
             if (updatedSession.status === 'WORKING' && updatedSession.me) {
-              console.log('✅ CONEXÃO ESTABELECIDA! Fechando modal e atualizando lista');
-
               // Fechar modal
               setQrModalOpen(false);
               setCurrentQRSession(null);
@@ -135,7 +141,7 @@ export function WhatsAppConnectionsPage() {
           }
         }
       } catch (error) {
-        console.error('❌ Erro ao verificar status da conexão:', error);
+        console.error('Erro ao verificar status da conexão:', error);
       }
     };
 
@@ -146,7 +152,6 @@ export function WhatsAppConnectionsPage() {
     const interval = setInterval(checkConnection, 5000);
 
     return () => {
-      console.log('🛑 Parando polling da sessão:', currentQRSession.name);
       clearInterval(interval);
     };
   }, [qrModalOpen, currentQRSession]);
@@ -168,6 +173,7 @@ export function WhatsAppConnectionsPage() {
       const processedSessions = data.map((session: any) => ({
         name: session.name,
         status: session.status || 'STOPPED',
+        provider: session.provider || 'WAHA',
         me: session.me || null,
         qr: session.qr || null,
         qrExpiresAt: session.qrExpiresAt ? new Date(session.qrExpiresAt) : undefined
@@ -192,20 +198,45 @@ export function WhatsAppConnectionsPage() {
       return;
     }
 
+    // Validar se as configurações do provedor estão disponíveis
+    if (newSessionProvider === 'WAHA' && (!settings?.wahaHost || !settings?.wahaApiKey)) {
+      toast.error('Configure as credenciais WAHA nas configurações do sistema');
+      return;
+    }
+
+    if (newSessionProvider === 'EVOLUTION' && (!settings?.evolutionHost || !settings?.evolutionApiKey)) {
+      toast.error('Configure as credenciais Evolution API nas configurações do sistema');
+      return;
+    }
+
     setIsCreating(true);
     try {
       const response = await authenticatedFetch('/api/waha/sessions', {
         method: 'POST',
-        body: JSON.stringify({ name: newSessionName.trim() })
+        body: JSON.stringify({
+          name: newSessionName.trim(),
+          provider: newSessionProvider
+        })
       });
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({ error: 'Erro desconhecido' }));
-        throw new Error(errorData.error || `HTTP ${response.status}`);
+
+        // Verificar se é erro de quota
+        if (errorData.upgradeRequired || (errorData.message && errorData.message.includes('Limite'))) {
+          toast.error(errorData.message || 'Limite de conexões atingido. Faça upgrade do seu plano para continuar.', {
+            duration: 6000,
+            icon: '⚠️'
+          });
+          throw new Error(errorData.message);
+        }
+
+        throw new Error(errorData.error || errorData.message || `HTTP ${response.status}`);
       }
 
-      toast.success('Sessão criada com sucesso');
+      toast.success(`Sessão ${newSessionProvider} criada com sucesso`);
       setNewSessionName('');
+      setNewSessionProvider('WAHA');
 
       // Recarregar imediatamente
       await loadSessions();
@@ -216,7 +247,10 @@ export function WhatsAppConnectionsPage() {
       }, 2000);
     } catch (error) {
       console.error('Erro ao criar sessão:', error);
-      toast.error(error instanceof Error ? error.message : 'Erro ao criar sessão');
+      // Não mostrar toast de erro genérico se já mostramos o toast específico de quota
+      if (!(error instanceof Error && error.message.includes('Limite'))) {
+        toast.error(error instanceof Error ? error.message : 'Erro ao criar sessão');
+      }
     } finally {
       setIsCreating(false);
     }
@@ -298,132 +332,72 @@ export function WhatsAppConnectionsPage() {
   };
 
   const openQRModal = async (sessionName: string) => {
-    console.log('🔍 openQRModal chamado para:', sessionName);
-
     try {
       // Primeiro, verificar se já temos um QR salvo no banco para esta sessão
       const currentSession = sessions.find(s => s.name === sessionName);
-      console.log('📋 Sessão atual:', currentSession);
 
       if (currentSession?.qr && currentSession?.qrExpiresAt && currentSession.qrExpiresAt > new Date()) {
-        console.log('✅ Usando QR salvo no banco');
         // Usar QR code já salvo no banco se ainda não expirou
         const sessionWithQR: WhatsAppSession = {
           name: sessionName,
           status: 'SCAN_QR_CODE',
+          provider: currentSession.provider,
           qr: currentSession.qr,
           qrExpiresAt: currentSession.qrExpiresAt,
           me: currentSession.me
         };
 
-        // Mostrar QR em popup corrigido (do banco) + logs debug
-        if (sessionWithQR.qr) {
-          console.log('🔥 QR DO BANCO - DADOS COMPLETOS:');
-          console.log('📏 Length:', sessionWithQR.qr.length);
-          console.log('🎯 Starts with data:', sessionWithQR.qr.startsWith('data:'));
-
-          // Extrair apenas o base64 puro
-          const pureBase64 = sessionWithQR.qr.startsWith('data:')
-            ? sessionWithQR.qr.split(',')[1]
-            : sessionWithQR.qr;
-
-          console.log('🎨 BASE64 PURO (SEM PREFIXO):');
-          console.log(pureBase64);
-          console.log('📏 Base64 puro length:', pureBase64.length);
-
-          // Tentar criar imagem para verificar se é válida
-          const testImg = new Image();
-          testImg.onload = () => console.log('✅ QR VÁLIDO - Imagem carregou:', testImg.width, 'x', testImg.height);
-          testImg.onerror = (e) => console.error('❌ QR INVÁLIDO - Erro ao carregar:', e);
-          testImg.src = sessionWithQR.qr;
-
-        }
-
         setCurrentQRSession(sessionWithQR);
         setQrModalOpen(true);
-
         return;
       }
 
-      console.log('🔄 Buscando QR direto da API WAHA...');
-
-      // Verificar se as configurações WAHA estão disponíveis
-      if (!settings?.wahaHost || !settings?.wahaApiKey) {
-        console.error('❌ Configurações WAHA não encontradas');
-        toast.error('Configure as credenciais WAHA nas configurações do sistema');
-        return;
-      }
-
-      // Buscar QR direto da API WAHA
-      const qrResponse = await fetch(`${settings.wahaHost}/api/${sessionName}/auth/qr`, {
-        method: 'GET',
-        headers: {
-          'accept': 'image/png',
-          'X-Api-Key': settings.wahaApiKey
-        }
+      // Primeiro, iniciar a sessão para gerar o QR
+      const startResponse = await authenticatedFetch(`/api/waha/sessions/${sessionName}/start`, {
+        method: 'POST'
       });
 
+      if (!startResponse.ok) {
+        const startError = await startResponse.json();
+        toast.error(`Erro ao iniciar sessão: ${startError.error || 'Erro desconhecido'}`);
+        return;
+      }
+
+      // Aguardar um pouco para a sessão inicializar
+      await new Promise(resolve => setTimeout(resolve, 1000));
+
+      // Agora buscar QR através do backend (que vai rotear para API correta)
+      const qrResponse = await authenticatedFetch(`/api/waha/sessions/${sessionName}/auth/qr`);
+
       if (qrResponse.ok) {
-        console.log('📡 QR Response status:', qrResponse.status);
-        console.log('📡 Content-Type:', qrResponse.headers.get('content-type'));
+        const qrData = await qrResponse.json();
 
-        // A API WAHA retorna diretamente a imagem PNG
-        const qrBlob = await qrResponse.blob();
-        console.log('📡 QR Blob size:', qrBlob.size, 'bytes');
+        if (qrData.qr) {
+          const sessionWithQR: WhatsAppSession = {
+            name: sessionName,
+            status: 'SCAN_QR_CODE',
+            provider: currentSession?.provider || 'WAHA',
+            qr: qrData.qr,
+            qrExpiresAt: qrData.expiresAt ? new Date(qrData.expiresAt) : new Date(Date.now() + 60000),
+            me: undefined
+          };
 
-        // Converter blob para base64 data URL
-        const reader = new FileReader();
-        const qrDataUrl = await new Promise<string>((resolve) => {
-          reader.onload = () => resolve(reader.result as string);
-          reader.readAsDataURL(qrBlob);
-        });
+          setCurrentQRSession(sessionWithQR);
+          setQrModalOpen(true);
 
-        console.log('📡 QR convertido para data URL:', qrDataUrl.substring(0, 100) + '...');
-
-        const sessionWithQR: WhatsAppSession = {
-          name: sessionName,
-          status: 'SCAN_QR_CODE',
-          qr: qrDataUrl,
-          qrExpiresAt: new Date(Date.now() + 60000), // Expira em 1 minuto
-          me: undefined
-        };
-
-        // Mostrar QR em popup corrigido (da API) + logs debug
-        if (sessionWithQR.qr) {
-            console.log('🔥 QR DA API - DADOS COMPLETOS:');
-            console.log('📏 Length:', sessionWithQR.qr.length);
-            console.log('🎯 Starts with data:', sessionWithQR.qr.startsWith('data:'));
-
-            // Extrair apenas o base64 puro
-            const pureBase64 = sessionWithQR.qr.startsWith('data:')
-              ? sessionWithQR.qr.split(',')[1]
-              : sessionWithQR.qr;
-
-            console.log('🎨 BASE64 PURO (SEM PREFIXO):');
-            console.log(pureBase64);
-            console.log('📏 Base64 puro length:', pureBase64.length);
-
-            // Tentar criar imagem para verificar se é válida
-            const testImg = new Image();
-            testImg.onload = () => console.log('✅ QR VÁLIDO - Imagem carregou:', testImg.width, 'x', testImg.height);
-            testImg.onerror = (e) => console.error('❌ QR INVÁLIDO - Erro ao carregar:', e);
-            testImg.src = sessionWithQR.qr;
-
+          // Recarregar sessões para obter dados atualizados do banco
+          setTimeout(() => {
+            loadSessions(false);
+          }, 1000);
+        } else {
+          toast.error('QR Code não disponível');
         }
-
-        setCurrentQRSession(sessionWithQR);
-        setQrModalOpen(true);
-
-        // Recarregar sessões para obter dados atualizados do banco
-        setTimeout(() => {
-          loadSessions(false);
-        }, 1000);
       } else {
-        console.error('❌ Erro na resposta:', qrResponse.status);
-        toast.error('Erro ao buscar QR Code');
+        const errorData = await qrResponse.json();
+        toast.error(errorData.error || 'Erro ao buscar QR Code');
       }
     } catch (error) {
-      console.error('💥 Erro ao buscar QR Code:', error);
+      console.error('Erro ao buscar QR Code:', error);
       toast.error('Erro ao buscar QR Code');
     }
   };
@@ -516,7 +490,10 @@ export function WhatsAppConnectionsPage() {
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
                     <div className="flex items-center gap-3 mb-2">
-                      <h4 className="text-lg font-medium text-gray-900">{session.name}</h4>
+                      <h4 className="text-lg font-medium text-gray-900">{session.displayName || session.name}</h4>
+                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${session.provider === 'EVOLUTION' ? 'bg-blue-100 text-blue-800' : 'bg-green-100 text-green-800'}`}>
+                        {session.provider === 'EVOLUTION' ? '🚀 Evolution' : '🔗 WAHA'}
+                      </span>
                       <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(session.status)}`}>
                         {getStatusText(session.status)}
                       </span>
@@ -545,14 +522,6 @@ export function WhatsAppConnectionsPage() {
                         className="px-3 py-1 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700"
                       >
                         Ver QR Code
-                      </button>
-                    )}
-                    {session.qr && session.qrExpiresAt && session.qrExpiresAt > new Date() && (
-                      <button
-                        onClick={() => openQRModal(session.name)}
-                        className="px-3 py-1 bg-purple-600 text-white text-sm rounded-md hover:bg-purple-700"
-                      >
-                        QR Salvo
                       </button>
                     )}
                     <button
@@ -596,6 +565,25 @@ export function WhatsAppConnectionsPage() {
 
             <div className="space-y-6">
               <div>
+                <label htmlFor="session-provider" className="block text-sm font-semibold text-gray-700 mb-2">
+                  Provedor WhatsApp *
+                </label>
+                <select
+                  id="session-provider"
+                  value={newSessionProvider}
+                  onChange={(e) => setNewSessionProvider(e.target.value as 'WAHA' | 'EVOLUTION')}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent text-sm"
+                  disabled={isCreating}
+                >
+                  <option value="WAHA">🔗 WAHA - WhatsApp HTTP API</option>
+                  <option value="EVOLUTION">🚀 Evolution API</option>
+                </select>
+                <p className="text-xs text-gray-500 mt-2">
+                  Escolha o provedor para conectar ao WhatsApp
+                </p>
+              </div>
+
+              <div>
                 <label htmlFor="session-name" className="block text-sm font-semibold text-gray-700 mb-2">
                   Nome da Sessão *
                 </label>
@@ -620,6 +608,7 @@ export function WhatsAppConnectionsPage() {
                   onClick={() => {
                     setCreateSessionModalOpen(false);
                     setNewSessionName('');
+                    setNewSessionProvider('WAHA');
                   }}
                   className="flex-1 bg-gray-100 text-gray-700 py-3 px-6 rounded-xl hover:bg-gray-200 font-medium transition-all duration-200 border border-gray-200"
                   disabled={isCreating}
@@ -667,7 +656,7 @@ export function WhatsAppConnectionsPage() {
             <div className="qr-modal-content bg-white rounded-lg shadow-xl">
             <div className="flex justify-between items-center p-6 border-b">
               <h3 className="text-lg font-medium text-gray-900">
-                QR Code - {currentQRSession.name}
+                QR Code - {currentQRSession.displayName || currentQRSession.name} ({currentQRSession.provider})
               </h3>
               <button
                 onClick={closeQRModal}
@@ -687,15 +676,48 @@ export function WhatsAppConnectionsPage() {
                     Abra o WhatsApp no seu celular, vá em <strong>Configurações → Aparelhos conectados → Conectar aparelho</strong> e escaneie o código abaixo
                   </p>
                   <div className="bg-white p-6 rounded-lg border inline-block shadow-lg">
-                    <img
-                      src={currentQRSession.qr}
-                      alt="QR Code WhatsApp"
-                      className="w-64 h-64 mx-auto block border-2 border-gray-200 rounded"
-                      onLoad={(e) => {
-                        const img = e.target as HTMLImageElement;
-                        console.log('✅ QR Image loaded - dimensions:', img.naturalWidth, 'x', img.naturalHeight);
-                      }}
-                    />
+                    {(() => {
+                      // Para Evolution: QR vem em base64 direto
+                      if (currentQRSession.provider === 'EVOLUTION' && currentQRSession.qr?.startsWith('data:image')) {
+                        return (
+                          <img
+                            src={currentQRSession.qr}
+                            alt="QR Code WhatsApp"
+                            className="w-64 h-64 mx-auto block border-2 border-gray-200 rounded"
+                          />
+                        );
+                      }
+
+                      // Para WAHA: QR já vem processado pelo backend em base64
+                      if (currentQRSession.provider === 'WAHA' && currentQRSession.qr?.startsWith('data:image')) {
+                        return (
+                          <img
+                            src={currentQRSession.qr}
+                            alt="QR Code WhatsApp"
+                            className="w-64 h-64 mx-auto block border-2 border-gray-200 rounded"
+                            onError={(e) => {
+                              console.error('Erro ao carregar QR WAHA base64');
+                            }}
+                          />
+                        );
+                      }
+
+                      // Fallback: detectar automaticamente
+                      const qrSrc = currentQRSession.qr?.startsWith('data:image')
+                        ? currentQRSession.qr
+                        : `/api/waha/sessions/${currentQRSession.name}/auth/qr`;
+
+                      return (
+                        <img
+                          src={qrSrc}
+                          alt="QR Code WhatsApp"
+                          className="w-64 h-64 mx-auto block border-2 border-gray-200 rounded"
+                          onError={(e) => {
+                            console.error('Erro ao carregar QR fallback');
+                          }}
+                        />
+                      );
+                    })()}
                   </div>
                   {currentQRSession.qrExpiresAt && (
                     <div className="mt-4">

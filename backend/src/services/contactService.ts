@@ -88,123 +88,176 @@ export class ContactService {
   static async getContacts(
     search?: string,
     page: number = 1,
-    pageSize: number = 30
+    pageSize: number = 30,
+    tenantId?: string
   ): Promise<ContactsResponse> {
-    // Sempre ler do arquivo para garantir consistência entre instâncias
-    const contacts = loadContacts();
-    console.log('📋 ContactService.getContacts - total contatos carregados do arquivo:', contacts.length);
-    console.log('📋 ContactService.getContacts - primeiros IDs:', contacts.slice(0, 3).map(c => c.id));
-    let filteredContacts = [...contacts];
+    try {
+      console.log('📋 ContactService.getContacts - tenantId:', tenantId);
 
-    // Aplicar filtros
-    if (search) {
-      const searchLower = search.toLowerCase();
-      filteredContacts = filteredContacts.filter(contact =>
-        contact.nome.toLowerCase().includes(searchLower) ||
-        contact.telefone.includes(search) ||
-        (contact.email && contact.email.toLowerCase().includes(searchLower))
-      );
+      // Construir filtros dinâmicos
+      const where: any = {};
+
+      // Filtro por tenant (SUPERADMIN vê todos se tenantId for undefined)
+      if (tenantId) {
+        where.tenantId = tenantId;
+      }
+
+      // Filtro de busca
+      if (search) {
+        const searchLower = search.toLowerCase();
+        where.OR = [
+          { nome: { contains: searchLower, mode: 'insensitive' } },
+          { telefone: { contains: search } },
+          { email: { contains: searchLower, mode: 'insensitive' } }
+        ];
+      }
+
+      // Buscar total de registros
+      const total = await prisma.contact.count({ where });
+
+      // Buscar contatos com paginação e incluir categoria
+      const skip = (page - 1) * pageSize;
+      const contacts = await prisma.contact.findMany({
+        where,
+        skip,
+        take: pageSize,
+        orderBy: { criadoEm: 'desc' },
+        include: {
+          categoria: true
+        }
+      });
+
+      console.log('📋 ContactService.getContacts - total encontrados:', total);
+
+      return {
+        contacts,
+        total,
+        page,
+        pageSize,
+        totalPages: Math.ceil(total / pageSize)
+      };
+    } catch (error) {
+      console.error('❌ ContactService.getContacts - erro:', error);
+      throw error;
     }
-
-
-    // Paginação
-    const total = filteredContacts.length;
-    const skip = (page - 1) * pageSize;
-    const paginatedContacts = filteredContacts.slice(skip, skip + pageSize);
-
-    // Enriquecer com dados de categoria
-    const enrichedContacts = await enrichContactsWithCategories(paginatedContacts);
-
-    return {
-      contacts: enrichedContacts,
-      total,
-      page,
-      pageSize,
-      totalPages: Math.ceil(total / pageSize)
-    };
   }
 
-  static async getContactById(id: string) {
-    // Carregar contatos atuais do arquivo
-    const contacts = loadContacts();
-    const contact = contacts.find(c => c.id === id);
+  static async getContactById(id: string, tenantId?: string) {
+    try {
+      const where: any = { id };
 
-    if (!contact) {
-      throw new Error('Contato não encontrado');
+      // Filtro por tenant (SUPERADMIN pode acessar qualquer contato)
+      if (tenantId) {
+        where.tenantId = tenantId;
+      }
+
+      const contact = await prisma.contact.findFirst({
+        where,
+        include: {
+          categoria: true
+        }
+      });
+
+      if (!contact) {
+        throw new Error('Contato não encontrado');
+      }
+
+      return contact;
+    } catch (error) {
+      console.error('❌ ContactService.getContactById - erro:', error);
+      throw error;
     }
-
-    // Enriquecer com dados de categoria
-    const enrichedContacts = await enrichContactsWithCategories([contact]);
-    return enrichedContacts[0];
   }
 
   static async createContact(data: ContactInput) {
-    console.log('📝 ContactService.createContact - data recebido:', JSON.stringify(data, null, 2));
-    const normalizedPhone = this.normalizePhone(data.telefone);
+    try {
+      console.log('📝 ContactService.createContact - data recebido:', JSON.stringify(data, null, 2));
+      const normalizedPhone = this.normalizePhone(data.telefone);
 
-    const newContact = {
-      id: Math.random().toString(36).substr(2, 9),
-      nome: data.nome,
-      telefone: normalizedPhone,
-      email: data.email || null,
-      observacoes: data.observacoes || null,
-      categoriaId: data.categoriaId || null,
-      criadoEm: new Date(),
-      atualizadoEm: new Date()
-    };
+      const newContact = await prisma.contact.create({
+        data: {
+          nome: data.nome,
+          telefone: normalizedPhone,
+          email: data.email || null,
+          observacoes: data.observacoes || null,
+          tags: data.tags || [],
+          categoriaId: data.categoriaId || null,
+          tenantId: data.tenantId || null
+        },
+        include: {
+          categoria: true
+        }
+      });
 
-    console.log('💾 ContactService.createContact - contato criado:', JSON.stringify(newContact, null, 2));
-
-    // Carregar contatos atuais do arquivo
-    const currentContacts = loadContacts();
-    currentContacts.unshift(newContact); // Adiciona no início da lista
-    saveContacts(currentContacts);
-    console.log('✅ ContactService.createContact - contato salvo no arquivo');
-
-    // Retornar com dados de categoria
-    const enrichedContacts = await enrichContactsWithCategories([newContact]);
-    return enrichedContacts[0];
+      console.log('✅ ContactService.createContact - contato criado:', newContact.id);
+      return newContact;
+    } catch (error) {
+      console.error('❌ ContactService.createContact - erro:', error);
+      throw error;
+    }
   }
 
-  static async updateContact(id: string, data: ContactInput) {
-    const normalizedPhone = this.normalizePhone(data.telefone);
+  static async updateContact(id: string, data: ContactInput, tenantId?: string) {
+    try {
+      const normalizedPhone = this.normalizePhone(data.telefone);
 
-    // Carregar contatos atuais do arquivo
-    const contacts = loadContacts();
-    const contactIndex = contacts.findIndex(c => c.id === id);
+      // Construir where clause com tenant isolation
+      const where: any = { id };
+      if (tenantId) {
+        where.tenantId = tenantId;
+      }
 
-    if (contactIndex === -1) {
-      throw new Error('Contato não encontrado');
+      // Verificar se o contato existe e pertence ao tenant
+      const existingContact = await prisma.contact.findFirst({ where });
+      if (!existingContact) {
+        throw new Error('Contato não encontrado');
+      }
+
+      const updatedContact = await prisma.contact.update({
+        where: { id },
+        data: {
+          nome: data.nome,
+          telefone: normalizedPhone,
+          email: data.email || null,
+          observacoes: data.observacoes || null,
+          tags: data.tags || [],
+          categoriaId: data.categoriaId || null
+        },
+        include: {
+          categoria: true
+        }
+      });
+
+      console.log('✅ ContactService.updateContact - contato atualizado:', id);
+      return updatedContact;
+    } catch (error) {
+      console.error('❌ ContactService.updateContact - erro:', error);
+      throw error;
     }
-
-    const updatedContact = {
-      ...contacts[contactIndex],
-      nome: data.nome,
-      telefone: normalizedPhone,
-      email: data.email || null,
-      observacoes: data.observacoes || null,
-      categoriaId: data.categoriaId || null,
-      atualizadoEm: new Date()
-    };
-
-    contacts[contactIndex] = updatedContact;
-    saveContacts(contacts);
-
-    // Retornar com dados de categoria
-    const enrichedContacts = await enrichContactsWithCategories([updatedContact]);
-    return enrichedContacts[0];
   }
 
-  static async deleteContact(id: string) {
-    // Carregar contatos atuais do arquivo
-    const contacts = loadContacts();
-    const contactIndex = contacts.findIndex(c => c.id === id);
+  static async deleteContact(id: string, tenantId?: string) {
+    try {
+      // Construir where clause com tenant isolation
+      const where: any = { id };
+      if (tenantId) {
+        where.tenantId = tenantId;
+      }
 
-    if (contactIndex === -1) {
-      throw new Error('Contato não encontrado');
+      // Verificar se o contato existe e pertence ao tenant
+      const existingContact = await prisma.contact.findFirst({ where });
+      if (!existingContact) {
+        throw new Error('Contato não encontrado');
+      }
+
+      await prisma.contact.delete({
+        where: { id }
+      });
+
+      console.log('✅ ContactService.deleteContact - contato excluído:', id);
+    } catch (error) {
+      console.error('❌ ContactService.deleteContact - erro:', error);
+      throw error;
     }
-
-    contacts.splice(contactIndex, 1);
-    saveContacts(contacts);
   }
 }

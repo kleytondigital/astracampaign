@@ -1,4 +1,5 @@
 import { settingsService } from './settingsService';
+import { tenantSettingsService } from './tenantSettingsService';
 
 export interface OpenAIMessage {
   model: string;
@@ -23,15 +24,22 @@ export class OpenAIService {
     return OpenAIService.instance;
   }
 
-  async generateMessage(messageConfig: OpenAIMessage, contactData: any = {}): Promise<OpenAIResponse> {
+  async generateMessage(messageConfig: OpenAIMessage, contactData: any = {}, tenantId?: string): Promise<OpenAIResponse> {
     try {
-      // Obter chave API das configurações
-      const settings = await settingsService.getSettings();
-
-      if (!settings.openaiApiKey) {
+      // Obter chave API das configurações do tenant
+      if (!tenantId) {
         return {
           success: false,
-          error: 'OpenAI API Key não configurada. Configure a chave nas configurações de integração.'
+          error: 'TenantId é obrigatório para usar OpenAI.'
+        };
+      }
+
+      const tenantSettings = await tenantSettingsService.getTenantSettings(tenantId);
+
+      if (!tenantSettings.openaiApiKey) {
+        return {
+          success: false,
+          error: 'OpenAI API Key não configurada para este tenant. Configure a chave nas configurações.'
         };
       }
 
@@ -71,7 +79,7 @@ export class OpenAIService {
       const response = await fetch(this.baseURL, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${settings.openaiApiKey}`,
+          'Authorization': `Bearer ${tenantSettings.openaiApiKey}`,
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
@@ -139,11 +147,11 @@ export class OpenAIService {
     }
   }
 
-  // Método para validar se a API Key está configurada
-  async validateApiKey(): Promise<boolean> {
+  // Método para validar se a API Key está configurada para um tenant
+  async validateApiKey(tenantId: string): Promise<boolean> {
     try {
-      const settings = await settingsService.getSettings();
-      return !!settings.openaiApiKey && settings.openaiApiKey.length > 0;
+      const tenantSettings = await tenantSettingsService.getTenantSettings(tenantId);
+      return !!tenantSettings.openaiApiKey && tenantSettings.openaiApiKey.length > 0;
     } catch (error) {
       return false;
     }

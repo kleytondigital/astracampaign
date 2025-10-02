@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { body } from 'express-validator';
 import { ContactController } from '../controllers/contactController';
+import { checkContactQuota } from '../middleware/quotaMiddleware';
 
 const router = Router();
 
@@ -15,7 +16,7 @@ const contactValidation = [
 
 router.get('/', ContactController.getContacts);
 router.get('/:id', ContactController.getContactById);
-router.post('/', contactValidation, ContactController.createContact);
+router.post('/', contactValidation, checkContactQuota, ContactController.createContact);
 router.put('/:id', contactValidation, ContactController.updateContact);
 router.delete('/:id', ContactController.deleteContact);
 
