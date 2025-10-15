@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
+import { apiFetch } from '../config/api';
 
 interface Tenant {
   id: string;
@@ -24,7 +25,7 @@ export function useTenants() {
       setError(null);
 
       const token = localStorage.getItem('auth_token');
-      const response = await fetch('/api/user-tenants/', {
+      const response = await apiFetch('/user-tenants/', {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`,

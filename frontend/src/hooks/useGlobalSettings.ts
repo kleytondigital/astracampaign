@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { apiFetch } from '../config/api';
 
 interface Settings {
   faviconUrl?: string;
@@ -13,7 +14,7 @@ export function useGlobalSettings() {
   const loadSettings = async () => {
     try {
       // Usar rota pública que não requer autenticação com cache busting
-      const response = await fetch('/api/settings/public?v=' + Date.now(), {
+      const response = await apiFetch('/settings/public?v=' + Date.now(), {
         cache: 'no-cache',
         headers: {
           'Cache-Control': 'no-cache',

@@ -37,7 +37,7 @@ export function useSettings() {
 
       (headers as Record<string, string>).Authorization = `Bearer ${token}`;
 
-      const response = await fetch('/api/settings', { headers });
+      const response = await (await import('../config/api')).apiFetch('/settings', { headers });
       if (response.ok) {
         const data = await response.json();
         setSettings(data);
