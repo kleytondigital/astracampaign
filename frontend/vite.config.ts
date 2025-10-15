@@ -5,9 +5,7 @@ export default defineConfig({
   plugins: [react()],
   define: {
     // Define a URL do backend para build de produção
-    'import.meta.env.VITE_API_URL': JSON.stringify(
-      process.env.VITE_API_URL || 'https://n8n-back-crm.h3ag2x.easypanel.host'
-    ),
+    'import.meta.env.VITE_API_URL': JSON.stringify('VITE_API_URL_PLACEHOLDER'),
   },
   esbuild: false,
   server: {
