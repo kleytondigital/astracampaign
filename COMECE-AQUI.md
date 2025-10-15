@@ -1,269 +1,222 @@
-# 🚀 COMECE AQUI - Deploy Easypanel
+# 🚀 COMECE AQUI - Resolver Tudo Rapidamente
 
-## 👋 Bem-vindo!
+## ❗ Situação Atual
 
-Este projeto agora está **otimizado para deploy simplificado no Easypanel**!
+Você tem **3 problemas** no Easypanel:
 
----
-
-## ⚡ Deploy Rápido (10 minutos)
-
-```
-1. Leia: QUICK-START-EASYPANEL.md
-2. Execute: build-and-push.bat (Windows) ou build-and-push.sh (Linux/Mac)
-3. Configure no Easypanel
-4. Pronto! ✅
-```
-
-**[👉 Ir para Quick Start](./QUICK-START-EASYPANEL.md)**
+1. 🔴 **Frontend crashando:** nginx não encontra "backend"
+2. 🔴 **Backend não inicia:** migrations falhadas (P3009)
+3. 🔴 **Não consegue acessar console:** container não inicia
 
 ---
 
-## 📘 Deploy Completo (30-60 minutos)
+## ✅ SOLUÇÃO EM 4 PASSOS
 
-```
-1. Leia: DEPLOY-EASYPANEL-SIMPLIFICADO.md
-2. Siga: DEPLOY-EASYPANEL-CHECKLIST.md
-3. Configure no Easypanel
-4. Pronto! ✅
-```
+### ⚡ PASSO 1: Commit dos Arquivos Corrigidos (2 min)
 
-**[👉 Ir para Guia Completo](./DEPLOY-EASYPANEL-SIMPLIFICADO.md)**
+Dois arquivos já foram corrigidos automaticamente:
+- ✅ `frontend/nginx.conf` - Removido proxy para backend
+- ✅ `backend/Dockerfile` - Permitir iniciar com migrations falhadas
 
----
-
-## 🎯 Escolha Seu Caminho
-
-### Você é...
-
-#### 🆕 Novo no Easypanel?
-→ Leia: [Deploy Simplificado](./DEPLOY-EASYPANEL-SIMPLIFICADO.md)  
-→ Use: [Checklist](./DEPLOY-EASYPANEL-CHECKLIST.md)  
-→ Tempo: 30-60 minutos
-
-#### ⚡ Tem pressa?
-→ Leia: [Quick Start](./QUICK-START-EASYPANEL.md)  
-→ Execute: `build-and-push.bat`  
-→ Tempo: 10 minutos
-
-#### 🤔 Quer entender como funciona?
-→ Leia: [Arquitetura](./EASYPANEL-ARQUITETURA.md)  
-→ Leia: [Conexões](./EASYPANEL-CONEXOES.md)  
-→ Tempo: 20 minutos
-
-#### 🐛 Está com problemas?
-→ Consulte: [Conexões - Troubleshooting](./EASYPANEL-CONEXOES.md#-troubleshooting-comum)  
-→ Verifique: [Variáveis de Ambiente](./VARIAVEIS-AMBIENTE.md)
-
----
-
-## 📚 Todos os Guias
-
-| Guia | O que você vai aprender | Tempo |
-|------|------------------------|-------|
-| [Quick Start](./QUICK-START-EASYPANEL.md) | Deploy em passos rápidos | 10min |
-| [Deploy Simplificado](./DEPLOY-EASYPANEL-SIMPLIFICADO.md) | Deploy completo passo a passo | 60min |
-| [Checklist](./DEPLOY-EASYPANEL-CHECKLIST.md) | Lista de verificação prática | 5min |
-| [Conexões](./EASYPANEL-CONEXOES.md) | Como os serviços se conectam | 15min |
-| [Arquitetura](./EASYPANEL-ARQUITETURA.md) | Entender a arquitetura | 20min |
-| [Variáveis](./VARIAVEIS-AMBIENTE.md) | Todas as variáveis documentadas | 10min |
-| [Índice](./DOCS-INDEX.md) | Navegar toda documentação | 5min |
-
----
-
-## 🔨 Scripts Disponíveis
-
-### Windows
-```powershell
-# Build e push das imagens
-.\build-and-push.bat
-```
-
-### Linux/Mac
-```bash
-# Dar permissão de execução
-chmod +x build-and-push.sh
-
-# Build e push das imagens
-./build-and-push.sh
-```
-
----
-
-## ✨ Por Que Easypanel?
-
-### ✅ Mais Simples
-- PostgreSQL e Redis **gerenciados**
-- Apenas **2 containers** para você gerenciar
-- SSL/HTTPS **automático**
-
-### ✅ Mais Rápido
-- Deploy em **10 minutos**
-- Backups **automáticos**
-- Updates **automáticos**
-
-### ✅ Mais Barato
-- Economia de **$240/mês**
-- Menos tempo de **manutenção**
-- Sem custos **escondidos**
-
-**[👉 Ver Comparação Completa](./EASYPANEL-ARQUITETURA.md#-comparação-de-custos)**
-
----
-
-## 🎯 O Que Você Vai Precisar
-
-### Requisitos
-
-- [ ] Conta no Easypanel
-- [ ] Domínio registrado
-- [ ] Docker instalado localmente (para build)
-- [ ] Conta em registry (Docker Hub, GHCR, etc)
-
-### Informações para Preparar
-
-- [ ] Nome do seu registry: `_____________`
-- [ ] Domínio frontend: `_____________`
-- [ ] Domínio backend (API): `_____________`
-- [ ] Senha PostgreSQL: `_____________` (gerar)
-- [ ] JWT Secret: `_____________` (gerar)
-
----
-
-## 🚀 Passo a Passo Resumido
-
-### 1️⃣ Build Local
-```bash
-.\build-and-push.bat  # Windows
-./build-and-push.sh   # Linux/Mac
-```
-
-### 2️⃣ No Easypanel
-
-**Criar:**
-- PostgreSQL (gerenciado)
-- Redis (gerenciado)
-- Backend (sua imagem)
-- Frontend (sua imagem)
-
-**Configurar:**
-- Variáveis de ambiente
-- Domínios
-- SSL/HTTPS (automático)
-
-### 3️⃣ DNS
-
-**Apontar:**
-- `api.seudominio.com` → IP Easypanel
-- `seudominio.com` → IP Easypanel
-
-### 4️⃣ Verificar
+**Execute:**
 
 ```bash
-# Backend
-curl https://api.seudominio.com/health
+cd E:\B2X-Disparo\campaign
 
-# Frontend
-https://seudominio.com (navegador)
+git add frontend/nginx.conf backend/Dockerfile
+git commit -m "fix: resolve nginx proxy and migrations startup issues"
+git push origin main
 ```
 
----
-
-## 💡 Dicas Rápidas
-
-### ✅ Faça
-- Use senhas fortes (32+ caracteres)
-- Siga o checklist
-- Verifique logs após deploy
-
-### ❌ Evite
-- Não use `localhost` em produção
-- Não coloque `/` no final das URLs
-- Não use senhas de exemplo
+✅ **Feito!** Código atualizado no GitHub.
 
 ---
 
-## 🆘 Precisa de Ajuda?
+### ⚡ PASSO 2: Rebuild no Easypanel (5 min)
 
-### Documentação
-- 📖 [Índice Completo](./DOCS-INDEX.md)
-- 🔌 [Troubleshooting](./EASYPANEL-CONEXOES.md#-troubleshooting-comum)
-- 📝 [Variáveis](./VARIAVEIS-AMBIENTE.md)
+**Frontend:**
+1. Easypanel → **Frontend** → **Redeploy**
+2. Aguarde 2-3 minutos
 
-### Comunidade
-- 💬 [Grupo WhatsApp](https://chat.whatsapp.com/LMa44csoeoS9gMjamMpbOK)
-- 🐛 [GitHub Issues](https://github.com/AstraOnlineWeb/astracampaign/issues)
+**Backend:**
+1. Easypanel → **Backend** → **Redeploy**
+2. Aguarde 2-3 minutos
+3. **Agora o container VAI INICIAR** (mesmo com migration falhada!)
 
-### Suporte Profissional
-- 📱 WhatsApp: [+55 61 9 9687-8959](https://wa.me/5561996878959)
+✅ **Ambos rodando!** Prossiga para Passo 3.
 
 ---
 
-## 📊 Estrutura da Documentação
+### ⚡ PASSO 3: Resolver Migrations no Console (10 min)
 
-```
-📚 Documentação/
-│
-├── 🚀 Deploy
-│   ├── COMECE-AQUI.md (você está aqui)
-│   ├── QUICK-START-EASYPANEL.md
-│   ├── DEPLOY-EASYPANEL-SIMPLIFICADO.md
-│   └── DEPLOY-EASYPANEL-CHECKLIST.md
-│
-├── 📖 Referência
-│   ├── EASYPANEL-CONEXOES.md
-│   ├── EASYPANEL-ARQUITETURA.md
-│   └── VARIAVEIS-AMBIENTE.md
-│
-├── 🔨 Scripts
-│   ├── build-and-push.bat
-│   └── build-and-push.sh
-│
-└── 📚 Navegação
-    ├── DOCS-INDEX.md
-    └── DEPLOY-RESUMO-FINAL.md
+1. Easypanel → **Backend** → **Console**
+
+2. Cole os comandos abaixo **UM DE CADA VEZ:**
+
+```bash
+npx prisma migrate resolve --applied 20250925000000_add_alerts_notifications
 ```
 
+```bash
+npx prisma migrate resolve --applied 20250925120000_remove_tenant_domain
+```
+
+```bash
+npx prisma migrate resolve --applied 20250930134500_add_categoria_to_contacts
+```
+
+```bash
+npx prisma migrate resolve --applied 20251001000000_add_display_name_to_sessions
+```
+
+```bash
+npx prisma migrate resolve --applied 20251001000000_add_user_tenant_many_to_many
+```
+
+3. Verificar:
+
+```bash
+npx prisma migrate status
+```
+
+**Deve mostrar:** `Database schema is up to date!` ✅
+
+4. Gerar Prisma Client:
+
+```bash
+npx prisma generate
+```
+
+5. Sair:
+
+```bash
+exit
+```
+
+✅ **Migrations resolvidas!** Prossiga para Passo 4.
+
 ---
 
-## 🎯 Próximo Passo
+### ⚡ PASSO 4: Finalizar (7 min)
 
-### Escolha:
+#### A) Reverter Dockerfile
 
-1. **⚡ Rápido (10min)**  
-   [👉 Quick Start](./QUICK-START-EASYPANEL.md)
+Edite `backend/Dockerfile` linha 66:
 
-2. **📘 Completo (60min)**  
-   [👉 Guia Simplificado](./DEPLOY-EASYPANEL-SIMPLIFICADO.md)
+**MUDAR DE:**
+```dockerfile
+CMD ["sh", "-c", "npx prisma migrate deploy || true && npm run dev"]
+```
 
-3. **🤔 Entender Primeiro**  
-   [👉 Arquitetura](./EASYPANEL-ARQUITETURA.md)
+**PARA:**
+```dockerfile
+CMD ["sh", "-c", "npx prisma migrate deploy && npm run dev"]
+```
+
+(Remova o `|| true`)
+
+#### B) Commit e Push
+
+```bash
+cd E:\B2X-Disparo\campaign
+
+git add backend/Dockerfile
+git commit -m "fix: restore normal migration behavior"
+git push origin main
+```
+
+#### C) Rebuild Final
+
+1. Easypanel → **Backend** → **Redeploy**
+2. Aguarde 2-3 minutos
+
+#### D) Remover ALLOWED_ORIGINS Duplicado
+
+1. Easypanel → **Backend** → **Environment**
+2. **REMOVER** esta linha:
+   ```
+   ALLOWED_ORIGINS="*"
+   ```
+3. **MANTER** apenas:
+   ```
+   ALLOWED_ORIGINS=https://crm.aoseudispor.com.br,https://n8n-front-crm.h3ag2x.easypanel.host
+   ```
+4. **Save** e **Restart**
+
+✅ **TUDO PRONTO!**
 
 ---
 
-## ✅ Checklist Antes de Começar
+## 🎯 Verificar se Funcionou
 
-- [ ] Li este arquivo
-- [ ] Escolhi qual guia seguir
-- [ ] Tenho conta no Easypanel
-- [ ] Tenho domínio registrado
-- [ ] Docker instalado
-- [ ] Conta em registry Docker
-- [ ] **Estou pronto para começar!** 🚀
+### Frontend
+```
+https://crm.aoseudispor.com.br
+```
+**Deve:** Carregar página de login ✅
+
+### Backend
+```
+https://n8n-back-crm.h3ag2x.easypanel.host/health
+```
+**Deve retornar:**
+```json
+{
+  "status": "ok",
+  "database": "connected",
+  "redis": "connected"
+}
+```
+
+### Login
+1. Acesse https://crm.aoseudispor.com.br
+2. Faça login
+3. **Deve funcionar!** ✅
 
 ---
 
-**[👉 COMEÇAR AGORA](./QUICK-START-EASYPANEL.md)** 🚀
+## 🎉 PRONTO!
+
+Sistema **100% funcional** em produção! 🚀
 
 ---
 
-<div align="center">
+## ⏱️ Tempo Total: ~24 minutos
 
-**Feito com ❤️ para simplificar seu deploy!**
+| Passo | Tempo |
+|-------|-------|
+| 1. Commit | 2 min |
+| 2. Rebuild | 5 min |
+| 3. Migrations | 10 min |
+| 4. Finalizar | 7 min |
+| **TOTAL** | **24 min** |
 
-⭐ Se este guia ajudou, dê uma estrela no GitHub! ⭐
+---
 
-</div>
+## 📚 Documentação Completa
 
+Se precisar de mais detalhes, consulte:
 
+1. **AÇÕES-URGENTES.md** - Guia completo
+2. **RESOLVER-CONTAINER-NAO-INICIA.md** - Sobre o container não iniciar
+3. **COMANDOS-CONSOLE-EASYPANEL.md** - Todos os comandos explicados
 
+---
+
+## 🆘 Problemas?
+
+### Container ainda não inicia?
+→ Veja **RESOLVER-CONTAINER-NAO-INICIA.md**
+
+### Migrations não resolvem?
+→ Veja **COMANDOS-CONSOLE-EASYPANEL.md**
+
+### Frontend com erro?
+→ Verifique logs: Easypanel → Frontend → Logs
+
+### Backend com erro?
+→ Verifique logs: Easypanel → Backend → Logs
+
+---
+
+**Bora resolver! Comece pelo PASSO 1! 💪**
