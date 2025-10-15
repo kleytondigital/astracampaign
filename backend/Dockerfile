@@ -47,8 +47,8 @@ COPY --from=builder --chown=nodejs:nodejs /app/package*.json ./
 # Copiar código fonte
 COPY --chown=nodejs:nodejs . .
 
-# Criar diretório de uploads
-RUN mkdir -p uploads && chown -R nodejs:nodejs uploads
+# Criar diretórios necessários com permissões corretas
+RUN mkdir -p uploads backups && chown -R nodejs:nodejs uploads backups
 
 # Mudar para usuário não-root
 USER nodejs
