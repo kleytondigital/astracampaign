@@ -1,5 +1,5 @@
 // Configuração runtime - injetada pelo Docker
 window.APP_CONFIG = {
-  API_URL: 'VITE_API_URL_PLACEHOLDER'
+  API_URL: 'VITE_API_URL_PLACEHOLDER/api'
 };
 
