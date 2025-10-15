@@ -39,7 +39,8 @@ RUN echo '#!/bin/sh' > /docker-entrypoint.d/40-substitute-env.sh && \
 EXPOSE 80
 
 # Health check
-HEALTHCHECK --interval=30s --timeout=3s --start-period=10s --retries=3 \
-  CMD wget --quiet --tries=1 --spider http://localhost/ || exit 1
+HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
+  CMD wget --quiet --tries=1 --spider http://localhost/api/health || exit 1
+
 
 # Nginx iniciará automaticamente
