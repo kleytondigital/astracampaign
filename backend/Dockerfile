@@ -58,9 +58,7 @@ EXPOSE 3001
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=3s --start-period=40s --retries=3 \
-  CMD curl -f http://localhost:3001/api/health || exit 1
+  CMD curl -f http://localhost:3001/health || exit 1
 
 # Comando de inicialização
-# TEMPORÁRIO: Ignora erro de migration para permitir acesso ao console
-# Após resolver migrations, mude de volta para: npx prisma migrate deploy && npm run dev
-CMD ["sh", "-c", "npx prisma migrate deploy || true && npm run dev"]
+CMD ["sh", "-c", "npx prisma migrate deploy && npm run dev"]
