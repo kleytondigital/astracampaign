@@ -33,6 +33,11 @@ interface AuthProviderProps {
 // Usar configuração runtime do Docker ou fallback para env do Vite ou localhost
 const API_BASE_URL = (window as any).APP_CONFIG?.API_URL || import.meta.env.VITE_API_URL || 'http://localhost:3001';
 
+// Debug: verificar qual URL está sendo usada
+console.log('🔍 DEBUG AUTH - window.APP_CONFIG:', (window as any).APP_CONFIG);
+console.log('🔍 DEBUG AUTH - import.meta.env.VITE_API_URL:', import.meta.env.VITE_API_URL);
+console.log('🔍 DEBUG AUTH - API_BASE_URL final:', API_BASE_URL);
+
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(localStorage.getItem('auth_token'));
