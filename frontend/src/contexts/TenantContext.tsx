@@ -1,6 +1,7 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { useAuth } from './AuthContext';
 import toast from 'react-hot-toast';
+import { apiFetch } from '../config/api';
 
 interface Tenant {
   id: string;
@@ -44,7 +45,7 @@ export function TenantProvider({ children }: { children: ReactNode }) {
       (headers as Record<string, string>)['X-Tenant-Id'] = savedTenantId;
     }
 
-    return fetch(url, {
+    return apiFetch(url, {
       ...options,
       headers,
     });

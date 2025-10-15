@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useTenants } from '../hooks/useTenants';
 import { useAuth } from '../contexts/AuthContext';
 import toast from 'react-hot-toast';
+import { apiFetch } from '../config/api';
 
 interface SuperAdminTenant {
   id: string;
@@ -40,7 +41,7 @@ export function TenantSelector() {
       (headers as Record<string, string>).Authorization = `Bearer ${token}`;
     }
 
-    return fetch(url, {
+    return apiFetch(url, {
       ...options,
       headers,
     });
