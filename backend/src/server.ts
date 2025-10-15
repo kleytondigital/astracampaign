@@ -198,8 +198,11 @@ app.use('/api/media', authMiddleware, mediaRoutes); // Template de mensagens mul
 app.use('/api/media-upload', mediaUploadRoutes); // Upload de arquivos (já tem authMiddleware dentro)
 app.use('/api', authMiddleware, mockRoutes);
 
-server.listen(PORT, async () => {
-  console.log(`Server running on port ${PORT}`);
+server.listen(PORT, '0.0.0.0', async () => {
+  console.log(`🚀 Server running on http://0.0.0.0:${PORT}`);
+  
+});
+
 
   // Initialize WebSocket service (Socket.IO para frontend)
   websocketService.initialize(server);
