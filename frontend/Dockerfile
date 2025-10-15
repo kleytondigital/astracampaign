@@ -32,7 +32,9 @@ COPY --from=builder /app/dist /usr/share/nginx/html
 RUN echo '#!/bin/sh' > /docker-entrypoint.d/40-substitute-env.sh && \
     echo 'set -e' >> /docker-entrypoint.d/40-substitute-env.sh && \
     echo 'echo "Substituindo variáveis de ambiente..."' >> /docker-entrypoint.d/40-substitute-env.sh && \
-    echo 'find /usr/share/nginx/html -type f -name "*.js" -exec sed -i "s|VITE_API_URL_PLACEHOLDER|${VITE_API_URL}|g" {} \;' >> /docker-entrypoint.d/40-substitute-env.sh && \
+    echo 'echo "VITE_API_URL=${VITE_API_URL}"' >> /docker-entrypoint.d/40-substitute-env.sh && \
+    echo 'sed -i "s|VITE_API_URL_PLACEHOLDER|${VITE_API_URL}|g" /usr/share/nginx/html/config.js' >> /docker-entrypoint.d/40-substitute-env.sh && \
+    echo 'cat /usr/share/nginx/html/config.js' >> /docker-entrypoint.d/40-substitute-env.sh && \
     chmod +x /docker-entrypoint.d/40-substitute-env.sh
 
 # Expor porta
