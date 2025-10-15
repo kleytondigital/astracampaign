@@ -200,8 +200,7 @@ app.use('/api', authMiddleware, mockRoutes);
 
 server.listen(PORT, '0.0.0.0', async () => {
   console.log(`🚀 Server running on http://0.0.0.0:${PORT}`);
-  
-});
+
 
 
   // Initialize WebSocket service (Socket.IO para frontend)
