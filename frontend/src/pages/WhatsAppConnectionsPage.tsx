@@ -162,7 +162,7 @@ export function WhatsAppConnectionsPage() {
 
     const checkConnection = async () => {
       try {
-        const response = await authenticatedFetch('/api/waha/sessions');
+        const response = await authenticatedFetch('/waha/sessions');
         if (response.ok) {
           const sessions = await response.json();
           const updatedSession = sessions.find((s: any) => s.name === currentQRSession.name);
@@ -205,7 +205,7 @@ export function WhatsAppConnectionsPage() {
       if (showLoading) {
         setLoading(true);
       }
-      const response = await authenticatedFetch('/api/waha/sessions');
+      const response = await authenticatedFetch('/waha/sessions');
 
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
@@ -258,7 +258,7 @@ export function WhatsAppConnectionsPage() {
 
     setIsCreating(true);
     try {
-      const response = await authenticatedFetch('/api/waha/sessions', {
+      const response = await authenticatedFetch('/waha/sessions', {
         method: 'POST',
         body: JSON.stringify({
           name: newSessionName.trim(),
@@ -316,7 +316,7 @@ export function WhatsAppConnectionsPage() {
     }
 
     try {
-      const response = await authenticatedFetch(`/api/waha/sessions/${sessionName}`, {
+      const response = await authenticatedFetch(`/waha/sessions/${sessionName}`, {
         method: 'DELETE',
       });
 
@@ -341,7 +341,7 @@ export function WhatsAppConnectionsPage() {
       toast.loading('Configurando webhook...', { id: 'webhook-config' });
 
       const response = await authenticatedFetch(
-        `/api/webhook-management/sessions/${sessionId}/webhook/configure`,
+        `/webhook-management/sessions/${sessionId}/webhook/configure`,
         { method: 'POST' }
       );
 
@@ -373,7 +373,7 @@ export function WhatsAppConnectionsPage() {
     try {
       toast.loading('Desconectando instância...', { id: 'logout' });
 
-      const response = await authenticatedFetch(`/api/instance-management/logout/${instanceName}`, {
+      const response = await authenticatedFetch(`/instance-management/logout/${instanceName}`, {
         method: 'POST',
       });
 
@@ -408,7 +408,7 @@ export function WhatsAppConnectionsPage() {
     // Buscar configurações atuais da instância
     try {
       const response = await authenticatedFetch(
-        `/api/instance-management/settings/${session.name}`,
+        `/instance-management/settings/${session.name}`,
         { method: 'GET' }
       );
 
@@ -437,7 +437,7 @@ export function WhatsAppConnectionsPage() {
       toast.loading('Configurando WebSocket...', { id: 'websocket' });
 
       const response = await authenticatedFetch(
-        `/api/instance-management/websocket/${instanceName}`,
+        `/instance-management/websocket/${instanceName}`,
         {
           method: 'POST',
           body: JSON.stringify({
@@ -472,7 +472,7 @@ export function WhatsAppConnectionsPage() {
       toast.loading('Configurando definições...', { id: 'settings' });
 
       const response = await authenticatedFetch(
-        `/api/instance-management/settings/${selectedSession.name}`,
+        `/instance-management/settings/${selectedSession.name}`,
         {
           method: 'PUT',
           body: JSON.stringify(instanceSettings),
@@ -502,12 +502,12 @@ export function WhatsAppConnectionsPage() {
 
       // Usar endpoint correto baseado no provider
       if (session.provider === 'EVOLUTION') {
-        response = await authenticatedFetch(`/api/instance-management/restart/${session.name}`, {
+        response = await authenticatedFetch(`/instance-management/restart/${session.name}`, {
           method: 'POST',
         });
       } else {
         // WAHA
-        response = await authenticatedFetch(`/api/waha/sessions/${session.name}/restart`, {
+        response = await authenticatedFetch(`/waha/sessions/${session.name}/restart`, {
           method: 'POST',
         });
       }
@@ -533,7 +533,7 @@ export function WhatsAppConnectionsPage() {
     setLoadingQR(sessionName);
     try {
       // Primeiro, iniciar a sessão
-      const startResponse = await authenticatedFetch(`/api/waha/sessions/${sessionName}/start`, {
+      const startResponse = await authenticatedFetch(`/waha/sessions/${sessionName}/start`, {
         method: 'POST',
       });
 
@@ -583,7 +583,7 @@ export function WhatsAppConnectionsPage() {
       }
 
       // Primeiro, iniciar a sessão para gerar o QR
-      const startResponse = await authenticatedFetch(`/api/waha/sessions/${sessionName}/start`, {
+      const startResponse = await authenticatedFetch(`/waha/sessions/${sessionName}/start`, {
         method: 'POST',
       });
 
@@ -597,7 +597,7 @@ export function WhatsAppConnectionsPage() {
       await new Promise((resolve) => setTimeout(resolve, 1000));
 
       // Agora buscar QR através do backend (que vai rotear para API correta)
-      const qrResponse = await authenticatedFetch(`/api/waha/sessions/${sessionName}/auth/qr`);
+      const qrResponse = await authenticatedFetch(`/waha/sessions/${sessionName}/auth/qr`);
 
       if (qrResponse.ok) {
         const qrData = await qrResponse.json();
@@ -1048,7 +1048,7 @@ export function WhatsAppConnectionsPage() {
                             // Fallback: detectar automaticamente
                             const qrSrc = currentQRSession.qr?.startsWith('data:image')
                               ? currentQRSession.qr
-                              : `/api/waha/sessions/${currentQRSession.name}/auth/qr`;
+                              : `/waha/sessions/${currentQRSession.name}/auth/qr`;
 
                             return (
                               <img
