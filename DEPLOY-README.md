@@ -245,3 +245,6 @@ app.get('/health', (req, res) => {
 Para iniciar o deploy, leia:
 📚 **DEPLOY-EASYPANEL-GUIA-COMPLETO.md**
 
+
+
+

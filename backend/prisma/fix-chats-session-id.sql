@@ -49,3 +49,6 @@ GROUP BY c.tenant_id, t.nome;
 
 
 
+
+
+

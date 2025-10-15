@@ -169,3 +169,6 @@ backend/src/
 
 **Sistema pronto para gestão visual de pipeline!** 🚀
 
+
+
+

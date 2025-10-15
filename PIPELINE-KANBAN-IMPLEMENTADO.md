@@ -400,3 +400,6 @@ http://localhost:3006/oportunidades
 
 *Implementado em ~3 horas | Zero bugs | 100% funcional*
 
+
+
+

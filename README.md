@@ -258,6 +258,19 @@ npm run dev          # Servidor de desenvolvimento (porta 3000)
 
 ## 📚 Documentação
 
+### 📖 **Guias de Deploy**
+
+#### **Easypanel (Recomendado)**
+- 📘 **[Deploy Simplificado](./DEPLOY-EASYPANEL-SIMPLIFICADO.md)** - Guia completo passo a passo
+- ⚡ **[Quick Start](./QUICK-START-EASYPANEL.md)** - Deploy em 10 minutos
+- ✅ **[Checklist](./DEPLOY-EASYPANEL-CHECKLIST.md)** - Lista de verificação prática
+- 🔌 **[Conexões](./EASYPANEL-CONEXOES.md)** - Como os serviços se comunicam
+- 📝 **[Variáveis de Ambiente](./VARIAVEIS-AMBIENTE.md)** - Documentação completa
+
+#### **Scripts Auxiliares**
+- 🔨 `build-and-push.bat` - Build e push automático (Windows)
+- 🔨 `build-and-push.sh` - Build e push automático (Linux/Mac)
+
 ### 🔗 **Endpoints da API**
 
 #### **Autenticação**
@@ -425,7 +438,32 @@ Para usar randomização de mensagens, configure múltiplos conteúdos:
 
 ## 🚀 Deploy em Produção
 
-### 🔧 **Build das Imagens**
+### 🎯 **Deploy Simplificado no Easypanel**
+
+Temos guias completos para deploy no Easypanel:
+
+- 📘 **[Guia Completo de Deploy](./DEPLOY-EASYPANEL-SIMPLIFICADO.md)** - Passo a passo detalhado
+- ⚡ **[Quick Start](./QUICK-START-EASYPANEL.md)** - Deploy em 10 minutos
+- 📝 **[Variáveis de Ambiente](./VARIAVEIS-AMBIENTE.md)** - Documentação completa
+
+**Vantagens do Easypanel:**
+- ✅ PostgreSQL e Redis gerenciados
+- ✅ SSL/HTTPS automático (Let's Encrypt)
+- ✅ Backups automáticos
+- ✅ Interface visual intuitiva
+- ✅ Apenas backend e frontend containerizados
+
+**Build rápido:**
+```bash
+# Windows
+.\build-and-push.bat
+
+# Linux/Mac
+chmod +x build-and-push.sh
+./build-and-push.sh
+```
+
+### 🔧 **Build Manual das Imagens**
 
 ```bash
 # Backend

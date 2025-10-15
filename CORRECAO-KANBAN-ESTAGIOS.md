@@ -187,3 +187,6 @@ frontend/src/
 
 **Sistema 100% operacional!** 🚀
 
+
+
+

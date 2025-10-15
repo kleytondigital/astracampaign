@@ -254,3 +254,6 @@ Faltam apenas **2 tarefas** para ter um **MVP EXCELENTE**:
 
 **Estimativa:** 5 horas para completar 100% das Fases 1 e 2! 🚀
 
+
+
+
