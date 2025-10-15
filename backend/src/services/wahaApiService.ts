@@ -1,5 +1,12 @@
 // Serviço para comunicação com a API WAHA
 import { settingsService } from './settingsService';
+import {
+  WahaWebhookConfig,
+  WebhookSetResponse,
+  WebhookGetResponse,
+  WebhookDeleteResponse,
+  WahaWebhookEvent
+} from '../types/webhook.types';
 
 // Função para normalizar números brasileiros
 function normalizeBrazilianPhone(phone: string): string {
@@ -21,7 +28,12 @@ interface WAHAMessage {
   caption?: string;
 }
 
-export async function sendMessage(sessionName: string, phone: string, message: WAHAMessage, validatedChatId?: string) {
+export async function sendMessage(
+  sessionName: string,
+  phone: string,
+  message: WAHAMessage,
+  validatedChatId?: string
+) {
   try {
     // Obter configurações WAHA
     const wahaConfig = await settingsService.getWahaConfig();
@@ -100,7 +112,10 @@ export async function sendMessage(sessionName: string, phone: string, message: W
     }
 
     console.log(`WAHA API - Sending to: ${wahaConfig.host}${endpoint}`);
-    console.log(`WAHA API - Request body:`, JSON.stringify(requestBody, null, 2));
+    console.log(
+      `WAHA API - Request body:`,
+      JSON.stringify(requestBody, null, 2)
+    );
 
     const response = await fetch(`${wahaConfig.host}${endpoint}`, {
       method: 'POST',
@@ -111,12 +126,16 @@ export async function sendMessage(sessionName: string, phone: string, message: W
       body: JSON.stringify(requestBody)
     });
 
-    console.log(`WAHA API - Response status: ${response.status} ${response.statusText}`);
+    console.log(
+      `WAHA API - Response status: ${response.status} ${response.statusText}`
+    );
 
     if (!response.ok) {
       const responseText = await response.text();
       console.log(`WAHA API - Error response:`, responseText);
-      throw new Error(`WAHA API error: ${response.status} ${response.statusText} - ${responseText}`);
+      throw new Error(
+        `WAHA API error: ${response.status} ${response.statusText} - ${responseText}`
+      );
     }
 
     const result = await response.json();
@@ -138,10 +157,12 @@ export async function getSessionStatus(sessionName: string) {
     });
 
     if (!response.ok) {
-      throw new Error(`WAHA API error: ${response.status} ${response.statusText}`);
+      throw new Error(
+        `WAHA API error: ${response.status} ${response.statusText}`
+      );
     }
 
-    const sessions = await response.json() as any[];
+    const sessions = (await response.json()) as any[];
     const session = sessions.find((s: any) => s.name === sessionName);
 
     if (!session) {
@@ -155,31 +176,46 @@ export async function getSessionStatus(sessionName: string) {
   }
 }
 
-export async function checkContactExists(sessionName: string, phone: string): Promise<{exists: boolean, chatId?: string}> {
+export async function checkContactExists(
+  sessionName: string,
+  phone: string
+): Promise<{ exists: boolean; chatId?: string }> {
   try {
     const wahaConfig = await settingsService.getWahaConfig();
     const normalizedPhone = normalizeBrazilianPhone(phone);
 
-    console.log(`🔍 Checking if contact exists: ${phone} -> ${normalizedPhone}`);
+    console.log(
+      `🔍 Checking if contact exists: ${phone} -> ${normalizedPhone}`
+    );
 
     // Usar o endpoint correto de checagem
-    const response = await fetch(`${wahaConfig.host}/api/contacts/check-exists?phone=${normalizedPhone}&session=${sessionName}`, {
-      method: 'GET',
-      headers: {
-        'accept': 'application/json',
-        'X-Api-Key': wahaConfig.apiKey
+    const response = await fetch(
+      `${wahaConfig.host}/api/contacts/check-exists?phone=${normalizedPhone}&session=${sessionName}`,
+      {
+        method: 'GET',
+        headers: {
+          accept: 'application/json',
+          'X-Api-Key': wahaConfig.apiKey
+        }
       }
-    });
+    );
 
     if (!response.ok) {
-      console.log(`❌ Error checking contact ${normalizedPhone}: ${response.status} ${response.statusText}`);
+      console.log(
+        `❌ Error checking contact ${normalizedPhone}: ${response.status} ${response.statusText}`
+      );
       return { exists: false };
     }
 
-    const result = await response.json() as { numberExists: boolean, chatId?: string };
+    const result = (await response.json()) as {
+      numberExists: boolean;
+      chatId?: string;
+    };
     const exists = result.numberExists === true;
 
-    console.log(`${exists ? '✅' : '❌'} Contact ${normalizedPhone} exists: ${exists}`);
+    console.log(
+      `${exists ? '✅' : '❌'} Contact ${normalizedPhone} exists: ${exists}`
+    );
 
     if (exists && result.chatId) {
       console.log(`📱 Using API returned chatId: ${result.chatId}`);
@@ -193,22 +229,31 @@ export async function checkContactExists(sessionName: string, phone: string): Pr
   }
 }
 
-export async function uploadMedia(sessionName: string, file: Buffer, fileName: string) {
+export async function uploadMedia(
+  sessionName: string,
+  file: Buffer,
+  fileName: string
+) {
   try {
     const wahaConfig = await settingsService.getWahaConfig();
     const formData = new FormData();
     formData.append('file', new Blob([file]), fileName);
 
-    const response = await fetch(`${wahaConfig.host}/api/${sessionName}/files`, {
-      method: 'POST',
-      headers: {
-        'X-Api-Key': wahaConfig.apiKey
-      },
-      body: formData
-    });
+    const response = await fetch(
+      `${wahaConfig.host}/api/${sessionName}/files`,
+      {
+        method: 'POST',
+        headers: {
+          'X-Api-Key': wahaConfig.apiKey
+        },
+        body: formData
+      }
+    );
 
     if (!response.ok) {
-      throw new Error(`WAHA API error: ${response.status} ${response.statusText}`);
+      throw new Error(
+        `WAHA API error: ${response.status} ${response.statusText}`
+      );
     }
 
     const result = await response.json();
@@ -216,5 +261,159 @@ export async function uploadMedia(sessionName: string, file: Buffer, fileName: s
   } catch (error) {
     console.error('Error uploading media to WAHA:', error);
     throw error;
+  }
+}
+
+// ============================================================================
+// WEBHOOK METHODS
+// ============================================================================
+
+/**
+ * Configura webhook para uma sessão WAHA
+ * @param sessionName Nome da sessão
+ * @param webhookConfig Configuração do webhook
+ */
+export async function setWebhook(
+  sessionName: string,
+  webhookConfig: Partial<WahaWebhookConfig>
+): Promise<WebhookSetResponse> {
+  try {
+    const wahaConfig = await settingsService.getWahaConfig();
+
+    const config: WahaWebhookConfig = {
+      url: webhookConfig.url || '',
+      enabled: webhookConfig.enabled !== false,
+      events: webhookConfig.events || Object.values(WahaWebhookEvent),
+      retries: webhookConfig.retries || 3,
+      hmac: webhookConfig.hmac || null,
+      customHeaders: webhookConfig.customHeaders || [],
+      headers: webhookConfig.headers || {}
+    };
+
+    const response = await fetch(
+      `${wahaConfig.host}/api/${sessionName}/webhooks`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Api-Key': wahaConfig.apiKey
+        },
+        body: JSON.stringify({
+          url: config.url,
+          events: config.events,
+          hmac: config.hmac,
+          retries: config.retries,
+          customHeaders: config.customHeaders
+        })
+      }
+    );
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(
+        `WAHA API error: ${response.status} ${response.statusText} - ${errorText}`
+      );
+    }
+
+    const data = await response.json();
+
+    console.log(
+      `✅ Webhook WAHA configurado para sessão ${sessionName}:`,
+      data
+    );
+
+    return {
+      success: true,
+      message: 'Webhook configurado com sucesso',
+      webhook: config
+    };
+  } catch (error: any) {
+    console.error(
+      `❌ Erro ao configurar webhook WAHA para ${sessionName}:`,
+      error
+    );
+    throw new Error(`Erro ao configurar webhook: ${error.message}`);
+  }
+}
+
+/**
+ * Busca a configuração de webhook de uma sessão WAHA
+ * @param sessionName Nome da sessão
+ */
+export async function getWebhook(
+  sessionName: string
+): Promise<WebhookGetResponse> {
+  try {
+    const wahaConfig = await settingsService.getWahaConfig();
+
+    const response = await fetch(
+      `${wahaConfig.host}/api/${sessionName}/webhooks`,
+      {
+        method: 'GET',
+        headers: {
+          'X-Api-Key': wahaConfig.apiKey
+        }
+      }
+    );
+
+    if (!response.ok) {
+      console.warn(`⚠️ Erro ao buscar webhook WAHA para ${sessionName}`);
+      return {
+        success: false,
+        webhook: null
+      };
+    }
+
+    const data = await response.json();
+
+    return {
+      success: true,
+      webhook: Array.isArray(data) && data.length > 0 ? data[0] : null
+    };
+  } catch (error: any) {
+    console.warn(`⚠️ Erro ao buscar webhook WAHA para ${sessionName}:`, error);
+    return {
+      success: false,
+      webhook: null
+    };
+  }
+}
+
+/**
+ * Remove a configuração de webhook de uma sessão WAHA
+ * @param sessionName Nome da sessão
+ */
+export async function deleteWebhook(
+  sessionName: string
+): Promise<WebhookDeleteResponse> {
+  try {
+    const wahaConfig = await settingsService.getWahaConfig();
+
+    const response = await fetch(
+      `${wahaConfig.host}/api/${sessionName}/webhooks`,
+      {
+        method: 'DELETE',
+        headers: {
+          'X-Api-Key': wahaConfig.apiKey
+        }
+      }
+    );
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(
+        `WAHA API error: ${response.status} ${response.statusText} - ${errorText}`
+      );
+    }
+
+    console.log(`✅ Webhook WAHA removido da sessão ${sessionName}`);
+
+    return {
+      success: true,
+      message: 'Webhook removido com sucesso'
+    };
+  } catch (error: any) {
+    console.error(`❌ Erro ao remover webhook WAHA de ${sessionName}:`, error);
+    throw new Error(`Erro ao remover webhook: ${error.message}`);
   }
 }

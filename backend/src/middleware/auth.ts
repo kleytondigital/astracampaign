@@ -70,17 +70,31 @@ export const authMiddleware = async (
       return;
     }
 
+    // CORREÇÃO: Usar tenantId do banco de dados, não do token
+    // O token pode estar desatualizado, sempre confiar no banco
+    const userTenantId = user.tenantId;
+
+    // Log de debug para rastrear problemas de tenant
+    // console.log('🔐 AuthMiddleware:', {
+    //   userId: user.id,
+    //   email: user.email,
+    //   role: user.role,
+    //   tenantIdFromDB: userTenantId,
+    //   tenantIdFromToken: decoded.tenantId,
+    //   match: userTenantId === decoded.tenantId
+    // });
+
     // Adicionar dados do usuário à request
     req.user = {
       id: user.id,
       email: user.email,
       nome: user.nome,
       role: user.role,
-      tenantId: decoded.tenantId
+      tenantId: userTenantId || undefined
     };
 
     // Para SuperAdmin, permitir override do tenantId via header X-Tenant-Id
-    let effectiveTenantId = decoded.tenantId;
+    let effectiveTenantId = userTenantId;
     if (user.role === 'SUPERADMIN') {
       const headerTenantId = req.header('X-Tenant-Id');
       if (headerTenantId) {
@@ -89,7 +103,7 @@ export const authMiddleware = async (
     }
 
     // Adicionar tenantId diretamente para fácil acesso
-    req.tenantId = effectiveTenantId;
+    req.tenantId = effectiveTenantId || undefined;
 
     // Se não é SUPERADMIN ou tem tenantId definido, buscar dados do tenant
     if (effectiveTenantId) {

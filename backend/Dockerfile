@@ -1,39 +1,64 @@
+# ==========================================
+# ESTÁGIO 1: Build
+# ==========================================
 FROM node:20-alpine AS builder
 
+# Instalar dependências do sistema para Prisma
+RUN apk add --no-cache openssl libc6-compat
+
 WORKDIR /app
 
+# Copiar arquivos de dependências
 COPY package*.json ./
-RUN npm install
+COPY prisma ./prisma/
 
+# Instalar dependências
+RUN npm ci --only=production && \
+    npm install -D prisma tsx @types/node
+
+# Copiar código fonte
 COPY . .
+
+# Gerar Prisma Client
 RUN npx prisma generate
-RUN npm run build
-RUN npm prune --production
 
-FROM node:20-alpine AS runtime
+# Compilar TypeScript (se necessário)
+# RUN npm run build
 
-RUN apk add --no-cache openssl postgresql-client
+# ==========================================
+# ESTÁGIO 2: Production
+# ==========================================
+FROM node:20-alpine AS production
+
+# Instalar dependências do sistema
+RUN apk add --no-cache openssl libc6-compat curl
+
+# Criar usuário não-root
+RUN addgroup -g 1001 -S nodejs && \
+    adduser -S nodejs -u 1001
 
 WORKDIR /app
 
-RUN addgroup -g 1001 -S nodejs
-RUN adduser -S nodejs -u 1001
+# Copiar node_modules e arquivos do builder
+COPY --from=builder --chown=nodejs:nodejs /app/node_modules ./node_modules
+COPY --from=builder --chown=nodejs:nodejs /app/prisma ./prisma
+COPY --from=builder --chown=nodejs:nodejs /app/package*.json ./
 
-COPY --from=builder /app/node_modules ./node_modules
-COPY --from=builder /app/dist ./dist
-COPY --from=builder /app/package*.json ./
-COPY --from=builder /app/prisma ./prisma
-COPY start.sh ./start.sh
+# Copiar código fonte
+COPY --chown=nodejs:nodejs . .
 
-RUN mkdir -p /app/data /app/uploads /app/backups && chown -R nodejs:nodejs /app/data /app/uploads /app/backups
-COPY uploads/default_icon.png /app/uploads/default_icon.png
-COPY uploads/default_favicon.png /app/uploads/default_favicon.png
-RUN chmod +x start.sh && chown nodejs:nodejs start.sh
-RUN chown -R nodejs:nodejs /app/node_modules/@prisma || true
-RUN chmod -R 755 /app/node_modules/@prisma || true
+# Criar diretório de uploads
+RUN mkdir -p uploads && chown -R nodejs:nodejs uploads
 
+# Mudar para usuário não-root
 USER nodejs
 
+# Expor porta
 EXPOSE 3001
 
-CMD ["./start.sh"]
+# Health check
+HEALTHCHECK --interval=30s --timeout=3s --start-period=40s --retries=3 \
+  CMD curl -f http://localhost:3001/health || exit 1
+
+# Comando de inicialização
+CMD ["sh", "-c", "npx prisma migrate deploy && npm run dev"]

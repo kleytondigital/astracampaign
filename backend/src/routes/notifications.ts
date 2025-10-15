@@ -1,35 +1,31 @@
 import { Router } from 'express';
 import { authMiddleware } from '../middleware/auth';
 import {
-  getNotifications,
+  getAllNotifications,
   getUnreadCount,
   markAsRead,
   markAllAsRead,
-  deleteNotification,
-  getNotificationsSummary
+  deleteNotification
 } from '../controllers/notificationsController';
 
 const router = Router();
 
-// Apply authentication middleware to all routes
+// Aplicar autenticação em todas as rotas
 router.use(authMiddleware);
 
-// GET /api/notifications - Get user notifications
-router.get('/', getNotifications);
+// Listar notificações
+router.get('/', getAllNotifications);
 
-// GET /api/notifications/summary - Notifications summary
-router.get('/summary', getNotificationsSummary);
-
-// GET /api/notifications/unread-count - Get unread count
+// Contagem de não lidas
 router.get('/unread-count', getUnreadCount);
 
-// POST /api/notifications/mark-all-read - Mark all as read
-router.post('/mark-all-read', markAllAsRead);
+// Marcar como lida
+router.patch('/:id/read', markAsRead);
 
-// POST /api/notifications/:id/mark-read - Mark notification as read
-router.post('/:id/mark-read', markAsRead);
+// Marcar todas como lidas
+router.patch('/read-all', markAllAsRead);
 
-// DELETE /api/notifications/:id - Delete notification
+// Excluir notificação
 router.delete('/:id', deleteNotification);
 
 export default router;

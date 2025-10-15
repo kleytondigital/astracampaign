@@ -1,0 +1,193 @@
+<!doctype html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Limpar Sessão - Astra Campaign</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        
+        h1 {
+            color: #333;
+        }
+        
+        button {
+            padding: 12px 24px;
+            margin: 10px 5px;
+            font-size: 16px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        
+        .btn-danger {
+            background: #dc3545;
+            color: white;
+        }
+        
+        .btn-primary {
+            background: #007bff;
+            color: white;
+        }
+        
+        .btn-success {
+            background: #28a745;
+            color: white;
+        }
+        
+        .info-box {
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 5px;
+            background: #f8f9fa;
+            border-left: 4px solid #007bff;
+        }
+        
+        .error-box {
+            background: #fff3cd;
+            border-left-color: #ffc107;
+        }
+        
+        .success-box {
+            background: #d4edda;
+            border-left-color: #28a745;
+        }
+        
+        pre {
+            background: #272822;
+            color: #f8f8f2;
+            padding: 15px;
+            border-radius: 5px;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>🔧 Diagnóstico e Limpeza de Sessão</h1>
+
+        <div id="result"></div>
+
+        <h2>Ações Disponíveis:</h2>
+        <button class="btn-danger" onclick="clearSession()">🗑️ Limpar Sessão Completa</button>
+        <button class="btn-primary" onclick="checkSession()">🔍 Verificar Sessão Atual</button>
+        <button class="btn-success" onclick="goToLogin()">🔐 Ir para Login</button>
+
+        <div class="info-box">
+            <h3>ℹ️ O que faz cada ação:</h3>
+            <ul>
+                <li>
+                    <strong>Limpar Sessão:</strong> Remove todos os dados de autenticação do navegador
+                </li>
+                <li><strong>Verificar Sessão:</strong> Mostra informações sobre o token atual</li>
+                <li><strong>Ir para Login:</strong> Redireciona para a página de login</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        function clearSession() {
+            const result = document.getElementById('result');
+
+            // Remover todos os itens do localStorage
+            const itemsBefore = Object.keys(localStorage);
+            localStorage.clear();
+
+            result.innerHTML = `
+                <div class="success-box">
+                    <h3>✅ Sessão Limpa com Sucesso!</h3>
+                    <p>Itens removidos: ${itemsBefore.length}</p>
+                    <ul>${itemsBefore.map((key) => `<li>${key}</li>`).join('')}</ul>
+                    <p><strong>Você será redirecionado para o login em 3 segundos...</strong></p>
+                </div>
+            `;
+
+        setTimeout(() => {
+          window.location.href = '/';
+        }, 3000);
+      }
+
+      function checkSession() {
+        const result = document.getElementById('result');
+        const token = localStorage.getItem('auth_token');
+
+        if (token) {
+          try {
+            // Decodificar JWT (sem verificação)
+            const parts = token.split('.');
+            if (parts.length === 3) {
+              const payload = JSON.parse(atob(parts[1]));
+
+              const now = Math.floor(Date.now() / 1000);
+              const expired = payload.exp && payload.exp < now;
+
+              result.innerHTML = `
+                            <div class="${expired ? 'error-box' : 'info-box'}">
+                                <h3>🔍 Informações do Token:</h3>
+                                <p><strong>Status:</strong> ${expired ? '❌ EXPIRADO' : '✅ Válido'}</p>
+                                <p><strong>Usuário ID:</strong> ${payload.userId || 'N/A'}</p>
+                                <p><strong>Email:</strong> ${payload.email || 'N/A'}</p>
+                                <p><strong>Role:</strong> ${payload.role || 'N/A'}</p>
+                                <p><strong>Tenant ID:</strong> ${payload.tenantId || 'N/A'}</p>
+                                ${payload.exp ? `<p><strong>Expira em:</strong> ${new Date(payload.exp * 1000).toLocaleString()}</p>` : ''}
+                                ${expired ? '<p style="color: red;"><strong>⚠️ Este token expirou! Faça login novamente.</strong></p>' : ''}
+                                <h4>Payload Completo:</h4>
+                                <pre>${JSON.stringify(payload, null, 2)}</pre>
+                            </div>
+                        `;
+            } else {
+              result.innerHTML = `
+                            <div class="error-box">
+                                <h3>❌ Token Inválido</h3>
+                                <p>O token não possui o formato JWT correto.</p>
+                                <p><strong>Recomendação:</strong> Limpe a sessão e faça login novamente.</p>
+                            </div>
+                        `;
+            }
+          } catch (error) {
+            result.innerHTML = `
+                        <div class="error-box">
+                            <h3>❌ Erro ao Decodificar Token</h3>
+                            <p>${error.message}</p>
+                            <p><strong>Recomendação:</strong> Limpe a sessão e faça login novamente.</p>
+                        </div>
+                    `;
+          }
+        } else {
+          result.innerHTML = `
+                    <div class="info-box">
+                        <h3>ℹ️ Nenhuma Sessão Ativa</h3>
+                        <p>Não há token de autenticação armazenado.</p>
+                        <p><strong>Ação:</strong> Faça login para criar uma nova sessão.</p>
+                    </div>
+                `;
+        }
+      }
+
+      function goToLogin() {
+        window.location.href = '/';
+      }
+
+      // Verificar automaticamente ao carregar
+      window.onload = checkSession;
+    </script>
+</body>
+
+</html>
+
+

@@ -43,6 +43,57 @@ class ApiService {
     return response.json();
   }
 
+  // Métodos HTTP padrão para compatibilidade com axios-like API
+  async get<T>(endpoint: string, config?: { params?: any }): Promise<{ data: T }> {
+    let url = endpoint;
+    if (config?.params) {
+      const searchParams = new URLSearchParams();
+      Object.entries(config.params).forEach(([key, value]) => {
+        if (value !== undefined && value !== null && value !== '') {
+          searchParams.set(key, String(value));
+        }
+      });
+      const queryString = searchParams.toString();
+      if (queryString) {
+        url += `?${queryString}`;
+      }
+    }
+    
+    const data = await this.request<T>(url);
+    return { data };
+  }
+
+  async post<T>(endpoint: string, data?: any): Promise<{ data: T }> {
+    const result = await this.request<T>(endpoint, {
+      method: 'POST',
+      body: data ? JSON.stringify(data) : undefined,
+    });
+    return { data: result };
+  }
+
+  async put<T>(endpoint: string, data?: any): Promise<{ data: T }> {
+    const result = await this.request<T>(endpoint, {
+      method: 'PUT',
+      body: data ? JSON.stringify(data) : undefined,
+    });
+    return { data: result };
+  }
+
+  async patch<T>(endpoint: string, data?: any): Promise<{ data: T }> {
+    const result = await this.request<T>(endpoint, {
+      method: 'PATCH',
+      body: data ? JSON.stringify(data) : undefined,
+    });
+    return { data: result };
+  }
+
+  async delete<T>(endpoint: string): Promise<{ data: T }> {
+    const result = await this.request<T>(endpoint, {
+      method: 'DELETE',
+    });
+    return { data: result };
+  }
+
   async getContacts(params?: {
     search?: string;
     tag?: string;
@@ -179,3 +230,4 @@ class ApiService {
 }
 
 export const apiService = new ApiService();
+export const api = apiService;

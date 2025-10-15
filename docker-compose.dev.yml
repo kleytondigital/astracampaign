@@ -1,0 +1,46 @@
+version: "3.8"
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: astra_postgres_dev
+    environment:
+      - POSTGRES_DB=astra_campaign_dev
+      - POSTGRES_USER=astra_dev
+      - POSTGRES_PASSWORD=dev123
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_dev_data:/var/lib/postgresql/data
+    networks:
+      - astra_dev_network
+
+  redis:
+    image: redis:7-alpine
+    container_name: astra_redis_dev
+    command: redis-server --appendonly yes
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_dev_data:/data
+    networks:
+      - astra_dev_network
+
+  # WAHA API para testes (opcional)
+  waha:
+    image: devlikeapro/waha:latest
+    container_name: astra_waha_dev
+    ports:
+      - "3000:3000"
+    environment:
+      - WAHA_API_KEY=dev-waha-key
+    networks:
+      - astra_dev_network
+
+networks:
+  astra_dev_network:
+    driver: bridge
+
+volumes:
+  postgres_dev_data:
+  redis_dev_data:

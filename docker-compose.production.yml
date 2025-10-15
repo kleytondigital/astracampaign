@@ -1,0 +1,164 @@
+version: '3.8'
+
+services:
+  # ==========================================
+  # POSTGRESQL DATABASE
+  # ==========================================
+  postgres:
+    image: postgres:16-alpine
+    container_name: astra-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-astra}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB:-astra_campaign}
+      PGDATA: /var/lib/postgresql/data/pgdata
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - astra-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-astra}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ==========================================
+  # REDIS CACHE
+  # ==========================================
+  redis:
+    image: redis:7-alpine
+    container_name: astra-redis
+    restart: unless-stopped
+    command: redis-server --appendonly yes ${REDIS_PASSWORD:+--requirepass $REDIS_PASSWORD}
+    volumes:
+      - redis_data:/data
+    networks:
+      - astra-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+  # ==========================================
+  # BACKEND API
+  # ==========================================
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: astra-backend
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      # Database
+      DATABASE_URL: postgresql://${POSTGRES_USER:-astra}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-astra_campaign}?schema=public
+      
+      # Redis
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+      
+      # Server
+      PORT: 3001
+      NODE_ENV: production
+      BACKEND_URL: ${BACKEND_URL}
+      
+      # JWT
+      JWT_SECRET: ${JWT_SECRET}
+      
+      # CORS
+      ALLOWED_ORIGINS: ${ALLOWED_ORIGINS}
+      
+      # WhatsApp - WAHA
+      WAHA_API_URL: ${WAHA_API_URL}
+      WAHA_API_KEY: ${WAHA_API_KEY}
+      
+      # WhatsApp - Evolution
+      EVOLUTION_API_URL: ${EVOLUTION_API_URL}
+      EVOLUTION_API_KEY: ${EVOLUTION_API_KEY}
+      EVOLUTION_HOST: ${EVOLUTION_HOST}
+      EVOLUTION_API_KEY_GLOBAL: ${EVOLUTION_API_KEY_GLOBAL}
+      
+      # AI
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
+      GROQ_API_KEY: ${GROQ_API_KEY}
+      
+      # Webhooks
+      WEBHOOK_BASE_URL: ${WEBHOOK_BASE_URL:-${BACKEND_URL}}
+    volumes:
+      - uploads_data:/app/uploads
+    networks:
+      - astra-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3001/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # ==========================================
+  # FRONTEND
+  # ==========================================
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        VITE_API_URL: ${BACKEND_URL:-https://api.seudominio.com}
+    container_name: astra-frontend
+    restart: unless-stopped
+    depends_on:
+      - backend
+    environment:
+      VITE_API_URL: ${BACKEND_URL:-https://api.seudominio.com}
+    networks:
+      - astra-network
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost/"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+
+  # ==========================================
+  # NGINX REVERSE PROXY (Opcional - EasyPanel já tem)
+  # ==========================================
+  # nginx:
+  #   image: nginx:alpine
+  #   container_name: astra-nginx
+  #   restart: unless-stopped
+  #   depends_on:
+  #     - frontend
+  #     - backend
+  #   ports:
+  #     - "80:80"
+  #     - "443:443"
+  #   volumes:
+  #     - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+  #     - ./nginx/ssl:/etc/nginx/ssl:ro
+  #   networks:
+  #     - astra-network
+
+# ==========================================
+# VOLUMES
+# ==========================================
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
+  uploads_data:
+    driver: local
+
+# ==========================================
+# NETWORKS
+# ==========================================
+networks:
+  astra-network:
+    driver: bridge
+

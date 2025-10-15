@@ -1,0 +1,7 @@
+version: 3
+agent:
+  authtoken: 33nImtafa1BJ0N6QAdakpaFLsfB_yYh8LirDPx2mEDqk9EP9
+tunnels:
+  work:
+    proto: http
+    addr: 3006

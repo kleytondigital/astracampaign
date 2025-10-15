@@ -46,17 +46,28 @@ export class WebSocketService {
     // Middleware de autenticação para WebSocket
     this.io.use(async (socket: AuthenticatedSocket, next) => {
       try {
-        const token = socket.handshake.auth.token || socket.handshake.query.token;
+        const token =
+          socket.handshake.auth.token || socket.handshake.query.token;
 
         if (!token) {
           return next(new Error('Token não fornecido'));
         }
 
-        const decoded = jwt.verify(token as string, process.env.JWT_SECRET || 'defaultsecret') as any;
+        const decoded = jwt.verify(
+          token as string,
+          process.env.JWT_SECRET || 'defaultsecret'
+        ) as any;
 
-        // Busca dados do usuário no banco
+        console.log('🔐 [WebSocket Auth] Token decodificado:', {
+          userId: decoded.userId,
+          email: decoded.email,
+          role: decoded.role,
+          tenantId: decoded.tenantId
+        });
+
+        // Busca dados do usuário no banco (JWT usa 'userId', não 'id')
         const user = await prisma.user.findUnique({
-          where: { id: decoded.id },
+          where: { id: decoded.userId }, // ✅ Corrigido: usar decoded.userId
           select: {
             id: true,
             tenantId: true,
@@ -83,7 +94,9 @@ export class WebSocketService {
     });
 
     this.io.on('connection', (socket: AuthenticatedSocket) => {
-      console.log(`🔌 Usuário conectado via WebSocket: ${socket.user?.id} (${socket.id})`);
+      console.log(
+        `🔌 Usuário conectado via WebSocket: ${socket.user?.id} (${socket.id})`
+      );
 
       if (socket.user) {
         this.addUserConnection(socket.user.id, socket.id);
@@ -91,7 +104,9 @@ export class WebSocketService {
         // Entra no room do tenant (se houver)
         if (socket.user.tenantId) {
           socket.join(`tenant_${socket.user.tenantId}`);
-          console.log(`👥 Usuário ${socket.user.id} entrou no room: tenant_${socket.user.tenantId}`);
+          console.log(
+            `👥 Usuário ${socket.user.id} entrou no room: tenant_${socket.user.tenantId}`
+          );
         }
 
         // SuperAdmin entra em room especial
@@ -126,62 +141,70 @@ export class WebSocketService {
           // Atualiza contador de não lidas
           await this.emitUnreadCount(socket.user.id);
 
-          console.log(`✅ Notificação ${notificationId} marcada como lida por ${socket.user.id}`);
+          console.log(
+            `✅ Notificação ${notificationId} marcada como lida por ${socket.user.id}`
+          );
         } catch (error) {
           console.error('Erro ao marcar notificação como lida:', error);
-          socket.emit('error', { message: 'Erro ao marcar notificação como lida' });
+          socket.emit('error', {
+            message: 'Erro ao marcar notificação como lida'
+          });
         }
       });
 
       // Handler para buscar notificações
-      socket.on('get_notifications', async (data: { page?: number; limit?: number }) => {
-        try {
-          if (!socket.user) return;
+      socket.on(
+        'get_notifications',
+        async (data: { page?: number; limit?: number }) => {
+          try {
+            if (!socket.user) return;
 
-          const page = data.page || 1;
-          const limit = data.limit || 20;
-          const skip = (page - 1) * limit;
+            const page = data.page || 1;
+            const limit = data.limit || 20;
+            const skip = (page - 1) * limit;
 
-          const notifications = await prisma.userNotification.findMany({
-            where: { userId: socket.user.id },
-            orderBy: { createdAt: 'desc' },
-            take: limit,
-            skip,
-            select: {
-              id: true,
-              title: true,
-              message: true,
-              type: true,
-              read: true,
-              createdAt: true,
-              readAt: true,
-              data: true
-            }
-          });
+            const notifications = await prisma.userNotification.findMany({
+              where: { userId: socket.user.id },
+              orderBy: { createdAt: 'desc' },
+              take: limit,
+              skip,
+              select: {
+                id: true,
+                title: true,
+                message: true,
+                type: true,
+                read: true,
+                createdAt: true,
+                readAt: true,
+                data: true
+              }
+            });
 
-          const total = await prisma.userNotification.count({
-            where: { userId: socket.user.id }
-          });
+            const total = await prisma.userNotification.count({
+              where: { userId: socket.user.id }
+            });
 
-          socket.emit('notifications_data', {
-            notifications,
-            pagination: {
-              page,
-              limit,
-              total,
-              totalPages: Math.ceil(total / limit)
-            }
-          });
-
-        } catch (error) {
-          console.error('Erro ao buscar notificações:', error);
-          socket.emit('error', { message: 'Erro ao buscar notificações' });
+            socket.emit('notifications_data', {
+              notifications,
+              pagination: {
+                page,
+                limit,
+                total,
+                totalPages: Math.ceil(total / limit)
+              }
+            });
+          } catch (error) {
+            console.error('Erro ao buscar notificações:', error);
+            socket.emit('error', { message: 'Erro ao buscar notificações' });
+          }
         }
-      });
+      );
 
       // Handler para desconexão
       socket.on('disconnect', () => {
-        console.log(`🔌 Usuário desconectado: ${socket.user?.id} (${socket.id})`);
+        console.log(
+          `🔌 Usuário desconectado: ${socket.user?.id} (${socket.id})`
+        );
 
         if (socket.user) {
           this.removeUserConnection(socket.user.id, socket.id);
@@ -203,7 +226,7 @@ export class WebSocketService {
   // Remove conexão do usuário
   private removeUserConnection(userId: string, socketId: string): void {
     const existing = this.connectedUsers.get(userId) || [];
-    const filtered = existing.filter(id => id !== socketId);
+    const filtered = existing.filter((id) => id !== socketId);
 
     if (filtered.length === 0) {
       this.connectedUsers.delete(userId);
@@ -213,12 +236,22 @@ export class WebSocketService {
   }
 
   // Emite notificação para usuário específico
-  public async notifyUser(userId: string, notification: {
-    title: string;
-    message: string;
-    type: 'INFO' | 'SUCCESS' | 'WARNING' | 'ERROR' | 'CAMPAIGN' | 'BACKUP' | 'SYSTEM';
-    data?: any;
-  }): Promise<void> {
+  public async notifyUser(
+    userId: string,
+    notification: {
+      title: string;
+      message: string;
+      type:
+        | 'INFO'
+        | 'SUCCESS'
+        | 'WARNING'
+        | 'ERROR'
+        | 'CAMPAIGN'
+        | 'BACKUP'
+        | 'SYSTEM';
+      data?: any;
+    }
+  ): Promise<void> {
     try {
       // Salva notificação no banco
       const savedNotification = await prisma.userNotification.create({
@@ -235,7 +268,7 @@ export class WebSocketService {
       if (this.io) {
         // Envia para todas as conexões do usuário
         const userSockets = this.connectedUsers.get(userId) || [];
-        userSockets.forEach(socketId => {
+        userSockets.forEach((socketId) => {
           this.io?.to(socketId).emit('new_notification', {
             id: savedNotification.id,
             title: notification.title,
@@ -250,19 +283,31 @@ export class WebSocketService {
         await this.emitUnreadCount(userId);
       }
 
-      console.log(`🔔 Notificação enviada para usuário ${userId}: ${notification.title}`);
+      console.log(
+        `🔔 Notificação enviada para usuário ${userId}: ${notification.title}`
+      );
     } catch (error) {
       console.error('Erro ao enviar notificação:', error);
     }
   }
 
   // Emite notificação para todos os usuários de um tenant
-  public async notifyTenant(tenantId: string, notification: {
-    title: string;
-    message: string;
-    type: 'INFO' | 'SUCCESS' | 'WARNING' | 'ERROR' | 'CAMPAIGN' | 'BACKUP' | 'SYSTEM';
-    data?: any;
-  }): Promise<void> {
+  public async notifyTenant(
+    tenantId: string,
+    notification: {
+      title: string;
+      message: string;
+      type:
+        | 'INFO'
+        | 'SUCCESS'
+        | 'WARNING'
+        | 'ERROR'
+        | 'CAMPAIGN'
+        | 'BACKUP'
+        | 'SYSTEM';
+      data?: any;
+    }
+  ): Promise<void> {
     try {
       // Busca todos os usuários do tenant
       const users = await prisma.user.findMany({
@@ -271,10 +316,14 @@ export class WebSocketService {
       });
 
       // Envia notificação para cada usuário
-      const promises = users.map(user => this.notifyUser(user.id, notification));
+      const promises = users.map((user) =>
+        this.notifyUser(user.id, notification)
+      );
       await Promise.all(promises);
 
-      console.log(`🏢 Notificação enviada para tenant ${tenantId}: ${notification.title}`);
+      console.log(
+        `🏢 Notificação enviada para tenant ${tenantId}: ${notification.title}`
+      );
     } catch (error) {
       console.error('Erro ao enviar notificação para tenant:', error);
     }
@@ -284,7 +333,14 @@ export class WebSocketService {
   public async notifySuperAdmins(notification: {
     title: string;
     message: string;
-    type: 'INFO' | 'SUCCESS' | 'WARNING' | 'ERROR' | 'CAMPAIGN' | 'BACKUP' | 'SYSTEM';
+    type:
+      | 'INFO'
+      | 'SUCCESS'
+      | 'WARNING'
+      | 'ERROR'
+      | 'CAMPAIGN'
+      | 'BACKUP'
+      | 'SYSTEM';
     data?: any;
   }): Promise<void> {
     try {
@@ -295,28 +351,37 @@ export class WebSocketService {
       });
 
       // Envia notificação para cada SuperAdmin
-      const promises = superAdmins.map(admin => this.notifyUser(admin.id, notification));
+      const promises = superAdmins.map((admin) =>
+        this.notifyUser(admin.id, notification)
+      );
       await Promise.all(promises);
 
-      console.log(`👑 Notificação enviada para SuperAdmins: ${notification.title}`);
+      console.log(
+        `👑 Notificação enviada para SuperAdmins: ${notification.title}`
+      );
     } catch (error) {
       console.error('Erro ao enviar notificação para SuperAdmins:', error);
     }
   }
 
   // Emite evento de progresso de campanha
-  public emitCampaignProgress(tenantId: string, campaignData: {
-    campaignId: string;
-    campaignName: string;
-    progress: number;
-    totalContacts: number;
-    sentCount: number;
-    failedCount: number;
-    status: string;
-  }): void {
+  public emitCampaignProgress(
+    tenantId: string,
+    campaignData: {
+      campaignId: string;
+      campaignName: string;
+      progress: number;
+      totalContacts: number;
+      sentCount: number;
+      failedCount: number;
+      status: string;
+    }
+  ): void {
     if (this.io) {
       this.io.to(`tenant_${tenantId}`).emit('campaign_progress', campaignData);
-      console.log(`📊 Progresso de campanha enviado para tenant ${tenantId}: ${campaignData.progress}%`);
+      console.log(
+        `📊 Progresso de campanha enviado para tenant ${tenantId}: ${campaignData.progress}%`
+      );
     }
   }
 
@@ -324,14 +389,17 @@ export class WebSocketService {
   private emitUserCount(tenantId: string | null): void {
     if (!this.io || !tenantId) return;
 
-    const connectedCount = Array.from(this.connectedUsers.entries())
-      .filter(([userId]) => {
+    const connectedCount = Array.from(this.connectedUsers.entries()).filter(
+      ([userId]) => {
         // Aqui seria ideal ter cache dos dados dos usuários conectados
         // Por simplicidade, vamos emitir a contagem total de conexões ativas
         return true;
-      }).length;
+      }
+    ).length;
 
-    this.io.to(`tenant_${tenantId}`).emit('users_online_count', { count: connectedCount });
+    this.io
+      .to(`tenant_${tenantId}`)
+      .emit('users_online_count', { count: connectedCount });
   }
 
   // Emite contador de notificações não lidas
@@ -346,12 +414,22 @@ export class WebSocketService {
 
       if (this.io) {
         const userSockets = this.connectedUsers.get(userId) || [];
-        userSockets.forEach(socketId => {
-          this.io?.to(socketId).emit('unread_notifications_count', { count: unreadCount });
+        userSockets.forEach((socketId) => {
+          this.io
+            ?.to(socketId)
+            .emit('unread_notifications_count', { count: unreadCount });
         });
       }
     } catch (error) {
       console.error('Erro ao emitir contador de não lidas:', error);
+    }
+  }
+
+  // Emite mensagem para todos os usuários de um tenant
+  public emitToTenant(tenantId: string, event: string, data: any): void {
+    if (this.io) {
+      this.io.to(`tenant_${tenantId}`).emit(event, data);
+      console.log(`📡 Evento '${event}' enviado para tenant ${tenantId}`);
     }
   }
 
@@ -364,7 +442,9 @@ export class WebSocketService {
   }): void {
     if (this.io) {
       this.io.to('superadmin').emit('system_status', status);
-      console.log(`🖥️ Status do sistema enviado para SuperAdmins: ${status.message}`);
+      console.log(
+        `🖥️ Status do sistema enviado para SuperAdmins: ${status.message}`
+      );
     }
   }
 

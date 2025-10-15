@@ -1,0 +1,45 @@
+# Node
+node_modules
+npm-debug.log
+yarn-error.log
+
+# Build (será criado no container)
+dist
+build
+
+# Environment
+.env
+.env.local
+.env.production.local
+.env.development.local
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Git
+.git
+.gitignore
+
+# Tests
+coverage
+*.test.ts
+*.test.tsx
+*.spec.ts
+*.spec.tsx
+__tests__
+
+# Documentation
+*.md
+docs
+
+# Development files
+vite.config.ts.timestamp-*
+

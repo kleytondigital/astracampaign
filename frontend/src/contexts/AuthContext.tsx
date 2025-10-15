@@ -7,6 +7,7 @@ interface User {
   email: string;
   role: string;
   ativo: boolean;
+  tenantId?: string | null;
   ultimoLogin?: string | null;
   criadoEm: string;
 }
@@ -160,11 +161,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     setToken,
   };
 
-  return (
-    <AuthContext.Provider value={value}>
-      {children}
-    </AuthContext.Provider>
-  );
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
 
 export const useAuth = (): AuthContextType => {

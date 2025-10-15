@@ -21,20 +21,27 @@ model Tenant {
   updatedAt    DateTime @updatedAt @map("updated_at")
 
   // Relations
-  users            User[]
-  userTenants      UserTenant[] // Relacionamento muitos-para-muitos
-  contacts         Contact[]
-  categories       Category[]
-  campaigns        Campaign[]
-  campaignMessages CampaignMessage[]
-  whatsappSessions WhatsAppSession[]
-  quotas           TenantQuota?
-  settings         TenantSettings?
-  alerts           Alert[]
-  messageTemplates MessageTemplate[]
-  automationFlows  AutomationFlow[]
-  integrations     Integration[]
-  auditLogs        AuditLog[]
+  users                User[]
+  userTenants          UserTenant[] // Relacionamento muitos-para-muitos
+  contacts             Contact[]
+  categories           Category[]
+  campaigns            Campaign[]
+  campaignMessages     CampaignMessage[]
+  whatsappSessions     WhatsAppSession[]
+  quotas               TenantQuota?
+  settings             TenantSettings?
+  alerts               Alert[]
+  messageTemplates     MessageTemplate[]
+  automationFlows      AutomationFlow[]
+  integrations         Integration[]
+  auditLogs            AuditLog[]
+  companies            Company[]
+  opportunities        Opportunity[]
+  activities           Activity[]
+  leads                Lead[]
+  chats                Chat[]
+  crmNotifications     CRMNotification[]
+  preRegisteredMedia   PreRegisteredMedia[]
 
   @@map("tenants")
 }
@@ -127,6 +134,12 @@ model Contact {
   // Relations
   categoria Category? @relation(fields: [categoriaId], references: [id], onDelete: SetNull)
   tenant    Tenant?   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  companyId String?   @map("company_id")
+  company   Company?  @relation(fields: [companyId], references: [id], onDelete: SetNull)
+  opportunities Opportunity[]
+  activities Activity[]
+  convertedFromLeads Lead[]
+  chats     Chat[]
 
   @@index([tenantId])
   @@index([categoriaId])
@@ -151,23 +164,30 @@ model Category {
 }
 
 model WhatsAppSession {
-  id             String     @id @default(uuid())
-  name           String     @unique // Nome real usado na API (ex: vendas_c52982e8)
-  displayName    String?    @map("display_name") // Nome exibido ao usuário (ex: vendas)
-  status         String
-  config         String?
-  meId           String?    @map("me_id")
-  mePushName     String?    @map("me_push_name")
-  meLid          String?    @map("me_lid")
-  meJid          String?    @map("me_jid")
-  qr             String?
-  qrExpiresAt    DateTime?  @map("qr_expires_at")
-  assignedWorker String?    @map("assigned_worker")
-  tenantId       String?    @map("tenant_id") // Optional for backward compatibility
-  criadoEm       DateTime   @default(now()) @map("criado_em")
-  atualizadoEm   DateTime   @updatedAt @map("atualizado_em")
-  provider       String     @default("WAHA")
-  campaigns      Campaign[]
+  id               String     @id @default(uuid())
+  name             String     @unique // Nome real usado na API (ex: vendas_c52982e8)
+  displayName      String?    @map("display_name") // Nome exibido ao usuário (ex: vendas)
+  status           String
+  config           String?
+  meId             String?    @map("me_id")
+  mePushName       String?    @map("me_push_name")
+  meLid            String?    @map("me_lid")
+  meJid            String?    @map("me_jid")
+  qr               String?
+  qrExpiresAt      DateTime?  @map("qr_expires_at")
+  assignedWorker   String?    @map("assigned_worker")
+  tenantId         String?    @map("tenant_id") // Optional for backward compatibility
+  criadoEm         DateTime   @default(now()) @map("criado_em")
+  atualizadoEm     DateTime   @updatedAt @map("atualizado_em")
+  provider         String     @default("WAHA")
+  
+  // Campos para gerenciar Webhook vs WebSocket
+  webhookEnabled   Boolean    @default(false) @map("webhook_enabled")
+  websocketEnabled Boolean    @default(false) @map("websocket_enabled")
+  webhookUrl       String?    @map("webhook_url")
+  webhookBase64    Boolean?   @map("webhook_base64")
+  
+  campaigns        Campaign[]
 
   // Relations
   tenant Tenant? @relation(fields: [tenantId], references: [id], onDelete: Cascade)
@@ -253,11 +273,19 @@ model User {
   notifications    Notification[]
   userNotifications UserNotification[]
   createdTemplates MessageTemplate[] @relation("TemplateCreator")
+  createdPreRegisteredMedia PreRegisteredMedia[] @relation("PreRegisteredMediaCreator")
   createdFlows     AutomationFlow[]  @relation("FlowCreator")
   createdIntegrations Integration[]   @relation("IntegrationCreator")
   auditLogs        AuditLog[]
+  assignedCompanies Company[]
+  assignedOpportunities Opportunity[]
+  assignedActivities Activity[]
+  assignedLeads    Lead[]
+  assignedChats    Chat[]              @relation("UserChats")
+  crmNotifications CRMNotification[]
 
   @@index([tenantId])
+  @@index([email])
   @@map("users")
 }
 
@@ -412,6 +440,47 @@ enum MessageType {
 }
 
 // ============================================================================
+// PRÉ-CADASTRADAS PARA CRM
+// ============================================================================
+
+model PreRegisteredMedia {
+  id          String    @id @default(uuid())
+  name        String    // Nome da mídia (ex: "Catálogo Verão", "Áudio Pagamento")
+  description String?   @db.Text // Descrição da mídia
+  category    String    // Categoria (ex: "Produtos", "Pagamento", "Promoções")
+  type        MediaType // Tipo da mídia
+  mediaUrl    String    @map("media_url") // URL do arquivo
+  thumbnailUrl String?  @map("thumbnail_url") // URL da thumbnail (para vídeos/imagens)
+  fileSize    Int?      @map("file_size") // Tamanho do arquivo em bytes
+  mimeType    String?   @map("mime_type") // Tipo MIME do arquivo
+  tags        String[]  // Tags para busca
+  isActive    Boolean   @default(true) @map("is_active")
+  usageCount  Int       @default(0) @map("usage_count") // Quantas vezes foi usada
+  tenantId    String    @map("tenant_id")
+  createdBy   String    @map("created_by")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+
+  // Relations
+  tenant      Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  creator     User      @relation("PreRegisteredMediaCreator", fields: [createdBy], references: [id])
+
+  @@index([tenantId])
+  @@index([category])
+  @@index([type])
+  @@index([isActive])
+  @@index([tags])
+  @@map("pre_registered_media")
+}
+
+enum MediaType {
+  IMAGE     // Imagens
+  VIDEO     // Vídeos
+  AUDIO     // Áudios
+  DOCUMENT  // Documentos
+}
+
+// ============================================================================
 // AUTOMATION AND WORKFLOW SYSTEM
 // ============================================================================
 
@@ -544,4 +613,329 @@ model AuditLog {
   @@index([action, timestamp])
   @@index([entityType, entityId])
   @@map("audit_logs")
+}
+
+// ============================================================================
+// CRM MODELS - OPPORTUNITIES AND PIPELINE
+// ============================================================================
+
+model Company {
+  id              String      @id @default(uuid())
+  tenantId        String      @map("tenant_id")
+  name            String
+  industry        String?
+  size            CompanySize?
+  website         String?
+  phone           String?
+  email           String?
+  address         Json?       // Endereço completo
+  description     String?     @db.Text
+  tags            String[]
+  customFields    Json?       @map("custom_fields")
+  assignedTo      String?     @map("assigned_to")
+  createdAt       DateTime    @default(now()) @map("created_at")
+  updatedAt       DateTime    @updatedAt @map("updated_at")
+  
+  // Relations
+  tenant          Tenant      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  contacts        Contact[]
+  opportunities   Opportunity[]
+  assignedUser    User?       @relation(fields: [assignedTo], references: [id])
+  
+  @@index([tenantId])
+  @@index([assignedTo])
+  @@map("companies")
+}
+
+model Opportunity {
+  id              String           @id @default(uuid())
+  tenantId        String           @map("tenant_id")
+  contactId       String?          @map("contact_id")
+  companyId       String?          @map("company_id")
+  title           String
+  value           Decimal          @db.Decimal(12,2)
+  stage           OpportunityStage
+  probability     Int              // 0-100%
+  expectedClose   DateTime?        @map("expected_close")
+  actualClose     DateTime?        @map("actual_close")
+  source          String?          // Lead source
+  description     String?          @db.Text
+  assignedTo      String?          @map("assigned_to")
+  tags            String[]
+  customFields    Json?            @map("custom_fields")
+  createdAt       DateTime         @default(now()) @map("created_at")
+  updatedAt       DateTime         @updatedAt @map("updated_at")
+  
+  // Relations
+  tenant          Tenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  contact         Contact?         @relation(fields: [contactId], references: [id], onDelete: SetNull)
+  company         Company?         @relation(fields: [companyId], references: [id], onDelete: SetNull)
+  assignedUser    User?            @relation(fields: [assignedTo], references: [id])
+  activities      Activity[]
+  
+  @@index([tenantId])
+  @@index([contactId])
+  @@index([companyId])
+  @@index([assignedTo])
+  @@index([stage])
+  @@map("opportunities")
+}
+
+model Activity {
+  id              String        @id @default(uuid())
+  tenantId        String        @map("tenant_id")
+  contactId       String?       @map("contact_id")
+  opportunityId   String?       @map("opportunity_id")
+  type            ActivityType
+  subject         String
+  description     String?       @db.Text
+  dueDate         DateTime?     @map("due_date")
+  completedAt     DateTime?     @map("completed_at")
+  assignedTo      String        @map("assigned_to")
+  priority        Priority
+  status          ActivityStatus
+  metadata        Json?         // Dados específicos da atividade
+  createdAt       DateTime      @default(now()) @map("created_at")
+  
+  // Relations
+  tenant          Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  contact         Contact?      @relation(fields: [contactId], references: [id], onDelete: SetNull)
+  opportunity     Opportunity?  @relation(fields: [opportunityId], references: [id], onDelete: SetNull)
+  assignedUser    User          @relation(fields: [assignedTo], references: [id])
+  
+  @@index([tenantId])
+  @@index([contactId])
+  @@index([opportunityId])
+  @@index([assignedTo])
+  @@index([type, status])
+  @@map("activities")
+}
+
+model Lead {
+  id              String      @id @default(uuid())
+  tenantId        String      @map("tenant_id")
+  firstName       String      @map("first_name")
+  lastName        String      @map("last_name")
+  email           String
+  phone           String?
+  company         String?
+  source          LeadSource
+  status          LeadStatus
+  score           Int         @default(0)
+  tags            String[]
+  customFields    Json?       @map("custom_fields")
+  assignedTo      String?     @map("assigned_to")
+  convertedAt     DateTime?   @map("converted_at")
+  convertedToContactId String? @map("converted_to_contact_id")
+  createdAt       DateTime    @default(now()) @map("created_at")
+  updatedAt       DateTime    @updatedAt @map("updated_at")
+  
+  // Relations
+  tenant          Tenant      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  assignedUser    User?       @relation(fields: [assignedTo], references: [id])
+  convertedToContact Contact? @relation(fields: [convertedToContactId], references: [id], onDelete: SetNull)
+  chats           Chat[]
+  
+  @@index([tenantId])
+  @@index([assignedTo])
+  @@index([status])
+  @@index([source])
+  @@map("leads")
+}
+
+// ============================================================================
+// CRM ENUMS
+// ============================================================================
+
+enum CompanySize {
+  STARTUP        // 1-10 funcionários
+  SMALL          // 11-50 funcionários
+  MEDIUM         // 51-200 funcionários
+  LARGE          // 201-1000 funcionários
+  ENTERPRISE     // 1000+ funcionários
+}
+
+enum OpportunityStage {
+  PROSPECT        // Prospecto inicial
+  QUALIFIED       // Qualificado
+  PROPOSAL        // Proposta enviada
+  NEGOTIATION     // Negociação
+  CLOSED_WON      // Ganha
+  CLOSED_LOST     // Perdida
+  ON_HOLD         // Em espera
+}
+
+enum ActivityType {
+  CALL         // Ligação
+  EMAIL        // Email
+  MEETING      // Reunião
+  TASK         // Tarefa
+  WHATSAPP     // Mensagem WhatsApp
+  NOTE         // Anotação
+  FOLLOW_UP    // Follow-up
+  PROPOSAL     // Proposta
+  DEMO         // Demonstração
+}
+
+enum Priority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+enum ActivityStatus {
+  PENDING       // Pendente
+  IN_PROGRESS   // Em andamento
+  COMPLETED     // Concluída
+  CANCELLED     // Cancelada
+}
+
+enum LeadSource {
+  WEBSITE         // Site
+  SOCIAL_MEDIA    // Redes sociais
+  REFERRAL        // Indicação
+  COLD_CALL       // Ligação fria
+  EMAIL_CAMPAIGN  // Campanha email
+  WHATSAPP_CAMPAIGN // Campanha WhatsApp
+  EVENT           // Evento
+  ADS             // Anúncios
+  OTHER           // Outro
+}
+
+enum LeadStatus {
+  NEW             // Novo
+  CONTACTED       // Contatado
+  QUALIFIED       // Qualificado
+  PROPOSAL        // Proposta
+  NEGOTIATION     // Negociação
+  CONVERTED       // Convertido
+  LOST            // Perdido
+}
+
+// ============================================================================
+// CHAT AND MESSAGING SYSTEM
+// ============================================================================
+
+model Chat {
+  id              String     @id @default(uuid())
+  tenantId        String     @map("tenant_id")
+  phone           String     // Telefone do cliente (com código do país)
+  contactName     String?    @map("contact_name") // Nome do contato
+  profilePicture  String?    @map("profile_picture") // URL da foto de perfil
+  contactId       String?    @map("contact_id")
+  leadId          String?    @map("lead_id")
+  assignedTo      String?    @map("assigned_to")
+  lastMessage     String?    @db.Text @map("last_message")
+  lastMessageAt   DateTime?  @map("last_message_at")
+  unreadCount     Int        @default(0) @map("unread_count")
+  status          ChatStatus @default(OPEN)
+  sessionId       String?    @map("session_id") // ID da sessão WhatsApp
+  isSyncing       Boolean    @default(false) @map("is_syncing") // Indica se está sincronizando histórico
+  createdAt       DateTime   @default(now()) @map("created_at")
+  updatedAt       DateTime   @updatedAt @map("updated_at")
+  
+  // Relations
+  tenant          Tenant     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  contact         Contact?   @relation(fields: [contactId], references: [id], onDelete: SetNull)
+  lead            Lead?      @relation(fields: [leadId], references: [id], onDelete: SetNull)
+  assignedUser    User?      @relation("UserChats", fields: [assignedTo], references: [id], onDelete: SetNull)
+  messages        Message[]
+  
+  @@unique([tenantId, phone]) // Um chat por telefone por tenant
+  @@index([tenantId])
+  @@index([contactId])
+  @@index([leadId])
+  @@index([assignedTo])
+  @@index([status])
+  @@index([lastMessageAt])
+  @@map("chats")
+}
+
+model Message {
+  id              String      @id @default(uuid())
+  chatId          String      @map("chat_id")
+  phone           String      // Telefone do remetente/destinatário
+  fromMe          Boolean     @map("from_me") // true = enviada, false = recebida
+  body            String?     @db.Text
+  mediaUrl        String?     @map("media_url")
+  type            ChatMessageType @default(TEXT)
+  timestamp       DateTime    // Data/hora da mensagem
+  ack             Int?        // Status de entrega (0=pending, 1=sent, 2=delivered, 3=read)
+  messageId       String?     @map("message_id") // ID da mensagem no WhatsApp
+  quotedMsgId     String?     @map("quoted_msg_id") // ID da mensagem citada
+  metadata        Json?       // Metadados adicionais
+  createdAt       DateTime    @default(now()) @map("created_at")
+  
+  // Relations
+  chat            Chat        @relation(fields: [chatId], references: [id], onDelete: Cascade)
+  
+  @@index([chatId])
+  @@index([timestamp])
+  @@index([fromMe])
+  @@map("messages")
+}
+
+// ============================================================================
+// CRM NOTIFICATIONS SYSTEM
+// ============================================================================
+
+model CRMNotification {
+  id          String                  @id @default(uuid())
+  tenantId    String                  @map("tenant_id")
+  userId      String                  @map("user_id")
+  type        CRMNotificationType
+  title       String
+  message     String                  @db.Text
+  link        String?                 // URL para redirecionar
+  data        Json?                   // Dados adicionais
+  read        Boolean                 @default(false)
+  readAt      DateTime?               @map("read_at")
+  createdAt   DateTime                @default(now()) @map("created_at")
+  
+  // Relations
+  tenant      Tenant                  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  user        User                    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@index([tenantId])
+  @@index([userId])
+  @@index([read])
+  @@index([createdAt])
+  @@map("crm_notifications")
+}
+
+// ============================================================================
+// CHAT AND NOTIFICATION ENUMS
+// ============================================================================
+
+enum ChatStatus {
+  OPEN            // Aberto/Ativo
+  RESOLVED        // Resolvido/Fechado
+  PENDING         // Aguardando resposta
+  ARCHIVED        // Arquivado
+}
+
+enum ChatMessageType {
+  TEXT            // Mensagem de texto
+  IMAGE           // Imagem
+  AUDIO           // Áudio
+  VOICE           // Nota de voz
+  VIDEO           // Vídeo
+  DOCUMENT        // Documento
+  STICKER         // Sticker
+  LOCATION        // Localização
+  CONTACT         // Contato
+  LINK            // Link
+  OTHER           // Outro tipo
+}
+
+enum CRMNotificationType {
+  NEW_MESSAGE     // Nova mensagem recebida
+  ACTIVITY_DUE    // Atividade próxima do vencimento
+  OPPORTUNITY_UPDATE // Oportunidade atualizada
+  LEAD_HOT        // Lead quente
+  ACTIVITY_COMPLETED // Atividade concluída
+  CHAT_ASSIGNED   // Chat atribuído
+  SYSTEM          // Notificação do sistema
+  INFO            // Informação geral
 }

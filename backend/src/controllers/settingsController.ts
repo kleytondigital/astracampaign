@@ -9,7 +9,6 @@ import fs from 'fs';
 
 const tenantSettingsService = new TenantSettingsService();
 
-
 // Configuração do multer para upload de logos
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
@@ -27,73 +26,101 @@ const upload = multer({
   storage,
   limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
   fileFilter: (req, file, cb) => {
-    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp', 'image/x-icon', 'image/vnd.microsoft.icon'];
+    const allowedTypes = [
+      'image/jpeg',
+      'image/jpg',
+      'image/png',
+      'image/gif',
+      'image/webp',
+      'image/x-icon',
+      'image/vnd.microsoft.icon'
+    ];
     if (allowedTypes.includes(file.mimetype)) {
       cb(null, true);
     } else {
-      cb(new Error(`Tipo de arquivo não permitido: ${file.mimetype}. Use JPEG, PNG, GIF, WebP ou ICO.`));
+      cb(
+        new Error(
+          `Tipo de arquivo não permitido: ${file.mimetype}. Use JPEG, PNG, GIF, WebP ou ICO.`
+        )
+      );
     }
   }
 });
 
 // Validation rules
 export const settingsValidation = [
-  body('wahaHost').optional().custom((value) => {
-    if (!value || value === '') return true;
-    if (!/^https?:\/\/.+/.test(value)) {
-      throw new Error('Host WAHA deve ser uma URL válida');
-    }
-    return true;
-  }),
-  body('wahaApiKey').optional().custom((value) => {
-    if (!value || value === '') return true;
-    if (value.length < 10) {
-      throw new Error('API Key deve ter pelo menos 10 caracteres');
-    }
-    return true;
-  }),
-  body('companyName').optional().custom((value) => {
-    if (!value || value === '') return true;
-    if (value.length < 1 || value.length > 100) {
-      throw new Error('Nome da empresa deve ter entre 1 e 100 caracteres');
-    }
-    return true;
-  }),
-  body('pageTitle').optional().custom((value) => {
-    if (!value || value === '') return true;
-    if (value.length < 1 || value.length > 100) {
-      throw new Error('Título da página deve ter entre 1 e 100 caracteres');
-    }
-    return true;
-  }),
-  body('openaiApiKey').optional().custom((value) => {
-    if (!value || value === '') return true;
-    if (value.length < 10) {
-      throw new Error('API Key da OpenAI deve ter pelo menos 10 caracteres');
-    }
-    return true;
-  }),
-  body('groqApiKey').optional().custom((value) => {
-    if (!value || value === '') return true;
-    if (value.length < 10) {
-      throw new Error('API Key da Groq deve ter pelo menos 10 caracteres');
-    }
-    return true;
-  }),
-  body('evolutionHost').optional().custom((value) => {
-    if (!value || value === '') return true;
-    if (!/^https?:\/\/.+/.test(value)) {
-      throw new Error('Host Evolution deve ser uma URL válida');
-    }
-    return true;
-  }),
-  body('evolutionApiKey').optional().custom((value) => {
-    if (!value || value === '') return true;
-    if (value.length < 10) {
-      throw new Error('API Key Evolution deve ter pelo menos 10 caracteres');
-    }
-    return true;
-  })
+  body('wahaHost')
+    .optional()
+    .custom((value) => {
+      if (!value || value === '') return true;
+      if (!/^https?:\/\/.+/.test(value)) {
+        throw new Error('Host WAHA deve ser uma URL válida');
+      }
+      return true;
+    }),
+  body('wahaApiKey')
+    .optional()
+    .custom((value) => {
+      if (!value || value === '') return true;
+      if (value.length < 10) {
+        throw new Error('API Key deve ter pelo menos 10 caracteres');
+      }
+      return true;
+    }),
+  body('companyName')
+    .optional()
+    .custom((value) => {
+      if (!value || value === '') return true;
+      if (value.length < 1 || value.length > 100) {
+        throw new Error('Nome da empresa deve ter entre 1 e 100 caracteres');
+      }
+      return true;
+    }),
+  body('pageTitle')
+    .optional()
+    .custom((value) => {
+      if (!value || value === '') return true;
+      if (value.length < 1 || value.length > 100) {
+        throw new Error('Título da página deve ter entre 1 e 100 caracteres');
+      }
+      return true;
+    }),
+  body('openaiApiKey')
+    .optional()
+    .custom((value) => {
+      if (!value || value === '') return true;
+      if (value.length < 10) {
+        throw new Error('API Key da OpenAI deve ter pelo menos 10 caracteres');
+      }
+      return true;
+    }),
+  body('groqApiKey')
+    .optional()
+    .custom((value) => {
+      if (!value || value === '') return true;
+      if (value.length < 10) {
+        throw new Error('API Key da Groq deve ter pelo menos 10 caracteres');
+      }
+      return true;
+    }),
+  body('evolutionHost')
+    .optional()
+    .custom((value) => {
+      if (!value || value === '') return true;
+      if (!/^https?:\/\/.+/.test(value)) {
+        throw new Error('Host Evolution deve ser uma URL válida');
+      }
+      return true;
+    }),
+  body('evolutionApiKey')
+    .optional()
+    .custom((value) => {
+      if (!value || value === '') return true;
+      if (value.length < 10) {
+        throw new Error('API Key Evolution deve ter pelo menos 10 caracteres');
+      }
+      return true;
+    })
 ];
 
 // Get settings
@@ -105,15 +132,25 @@ export const getSettings = async (req: AuthenticatedRequest, res: Response) => {
     // Para configurações AI, usar tenantId do usuário, ou parâmetro tenantId para SUPERADMIN
     let effectiveTenantId = req.tenantId;
     if (req.user?.role === 'SUPERADMIN') {
-      // SUPERADMIN pode gerenciar configurações de qualquer tenant
-      effectiveTenantId = (req.query.tenantId as string) || 'aa135abc-56bf-400a-b980-cc2a38f0a2b4';
+      // SUPERADMIN pode gerenciar configurações de qualquer tenant via query param
+      // Se não fornecer tenantId, retorna apenas configurações globais
+      effectiveTenantId = (req.query.tenantId as string) || undefined;
     }
+
+    console.log('⚙️ SettingsController.getSettings:', {
+      userRole: req.user?.role,
+      userTenantId: req.user?.tenantId,
+      reqTenantId: req.tenantId,
+      effectiveTenantId,
+      queryTenantId: req.query.tenantId
+    });
 
     // Buscar configurações do tenant (APIs de IA)
     let tenantSettings = null;
     if (effectiveTenantId) {
       try {
-        tenantSettings = await tenantSettingsService.getTenantSettings(effectiveTenantId);
+        tenantSettings =
+          await tenantSettingsService.getTenantSettings(effectiveTenantId);
       } catch (error) {
         console.warn('Erro ao buscar configurações do tenant:', error);
       }
@@ -150,14 +187,27 @@ export const getPublicSettings = async (req: Request, res: Response) => {
 };
 
 // Update settings
-export const updateSettings = async (req: AuthenticatedRequest, res: Response) => {
+export const updateSettings = async (
+  req: AuthenticatedRequest,
+  res: Response
+) => {
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       return res.status(400).json({ errors: errors.array() });
     }
 
-    const { wahaHost, wahaApiKey, evolutionHost, evolutionApiKey, companyName, pageTitle, openaiApiKey, groqApiKey, tenantId } = req.body;
+    const {
+      wahaHost,
+      wahaApiKey,
+      evolutionHost,
+      evolutionApiKey,
+      companyName,
+      pageTitle,
+      openaiApiKey,
+      groqApiKey,
+      tenantId
+    } = req.body;
 
     // Atualizar configurações globais
     const globalSettings = await settingsService.updateSettings({
@@ -178,11 +228,17 @@ export const updateSettings = async (req: AuthenticatedRequest, res: Response) =
 
     // Atualizar configurações do tenant (APIs de IA)
     let tenantSettings = null;
-    if (effectiveTenantId && (openaiApiKey !== undefined || groqApiKey !== undefined)) {
-      tenantSettings = await tenantSettingsService.updateTenantSettings(effectiveTenantId, {
-        openaiApiKey,
-        groqApiKey
-      });
+    if (
+      effectiveTenantId &&
+      (openaiApiKey !== undefined || groqApiKey !== undefined)
+    ) {
+      tenantSettings = await tenantSettingsService.updateTenantSettings(
+        effectiveTenantId,
+        {
+          openaiApiKey,
+          groqApiKey
+        }
+      );
     }
 
     // Combinar as configurações para resposta
@@ -283,7 +339,10 @@ export const removeFavicon = async (req: Request, res: Response) => {
 
     if (settings.faviconUrl) {
       // Remover arquivo físico
-      const filePath = path.join('/app/uploads', path.basename(settings.faviconUrl.replace('/api/uploads/', '')));
+      const filePath = path.join(
+        '/app/uploads',
+        path.basename(settings.faviconUrl.replace('/api/uploads/', ''))
+      );
       if (fs.existsSync(filePath)) {
         fs.unlinkSync(filePath);
       }
@@ -311,7 +370,10 @@ export const removeLogo = async (req: Request, res: Response) => {
 
     if (settings.logoUrl) {
       // Remover arquivo físico
-      const filePath = path.join('/app/uploads', path.basename(settings.logoUrl.replace('/api/uploads/', '')));
+      const filePath = path.join(
+        '/app/uploads',
+        path.basename(settings.logoUrl.replace('/api/uploads/', ''))
+      );
       if (fs.existsSync(filePath)) {
         fs.unlinkSync(filePath);
       }
@@ -376,7 +438,10 @@ export const removeIcon = async (req: Request, res: Response) => {
 
     if (settings.iconUrl) {
       // Remover arquivo físico
-      const filePath = path.join('/app/uploads', path.basename(settings.iconUrl.replace('/api/uploads/', '')));
+      const filePath = path.join(
+        '/app/uploads',
+        path.basename(settings.iconUrl.replace('/api/uploads/', ''))
+      );
       if (fs.existsSync(filePath)) {
         fs.unlinkSync(filePath);
       }

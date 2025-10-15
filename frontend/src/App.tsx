@@ -5,9 +5,20 @@ import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { TenantProvider } from './contexts/TenantContext';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { Navigation } from './components/Navigation';
+import { NotificationBell } from './components/NotificationBell';
 import { ContactsPage } from './pages/ContactsPage';
 import { WhatsAppConnectionsPage } from './pages/WhatsAppConnectionsPage';
 import { CampaignsPage } from './pages/CampaignsPage';
+import OpportunitiesPage from './pages/OpportunitiesPage';
+import OpportunityDetailPage from './pages/OpportunityDetailPage';
+import ActivitiesPage from './pages/ActivitiesPage';
+import CompaniesPage from './pages/CompaniesPage';
+import CompanyDetailPage from './pages/CompanyDetailPage';
+import LeadsPage from './pages/LeadsPage';
+import LeadDetailPage from './pages/LeadDetailPage';
+import SalesDashboardPage from './pages/SalesDashboardPage';
+import SalesAutomationsPage from './pages/SalesAutomationsPage';
+import AtendimentoPage from './pages/AtendimentoPage';
 import { SettingsPage } from './pages/SettingsPage';
 import { UsersPage } from './pages/UsersPage';
 import { LoginPage } from './pages/LoginPage';
@@ -32,7 +43,7 @@ function AppContent() {
     if (settings?.faviconUrl) {
       // Remover favicons existentes
       const existingFavicons = document.querySelectorAll('link[rel*="icon"]');
-      existingFavicons.forEach(favicon => favicon.remove());
+      existingFavicons.forEach((favicon) => favicon.remove());
 
       // Adicionar novo favicon com cache busting
       const favicon = document.createElement('link');
@@ -54,10 +65,10 @@ function AppContent() {
   useEffect(() => {
     const removeBanners = () => {
       // Remove elements with specific version banner text
-      const elements = Array.from(document.querySelectorAll('*')).filter(el =>
-        el.textContent && el.textContent.includes('BUILD 2025-09-17-19:02')
+      const elements = Array.from(document.querySelectorAll('*')).filter(
+        (el) => el.textContent && el.textContent.includes('BUILD 2025-09-17-19:02')
       );
-      elements.forEach(el => {
+      elements.forEach((el) => {
         el.remove();
       });
     };
@@ -95,10 +106,15 @@ function AppContent() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-slate-50 flex">
       <Navigation />
 
-      <main className="main-content flex-1 flex flex-col">
+      <main className="main-content flex-1 flex flex-col relative z-10">
+        {/* Top bar com notificações */}
+        <div className="bg-white border-b border-gray-200 px-6 py-3 flex items-center justify-end">
+          <NotificationBell />
+        </div>
+
         <Routes>
           <Route path="/login" element={<Navigate to="/contatos" replace />} />
           <Route path="/" element={<Navigate to="/contatos" replace />} />
@@ -123,6 +139,86 @@ function AppContent() {
             element={
               <ProtectedRoute>
                 <CampaignsPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/oportunidades"
+            element={
+              <ProtectedRoute>
+                <OpportunitiesPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/oportunidades/:id"
+            element={
+              <ProtectedRoute>
+                <OpportunityDetailPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/atividades"
+            element={
+              <ProtectedRoute>
+                <ActivitiesPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/empresas"
+            element={
+              <ProtectedRoute>
+                <CompaniesPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/empresas/:id"
+            element={
+              <ProtectedRoute>
+                <CompanyDetailPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/leads"
+            element={
+              <ProtectedRoute>
+                <LeadsPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/leads/:id"
+            element={
+              <ProtectedRoute>
+                <LeadDetailPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/vendas-dashboard"
+            element={
+              <ProtectedRoute>
+                <SalesDashboardPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/automacoes-vendas"
+            element={
+              <ProtectedRoute>
+                <SalesAutomationsPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/atendimento"
+            element={
+              <ProtectedRoute>
+                <AtendimentoPage />
               </ProtectedRoute>
             }
           />

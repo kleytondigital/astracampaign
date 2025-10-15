@@ -11,13 +11,16 @@
     "format": "prettier --write src/**/*.{ts,tsx}"
   },
   "dependencies": {
+    "@hello-pangea/dnd": "^18.0.1",
     "@hookform/resolvers": "^3.3.2",
     "libphonenumber-js": "^1.10.51",
+    "lucide-react": "^0.545.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-hook-form": "^7.48.2",
     "react-hot-toast": "^2.4.1",
     "react-router-dom": "^7.9.1",
+    "socket.io-client": "^4.8.1",
     "xlsx": "^0.18.5",
     "zod": "^3.22.4"
   },

@@ -5,11 +5,26 @@ const prisma = new PrismaClient();
 export class TenantSettingsService {
   async getTenantSettings(tenantId: string) {
     try {
-      console.log('📋 TenantSettingsService.getTenantSettings - tenantId:', tenantId, 'type:', typeof tenantId);
+      console.log(
+        '📋 TenantSettingsService.getTenantSettings - tenantId:',
+        tenantId,
+        'type:',
+        typeof tenantId
+      );
 
       if (!tenantId || tenantId === 'undefined' || tenantId === 'null') {
-        console.error('❌ TenantID inválido recebido:', tenantId);
-        throw new Error(`TenantID inválido: ${tenantId}`);
+        console.log('⚠️ TenantID não fornecido (usuário pode ser SUPERADMIN)');
+        return null; // SUPERADMIN não precisa de tenant settings
+      }
+
+      // Verificar se o tenant existe antes de tentar criar settings
+      const tenant = await prisma.tenant.findUnique({
+        where: { id: tenantId }
+      });
+
+      if (!tenant) {
+        console.warn('⚠️ Tenant não encontrado:', tenantId);
+        return null; // Retornar null ao invés de lançar erro
       }
 
       let settings = await prisma.tenantSettings.findUnique({
@@ -17,7 +32,10 @@ export class TenantSettingsService {
       });
 
       if (!settings) {
-        console.log('⚠️ TenantSettings não encontrado, criando novo para tenantId:', tenantId);
+        console.log(
+          '⚠️ TenantSettings não encontrado, criando novo para tenantId:',
+          tenantId
+        );
         settings = await prisma.tenantSettings.create({
           data: {
             tenantId,
@@ -30,23 +48,34 @@ export class TenantSettingsService {
 
       return settings;
     } catch (error) {
-      console.error('❌ Error getting tenant settings for tenantId:', tenantId, 'error:', error);
+      console.error(
+        '❌ Error getting tenant settings for tenantId:',
+        tenantId,
+        'error:',
+        error
+      );
       throw error;
     }
   }
 
-  async updateTenantSettings(tenantId: string, data: {
-    openaiApiKey?: string | null;
-    groqApiKey?: string | null;
-    customBranding?: any;
-  }) {
+  async updateTenantSettings(
+    tenantId: string,
+    data: {
+      openaiApiKey?: string | null;
+      groqApiKey?: string | null;
+      customBranding?: any;
+    }
+  ) {
     try {
       const settings = await prisma.tenantSettings.upsert({
         where: { tenantId },
         update: {
-          openaiApiKey: data.openaiApiKey !== undefined ? data.openaiApiKey : undefined,
-          groqApiKey: data.groqApiKey !== undefined ? data.groqApiKey : undefined,
-          customBranding: data.customBranding !== undefined ? data.customBranding : undefined
+          openaiApiKey:
+            data.openaiApiKey !== undefined ? data.openaiApiKey : undefined,
+          groqApiKey:
+            data.groqApiKey !== undefined ? data.groqApiKey : undefined,
+          customBranding:
+            data.customBranding !== undefined ? data.customBranding : undefined
         },
         create: {
           tenantId,

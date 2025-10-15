@@ -69,13 +69,39 @@ export const listCampaigns = async (req: AuthenticatedRequest, res: Response) =>
       prisma.campaign.count({ where })
     ]);
 
-    // Parse JSON fields
-    const campaignsWithParsedData = campaigns.map(campaign => ({
-      ...campaign,
-      targetTags: JSON.parse(campaign.targetTags),
-      sessionNames: campaign.sessionNames ? JSON.parse(campaign.sessionNames) : [],
-      messageContent: JSON.parse(campaign.messageContent)
-    }));
+    // Parse JSON fields com tratamento de erro
+    const campaignsWithParsedData = campaigns.map(campaign => {
+      try {
+        return {
+          ...campaign,
+          targetTags: typeof campaign.targetTags === 'string' 
+            ? JSON.parse(campaign.targetTags) 
+            : campaign.targetTags || [],
+          sessionNames: campaign.sessionNames 
+            ? (typeof campaign.sessionNames === 'string' ? JSON.parse(campaign.sessionNames) : campaign.sessionNames)
+            : [],
+          messageContent: typeof campaign.messageContent === 'string'
+            ? JSON.parse(campaign.messageContent)
+            : campaign.messageContent || {}
+        };
+      } catch (error) {
+        console.error('Erro ao fazer parse de campanha:', {
+          campaignId: campaign.id,
+          error: error.message,
+          targetTags: campaign.targetTags,
+          sessionNames: campaign.sessionNames,
+          messageContent: campaign.messageContent
+        });
+        
+        // Retornar campanha com valores padrão em caso de erro
+        return {
+          ...campaign,
+          targetTags: [],
+          sessionNames: [],
+          messageContent: {}
+        };
+      }
+    });
 
     res.json({
       campaigns: campaignsWithParsedData,

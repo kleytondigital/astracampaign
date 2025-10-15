@@ -4,6 +4,8 @@ interface Settings {
   id: string;
   wahaHost: string;
   wahaApiKey: string;
+  evolutionHost?: string;
+  evolutionApiKey?: string;
   logoUrl?: string;
   companyName?: string;
   faviconUrl?: string;
@@ -58,6 +60,6 @@ export function useSettings() {
     settings,
     loading,
     error,
-    refetch: loadSettings
+    refetch: loadSettings,
   };
 }
