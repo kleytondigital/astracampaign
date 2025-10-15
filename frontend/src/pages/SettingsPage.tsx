@@ -5,6 +5,7 @@ import { z } from 'zod';
 import toast from 'react-hot-toast';
 import { Header } from '../components/Header';
 import { useAuth } from '../contexts/AuthContext';
+import { apiFetch } from '../config/api';
 
 interface Settings {
   id: string;
@@ -37,7 +38,7 @@ export function SettingsPage() {
       (headers as Record<string, string>).Authorization = `Bearer ${token}`;
     }
 
-    return fetch(url, {
+    return apiFetch(url, {
       ...options,
       headers,
     });

@@ -4,6 +4,7 @@ import { Header } from '../components/Header';
 import { useSettings } from '../hooks/useSettings';
 import { useTenant } from '../contexts/TenantContext';
 import { ConnectionModeModal } from '../components/ConnectionModeModal';
+import { apiFetch } from '../config/api';
 
 // Componente para exibir contador do QR Code
 function QRCountdown({ expiresAt }: { expiresAt: Date }) {
@@ -126,7 +127,7 @@ export function WhatsAppConnectionsPage() {
       (headers as Record<string, string>)['X-Tenant-Id'] = selectedTenantId;
     }
 
-    return fetch(url, {
+    return apiFetch(url, {
       ...options,
       headers,
     });

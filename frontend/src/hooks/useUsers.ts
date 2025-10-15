@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { User, UsersResponse } from '../types';
 import { useAuth } from '../contexts/AuthContext';
+import { apiFetch } from '../config/api';
 
 interface UseUsersParams {
   search?: string;
@@ -28,7 +29,7 @@ export function useUsers({ search, page = 1, pageSize = 20 }: UseUsersParams = {
       (headers as Record<string, string>).Authorization = `Bearer ${token}`;
     }
 
-    return fetch(url, {
+    return apiFetch(url, {
       ...options,
       headers,
     });
