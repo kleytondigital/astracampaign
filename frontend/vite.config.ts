@@ -3,6 +3,12 @@ import react from '@vitejs/plugin-react';
 
 export default defineConfig({
   plugins: [react()],
+  define: {
+    // Define a URL do backend para build de produção
+    'import.meta.env.VITE_API_URL': JSON.stringify(
+      process.env.VITE_API_URL || 'https://n8n-back-crm.h3ag2x.easypanel.host'
+    ),
+  },
   esbuild: false,
   server: {
     port: 3006,
