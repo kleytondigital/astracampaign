@@ -264,14 +264,13 @@ model User {
   role         String    @default("USER") // USER, ADMIN, SUPERADMIN
   ativo        Boolean   @default(true)
   tenantId     String?   @map("tenant_id") // NULL for SUPERADMIN
-  departmentId String?   @map("department_id") // Departamento do usuário
   ultimoLogin  DateTime? @map("ultimo_login")
   criadoEm     DateTime  @default(now()) @map("criado_em")
   atualizadoEm DateTime  @updatedAt @map("atualizado_em")
 
   // Relations
   tenant           Tenant?           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  department       Department?       @relation(fields: [departmentId], references: [id], onDelete: SetNull)
+  departments      UserDepartment[]  // Relacionamento N:N com departamentos
   tenants          UserTenant[]      // Relacionamento muitos-para-muitos com tenants
   alerts           Alert[]
   notifications    Notification[]
@@ -292,7 +291,6 @@ model User {
   sentMessages     Message[]           // Mensagens enviadas pelo usuário
 
   @@index([tenantId])
-  @@index([departmentId])
   @@index([email])
   @@map("users")
 }
@@ -974,15 +972,34 @@ model Department {
   updatedAt   DateTime @updatedAt @map("updated_at")
 
   // Relations
-  tenant       Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  users        User[]         // Usuários do departamento
-  chats        Chat[]         // Chats atribuídos ao departamento
-  assignments  ChatAssignment[] // Histórico de atribuições
-  metrics      ChatMetrics[]  // Métricas do departamento
+  tenant       Tenant            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  users        UserDepartment[]  // Relacionamento N:N com usuários
+  chats        Chat[]            // Chats atribuídos ao departamento
+  assignments  ChatAssignment[]  // Histórico de atribuições
+  metrics      ChatMetrics[]     // Métricas do departamento
 
   @@index([tenantId])
   @@index([active])
   @@map("departments")
+}
+
+// Tabela intermediária para relacionamento N:N entre User e Department
+model UserDepartment {
+  id           String   @id @default(uuid())
+  userId       String   @map("user_id")
+  departmentId String   @map("department_id")
+  isDefault    Boolean  @default(false) @map("is_default") // Departamento padrão do usuário
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  department Department @relation(fields: [departmentId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, departmentId]) // Um usuário não pode estar duplicado no mesmo departamento
+  @@index([userId])
+  @@index([departmentId])
+  @@map("user_departments")
 }
 
 model ChatAssignment {

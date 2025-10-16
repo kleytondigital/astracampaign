@@ -81,13 +81,42 @@ export const createDepartment = async (req: AuthenticatedRequest, res: Response)
       return res.status(400).json({ error: 'Já existe um departamento com este nome' });
     }
 
+    // Criar departamento
     const department = await prisma.department.create({
       data: {
         tenantId: user.tenantId,
         name: name.trim(),
         description: description?.trim() || null,
         color: color || '#3B82F6'
+      }
+    });
+
+    // Adicionar automaticamente todos os usuários ADMIN do tenant ao departamento
+    const adminUsers = await prisma.user.findMany({
+      where: {
+        tenantId: user.tenantId,
+        role: { in: ['ADMIN', 'SUPERADMIN'] },
+        ativo: true
       },
+      select: { id: true }
+    });
+
+    if (adminUsers.length > 0) {
+      await prisma.userDepartment.createMany({
+        data: adminUsers.map(admin => ({
+          userId: admin.id,
+          departmentId: department.id,
+          isDefault: false
+        })),
+        skipDuplicates: true
+      });
+
+      console.log(`✅ Adicionados ${adminUsers.length} admins ao departamento ${department.name}`);
+    }
+
+    // Buscar departamento com contagens
+    const departmentWithCount = await prisma.department.findUnique({
+      where: { id: department.id },
       include: {
         _count: {
           select: {
@@ -100,7 +129,7 @@ export const createDepartment = async (req: AuthenticatedRequest, res: Response)
 
     res.status(201).json({
       success: true,
-      data: department,
+      data: departmentWithCount,
       message: 'Departamento criado com sucesso'
     });
   } catch (error) {
@@ -315,29 +344,277 @@ export const getDepartmentUsers = async (req: AuthenticatedRequest, res: Respons
       return res.status(404).json({ error: 'Departamento não encontrado' });
     }
 
-    const users = await prisma.user.findMany({
+    // Buscar usuários através da tabela intermediária
+    const userDepartments = await prisma.userDepartment.findMany({
       where: {
-        departmentId: id,
+        departmentId: id
+      },
+      include: {
+        user: {
+          where: {
+            tenantId: user.tenantId,
+            ativo: true
+          },
+          select: {
+            id: true,
+            nome: true,
+            email: true,
+            role: true,
+            ultimoLogin: true,
+            criadoEm: true,
+            _count: {
+              select: {
+                assignedChats: true,
+                chatAssignments: {
+                  where: {
+                    status: 'ACTIVE'
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    });
+
+    const users = userDepartments
+      .filter(ud => ud.user !== null)
+      .map(ud => ({
+        ...ud.user,
+        isDefault: ud.isDefault,
+        addedAt: ud.createdAt
+      }))
+      .sort((a, b) => a.nome.localeCompare(b.nome));
+
+    res.json({
+      success: true,
+      data: users
+    });
+  } catch (error) {
+    console.error('❌ Erro ao listar usuários do departamento:', error);
+    res.status(500).json({ error: 'Erro interno do servidor' });
+  }
+};
+
+// ============================================================================
+// ADICIONAR USUÁRIO AO DEPARTAMENTO
+// ============================================================================
+export const addUserToDepartment = async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const { user } = req;
+    const { id } = req.params; // departmentId
+    const { userId, isDefault } = req.body;
+    
+    if (!user?.tenantId) {
+      return res.status(401).json({ error: 'Usuário não autenticado' });
+    }
+
+    // Apenas ADMIN e SUPERADMIN podem adicionar usuários
+    if (user.role !== 'ADMIN' && user.role !== 'SUPERADMIN') {
+      return res.status(403).json({ error: 'Sem permissão para adicionar usuários' });
+    }
+
+    if (!userId) {
+      return res.status(400).json({ error: 'ID do usuário é obrigatório' });
+    }
+
+    // Verificar se o departamento existe e pertence ao tenant
+    const department = await prisma.department.findFirst({
+      where: {
+        id,
+        tenantId: user.tenantId
+      }
+    });
+
+    if (!department) {
+      return res.status(404).json({ error: 'Departamento não encontrado' });
+    }
+
+    // Verificar se o usuário existe e pertence ao tenant
+    const targetUser = await prisma.user.findFirst({
+      where: {
+        id: userId,
         tenantId: user.tenantId,
         ativo: true
+      }
+    });
+
+    if (!targetUser) {
+      return res.status(404).json({ error: 'Usuário não encontrado' });
+    }
+
+    // Verificar se o usuário já está no departamento
+    const existingRelation = await prisma.userDepartment.findFirst({
+      where: {
+        userId,
+        departmentId: id
+      }
+    });
+
+    if (existingRelation) {
+      return res.status(400).json({ error: 'Usuário já está neste departamento' });
+    }
+
+    // Se isDefault for true, remover isDefault de outros departamentos do usuário
+    if (isDefault) {
+      await prisma.userDepartment.updateMany({
+        where: {
+          userId,
+          isDefault: true
+        },
+        data: {
+          isDefault: false
+        }
+      });
+    }
+
+    // Adicionar usuário ao departamento
+    const userDepartment = await prisma.userDepartment.create({
+      data: {
+        userId,
+        departmentId: id,
+        isDefault: isDefault || false
+      },
+      include: {
+        user: {
+          select: {
+            id: true,
+            nome: true,
+            email: true,
+            role: true
+          }
+        },
+        department: {
+          select: {
+            id: true,
+            name: true,
+            color: true
+          }
+        }
+      }
+    });
+
+    res.status(201).json({
+      success: true,
+      data: userDepartment,
+      message: 'Usuário adicionado ao departamento com sucesso'
+    });
+  } catch (error) {
+    console.error('❌ Erro ao adicionar usuário ao departamento:', error);
+    res.status(500).json({ error: 'Erro interno do servidor' });
+  }
+};
+
+// ============================================================================
+// REMOVER USUÁRIO DO DEPARTAMENTO
+// ============================================================================
+export const removeUserFromDepartment = async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const { user } = req;
+    const { id, userId } = req.params; // id = departmentId
+    
+    if (!user?.tenantId) {
+      return res.status(401).json({ error: 'Usuário não autenticado' });
+    }
+
+    // Apenas ADMIN e SUPERADMIN podem remover usuários
+    if (user.role !== 'ADMIN' && user.role !== 'SUPERADMIN') {
+      return res.status(403).json({ error: 'Sem permissão para remover usuários' });
+    }
+
+    // Verificar se o departamento existe e pertence ao tenant
+    const department = await prisma.department.findFirst({
+      where: {
+        id,
+        tenantId: user.tenantId
+      }
+    });
+
+    if (!department) {
+      return res.status(404).json({ error: 'Departamento não encontrado' });
+    }
+
+    // Verificar se o usuário alvo é ADMIN (admins não podem ser removidos)
+    const targetUser = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { role: true }
+    });
+
+    if (targetUser && (targetUser.role === 'ADMIN' || targetUser.role === 'SUPERADMIN')) {
+      return res.status(403).json({ 
+        error: 'Administradores são automaticamente membros de todos os departamentos e não podem ser removidos' 
+      });
+    }
+
+    // Remover usuário do departamento
+    const deleted = await prisma.userDepartment.deleteMany({
+      where: {
+        userId,
+        departmentId: id
+      }
+    });
+
+    if (deleted.count === 0) {
+      return res.status(404).json({ error: 'Usuário não encontrado neste departamento' });
+    }
+
+    res.json({
+      success: true,
+      message: 'Usuário removido do departamento com sucesso'
+    });
+  } catch (error) {
+    console.error('❌ Erro ao remover usuário do departamento:', error);
+    res.status(500).json({ error: 'Erro interno do servidor' });
+  }
+};
+
+// ============================================================================
+// LISTAR USUÁRIOS DISPONÍVEIS PARA ADICIONAR
+// ============================================================================
+export const getAvailableUsers = async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const { user } = req;
+    const { id } = req.params; // departmentId
+    
+    if (!user?.tenantId) {
+      return res.status(401).json({ error: 'Usuário não autenticado' });
+    }
+
+    // Verificar se o departamento existe e pertence ao tenant
+    const department = await prisma.department.findFirst({
+      where: {
+        id,
+        tenantId: user.tenantId
+      }
+    });
+
+    if (!department) {
+      return res.status(404).json({ error: 'Departamento não encontrado' });
+    }
+
+    // Buscar usuários do tenant que NÃO estão no departamento e NÃO são admins
+    const usersInDepartment = await prisma.userDepartment.findMany({
+      where: { departmentId: id },
+      select: { userId: true }
+    });
+
+    const userIdsInDepartment = usersInDepartment.map(ud => ud.userId);
+
+    const availableUsers = await prisma.user.findMany({
+      where: {
+        tenantId: user.tenantId,
+        ativo: true,
+        role: 'USER', // Apenas usuários comuns (admins são adicionados automaticamente)
+        id: {
+          notIn: userIdsInDepartment
+        }
       },
       select: {
         id: true,
         nome: true,
         email: true,
         role: true,
-        ultimoLogin: true,
-        criadoEm: true,
-        _count: {
-          select: {
-            assignedChats: true,
-            chatAssignments: {
-              where: {
-                status: 'ACTIVE'
-              }
-            }
-          }
-        }
+        ultimoLogin: true
       },
       orderBy: {
         nome: 'asc'
@@ -346,10 +623,10 @@ export const getDepartmentUsers = async (req: AuthenticatedRequest, res: Respons
 
     res.json({
       success: true,
-      data: users
+      data: availableUsers
     });
   } catch (error) {
-    console.error('❌ Erro ao listar usuários do departamento:', error);
+    console.error('❌ Erro ao listar usuários disponíveis:', error);
     res.status(500).json({ error: 'Erro interno do servidor' });
   }
 };
