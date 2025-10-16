@@ -23,6 +23,7 @@ model Tenant {
   // Relations
   users                User[]
   userTenants          UserTenant[] // Relacionamento muitos-para-muitos
+  departments          Department[] // Departamentos do tenant
   contacts             Contact[]
   categories           Category[]
   campaigns            Campaign[]
@@ -42,6 +43,7 @@ model Tenant {
   chats                Chat[]
   crmNotifications     CRMNotification[]
   preRegisteredMedia   PreRegisteredMedia[]
+  chatMetrics          ChatMetrics[] // Métricas de atendimento
 
   @@map("tenants")
 }
@@ -262,12 +264,14 @@ model User {
   role         String    @default("USER") // USER, ADMIN, SUPERADMIN
   ativo        Boolean   @default(true)
   tenantId     String?   @map("tenant_id") // NULL for SUPERADMIN
+  departmentId String?   @map("department_id") // Departamento do usuário
   ultimoLogin  DateTime? @map("ultimo_login")
   criadoEm     DateTime  @default(now()) @map("criado_em")
   atualizadoEm DateTime  @updatedAt @map("atualizado_em")
 
   // Relations
   tenant           Tenant?           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  department       Department?       @relation(fields: [departmentId], references: [id], onDelete: SetNull)
   tenants          UserTenant[]      // Relacionamento muitos-para-muitos com tenants
   alerts           Alert[]
   notifications    Notification[]
@@ -283,8 +287,11 @@ model User {
   assignedLeads    Lead[]
   assignedChats    Chat[]              @relation("UserChats")
   crmNotifications CRMNotification[]
+  chatAssignments  ChatAssignment[]    // Atribuições de chat
+  chatMetrics      ChatMetrics[]       // Métricas de atendimento
 
   @@index([tenantId])
+  @@index([departmentId])
   @@index([email])
   @@map("users")
 }
@@ -818,30 +825,34 @@ enum LeadStatus {
 // ============================================================================
 
 model Chat {
-  id              String     @id @default(uuid())
-  tenantId        String     @map("tenant_id")
-  phone           String     // Telefone do cliente (com código do país)
-  whatsappChatId  String?    @map("whatsapp_chat_id") // ChatId original do WhatsApp (ex: 556295473360@c.us)
-  contactName     String?    @map("contact_name") // Nome do contato
-  profilePicture  String?    @map("profile_picture") // URL da foto de perfil
-  contactId       String?    @map("contact_id")
-  leadId          String?    @map("lead_id")
-  assignedTo      String?    @map("assigned_to")
-  lastMessage     String?    @db.Text @map("last_message")
-  lastMessageAt   DateTime?  @map("last_message_at")
-  unreadCount     Int        @default(0) @map("unread_count")
-  status          ChatStatus @default(OPEN)
-  sessionId       String?    @map("session_id") // ID da sessão WhatsApp
-  isSyncing       Boolean    @default(false) @map("is_syncing") // Indica se está sincronizando histórico
-  createdAt       DateTime   @default(now()) @map("created_at")
-  updatedAt       DateTime   @updatedAt @map("updated_at")
+  id              String           @id @default(uuid())
+  tenantId        String           @map("tenant_id")
+  phone           String           // Telefone do cliente (com código do país)
+  whatsappChatId  String?          @map("whatsapp_chat_id") // ChatId original do WhatsApp (ex: 556295473360@c.us)
+  contactName     String?          @map("contact_name") // Nome do contato
+  profilePicture  String?          @map("profile_picture") // URL da foto de perfil
+  contactId       String?          @map("contact_id")
+  leadId          String?          @map("lead_id")
+  assignedTo      String?          @map("assigned_to")
+  departmentId    String?          @map("department_id") // Departamento responsável pelo chat
+  lastMessage     String?          @db.Text @map("last_message")
+  lastMessageAt   DateTime?        @map("last_message_at")
+  unreadCount     Int              @default(0) @map("unread_count")
+  status          ChatStatus       @default(OPEN)
+  serviceStatus   ChatServiceStatus @default(WAITING) @map("service_status") // Status do atendimento
+  sessionId       String?          @map("session_id") // ID da sessão WhatsApp
+  isSyncing       Boolean          @default(false) @map("is_syncing") // Indica se está sincronizando histórico
+  createdAt       DateTime         @default(now()) @map("created_at")
+  updatedAt       DateTime         @updatedAt @map("updated_at")
   
   // Relations
-  tenant          Tenant     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  contact         Contact?   @relation(fields: [contactId], references: [id], onDelete: SetNull)
-  lead            Lead?      @relation(fields: [leadId], references: [id], onDelete: SetNull)
-  assignedUser    User?      @relation("UserChats", fields: [assignedTo], references: [id], onDelete: SetNull)
+  tenant          Tenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  department      Department?      @relation(fields: [departmentId], references: [id], onDelete: SetNull)
+  contact         Contact?         @relation(fields: [contactId], references: [id], onDelete: SetNull)
+  lead            Lead?            @relation(fields: [leadId], references: [id], onDelete: SetNull)
+  assignedUser    User?            @relation("UserChats", fields: [assignedTo], references: [id], onDelete: SetNull)
   messages        Message[]
+  assignments     ChatAssignment[] // Histórico de atribuições
   
   @@unique([tenantId, phone]) // Um chat por telefone por tenant
   @@index([tenantId])
@@ -939,4 +950,99 @@ enum CRMNotificationType {
   CHAT_ASSIGNED   // Chat atribuído
   SYSTEM          // Notificação do sistema
   INFO            // Informação geral
+}
+
+// ============================================================================
+// DEPARTMENT SYSTEM MODELS
+// ============================================================================
+
+model Department {
+  id          String   @id @default(uuid())
+  tenantId    String   @map("tenant_id")
+  name        String
+  description String?
+  color       String   @default("#3B82F6") // Cor do departamento
+  active      Boolean  @default(true)
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  tenant       Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  users        User[]         // Usuários do departamento
+  chats        Chat[]         // Chats atribuídos ao departamento
+  assignments  ChatAssignment[] // Histórico de atribuições
+  metrics      ChatMetrics[]  // Métricas do departamento
+
+  @@index([tenantId])
+  @@index([active])
+  @@map("departments")
+}
+
+model ChatAssignment {
+  id           String   @id @default(uuid())
+  chatId       String   @map("chat_id")
+  userId       String   @map("user_id")
+  departmentId String   @map("department_id")
+  assignedAt   DateTime @default(now()) @map("assigned_at")
+  unassignedAt DateTime? @map("unassigned_at")
+  status       AssignmentStatus @default(ACTIVE)
+  notes        String? // Notas sobre a atribuição
+
+  // Relations
+  chat       Chat       @relation(fields: [chatId], references: [id], onDelete: Cascade)
+  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  department Department @relation(fields: [departmentId], references: [id], onDelete: Cascade)
+
+  @@index([chatId])
+  @@index([userId])
+  @@index([departmentId])
+  @@index([status])
+  @@index([assignedAt])
+  @@map("chat_assignments")
+}
+
+model ChatMetrics {
+  id              String   @id @default(uuid())
+  userId          String   @map("user_id")
+  departmentId    String   @map("department_id")
+  tenantId        String   @map("tenant_id")
+  date            DateTime @db.Date // Data das métricas
+  
+  // Contadores
+  chatsInitiated  Int      @default(0) @map("chats_initiated") // Chats iniciados
+  chatsOpened     Int      @default(0) @map("chats_opened")    // Chats abertos
+  chatsClosed     Int      @default(0) @map("chats_closed")    // Chats fechados
+  messagesSent    Int      @default(0) @map("messages_sent")   // Mensagens enviadas
+  responseTime    Int      @default(0) @map("response_time")   // Tempo médio de resposta (segundos)
+  resolutionTime  Int      @default(0) @map("resolution_time") // Tempo médio de resolução (segundos)
+  
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  department Department @relation(fields: [departmentId], references: [id], onDelete: Cascade)
+  tenant     Tenant     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, departmentId, tenantId, date])
+  @@index([userId])
+  @@index([departmentId])
+  @@index([tenantId])
+  @@index([date])
+  @@map("chat_metrics")
+}
+
+enum AssignmentStatus {
+  ACTIVE    // Ativo - usuário está atendendo
+  TRANSFERRED // Transferido para outro usuário
+  CLOSED    // Chat fechado
+  PAUSED    // Pausado temporariamente
+}
+
+enum ChatServiceStatus {
+  WAITING   // Aguardando atendimento
+  ACTIVE    // Em atendimento
+  TRANSFERRED // Transferido
+  CLOSED    // Fechado
+  PAUSED    // Pausado
 }

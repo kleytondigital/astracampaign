@@ -550,7 +550,7 @@ export default function AtendimentoPage() {
           <h1 className="text-xl font-bold text-gray-900 mb-4">💬 Atendimento</h1>
 
           {/* Sincronizar Chats */}
-          <div className="mb-4">
+          {/* <div className="mb-4">
             <div className="flex gap-2">
               <input
                 type="text"
@@ -599,7 +599,7 @@ export default function AtendimentoPage() {
             <p className="text-xs text-gray-500 mt-1">
               Digite o nome da instância e clique para importar chats
             </p>
-          </div>
+          </div> */}
 
           {/* Estatísticas */}
           {stats && (
