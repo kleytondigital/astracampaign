@@ -27,6 +27,7 @@ import { SuperAdminDashboard } from './pages/SuperAdminDashboard';
 import { SuperAdminManagerPage } from './pages/SuperAdminManagerPage';
 import AdminDashboard from './pages/AdminDashboard';
 import DepartmentsPage from './pages/DepartmentsPage';
+import ReportsPage from './pages/ReportsPage';
 import { useGlobalSettings } from './hooks/useGlobalSettings';
 import './styles/globals.css';
 
@@ -237,6 +238,14 @@ function AppContent() {
             element={
               <ProtectedRoute>
                 <DepartmentsPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/relatorios"
+            element={
+              <ProtectedRoute>
+                <ReportsPage />
               </ProtectedRoute>
             }
           />

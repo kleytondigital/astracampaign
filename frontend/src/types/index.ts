@@ -522,3 +522,124 @@ export interface SalesDashboard {
     leadSources: Array<{ source: string; count: number; value: number }>;
   };
 }
+
+// ============================================================================
+// MÓDULO DE RELATÓRIOS E DASHBOARDS
+// ============================================================================
+
+export interface DataSource {
+  id: string;
+  tenantId: string;
+  name: string;
+  type: string;
+  url: string;
+  credentials?: string | null;
+  active: boolean;
+  lastSync?: string | null;
+  syncStatus: 'PENDING' | 'SUCCESS' | 'ERROR' | 'SYNCING';
+  errorMessage?: string | null;
+  createdAt: string;
+  updatedAt: string;
+  _count?: {
+    campaigns: number;
+    reports: number;
+  };
+}
+
+export interface CampaignData {
+  id: string;
+  dataSourceId: string;
+  tenantId: string;
+  campaignName: string;
+  date: string;
+  cost: number;
+  reach: number;
+  impressions: number;
+  clicks: number;
+  ctr: number;
+  conversions: number;
+  costPerConversion?: number | null;
+  roi?: number | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface Report {
+  id: string;
+  tenantId: string;
+  dataSourceId?: string | null;
+  name: string;
+  type: 'DASHBOARD' | 'SUMMARY' | 'CUSTOM';
+  config: any;
+  isPublic: boolean;
+  shareToken?: string | null;
+  createdBy: string;
+  createdAt: string;
+  updatedAt: string;
+  dataSource?: {
+    id: string;
+    name: string;
+    type: string;
+  } | null;
+  creator?: {
+    id: string;
+    nome: string;
+    email: string;
+  } | null;
+}
+
+export interface ReportData {
+  summary: {
+    totalCost: number;
+    totalReach: number;
+    totalImpressions: number;
+    totalClicks: number;
+    totalConversions: number;
+    averageCtr: number;
+    averageCostPerConversion: number;
+    averageRoi: number;
+  };
+  trends: {
+    costTrend: number;
+    reachTrend: number;
+    impressionsTrend: number;
+    clicksTrend: number;
+    conversionsTrend: number;
+    ctrTrend: number;
+    costPerConversionTrend: number;
+    roiTrend: number;
+  };
+  topCampaigns: Array<{
+    campaignName: string;
+    cost: number;
+    conversions: number;
+    roi: number;
+    ctr: number;
+  }>;
+  dailyData: Array<{
+    date: string;
+    cost: number;
+    reach: number;
+    impressions: number;
+    clicks: number;
+    conversions: number;
+    ctr: number;
+    costPerConversion: number;
+    roi: number;
+  }>;
+  insights: string[];
+}
+
+export interface TestConnectionResult {
+  success: boolean;
+  columns?: string[];
+  sampleData?: any[];
+  totalRows?: number;
+  error?: string;
+}
+
+export interface SyncResult {
+  recordsProcessed: number;
+  recordsCreated: number;
+  recordsUpdated: number;
+}
