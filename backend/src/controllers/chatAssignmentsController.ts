@@ -1,6 +1,8 @@
 import { Request, Response } from 'express';
-import { prisma } from '../lib/prisma';
+import { PrismaClient } from '@prisma/client';
 import { websocketService } from '../services/websocketService';
+
+const prisma = new PrismaClient();
 
 interface AuthenticatedRequest extends Request {
   user?: {
