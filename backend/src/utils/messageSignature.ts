@@ -16,14 +16,22 @@ export const formatMessageWithSignature = async (
       return messageBody;
     }
 
-    // Buscar informações do usuário e departamento
+    // Buscar informações do usuário e seus departamentos
     const user = await prisma.user.findUnique({
       where: { id: userId },
       include: {
-        department: {
-          select: {
-            name: true
-          }
+        departments: {
+          where: {
+            isDefault: true // Pegar o departamento padrão
+          },
+          include: {
+            department: {
+              select: {
+                name: true
+              }
+            }
+          },
+          take: 1
         }
       }
     });
@@ -37,8 +45,8 @@ export const formatMessageWithSignature = async (
       return messageBody;
     }
 
-    // USER assina com nome e departamento
-    const departmentName = user.department?.name || 'Sem Departamento';
+    // USER assina com nome e departamento padrão
+    const departmentName = user.departments?.[0]?.department?.name || 'Sem Departamento';
     const signature = `\n\n_**${user.nome} [${departmentName}]**_`;
     
     return messageBody + signature;

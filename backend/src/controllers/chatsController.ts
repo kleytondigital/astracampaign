@@ -401,15 +401,23 @@ export const sendMessage = async (req: AuthenticatedRequest, res: Response) => {
         .json({ error: 'Erro ao enviar mensagem via WhatsApp' });
     }
 
-    // Buscar informações do usuário para assinatura
-    const user = await prisma.user.findUnique({
+    // Buscar informações do usuário para assinatura (departamento padrão)
+    const userWithDepartment = await prisma.user.findUnique({
       where: { id: userId },
       include: {
-        department: {
-          select: { name: true }
+        departments: {
+          where: { isDefault: true },
+          include: {
+            department: {
+              select: { name: true }
+            }
+          },
+          take: 1
         }
       }
     });
+
+    const departmentName = userWithDepartment?.departments?.[0]?.department?.name || null;
 
     // Criar mensagem no banco
     const message = await prisma.message.create({
@@ -425,7 +433,7 @@ export const sendMessage = async (req: AuthenticatedRequest, res: Response) => {
         messageId: sentResult?.id || sentResult?.key?.id,
         // Campos de assinatura
         sentBy: userId,
-        departmentName: user?.department?.name || null,
+        departmentName: departmentName,
         isSigned: shouldSignMessage(userRole || 'USER')
       }
     });
