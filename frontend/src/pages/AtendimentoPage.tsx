@@ -381,7 +381,11 @@ export default function AtendimentoPage() {
 
       // Timer de gravação
       recordingIntervalRef.current = setInterval(() => {
-        setRecordingTime((prev) => prev + 1);
+        setRecordingTime((prev) => {
+          const newTime = prev + 1;
+          console.log('⏱️ Timer incrementando:', prev, '->', newTime);
+          return newTime;
+        });
       }, 1000);
 
       toast.success('🎤 Gravação iniciada!');
@@ -397,7 +401,9 @@ export default function AtendimentoPage() {
       setIsRecording(false);
       
       // Salvar o tempo final antes de limpar o timer
+      console.log('🛑 Parando gravação - tempo atual:', recordingTime);
       setFinalRecordingTime(recordingTime);
+      console.log('💾 Tempo final salvo:', recordingTime);
 
       if (recordingIntervalRef.current) {
         clearInterval(recordingIntervalRef.current);

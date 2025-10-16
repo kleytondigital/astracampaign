@@ -664,6 +664,7 @@ function mapWAHAMessageType(type: string, mediaType?: string): any {
     if (mediaType === 'image') return 'IMAGE';
     if (mediaType === 'video') return 'VIDEO';
     if (mediaType === 'audio') return 'AUDIO';
+    if (mediaType === 'ptt') return 'VOICE'; // Push To Talk = áudio de voz
     if (mediaType === 'document') return 'DOCUMENT';
   }
 
