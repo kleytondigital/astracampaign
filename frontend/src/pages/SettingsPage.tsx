@@ -108,7 +108,7 @@ export function SettingsPage() {
         }
       }
 
-      const response = await authenticatedFetch('/api/settings', {
+      const response = await authenticatedFetch('/settings', {
         method: 'PUT',
         body: JSON.stringify(requestData),
       });
@@ -149,7 +149,7 @@ export function SettingsPage() {
         }
       }
 
-      const response = await authenticatedFetch('/api/settings', {
+      const response = await authenticatedFetch('/settings', {
         method: 'PUT',
         body: JSON.stringify(requestData),
       });

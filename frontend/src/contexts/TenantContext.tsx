@@ -66,7 +66,7 @@ export function TenantProvider({ children }: { children: ReactNode }) {
     }
 
     try {
-      const response = await authenticatedFetch('/api/tenants');
+      const response = await authenticatedFetch('/tenants');
       if (response.ok) {
         const data = await response.json();
         const tenantsArray = data.tenants || [];

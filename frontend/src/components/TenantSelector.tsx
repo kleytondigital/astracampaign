@@ -51,7 +51,7 @@ export function TenantSelector() {
     try {
       setLoadingSuperAdmin(true);
       // Buscar apenas tenants associados ao usuário (mesmo para SUPERADMIN)
-      const response = await authenticatedFetch('/api/user-tenants');
+      const response = await authenticatedFetch('/user-tenants');
       if (response.ok) {
         const data = await response.json();
         const tenantsArray = data.tenants || [];
@@ -80,7 +80,7 @@ export function TenantSelector() {
       setLoadingSuperAdmin(true);
 
       const token = localStorage.getItem('auth_token');
-      const response = await authenticatedFetch('/api/user-tenants/switch', {
+      const response = await authenticatedFetch('/user-tenants/switch', {
         method: 'POST',
         body: JSON.stringify({ tenantId })
       });
