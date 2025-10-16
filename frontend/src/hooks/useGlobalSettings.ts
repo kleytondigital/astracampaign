@@ -24,6 +24,13 @@ export function useGlobalSettings() {
 
       if (response.ok) {
         const data = await response.json();
+        
+        // Limpar estado anterior para evitar flash do logo antigo
+        setSettings(null);
+        
+        // Aguardar um frame para garantir que o estado foi limpo
+        await new Promise(resolve => setTimeout(resolve, 10));
+        
         setSettings({
           faviconUrl: data.faviconUrl,
           pageTitle: data.pageTitle,
