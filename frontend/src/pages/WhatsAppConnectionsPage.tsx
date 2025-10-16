@@ -340,10 +340,17 @@ export function WhatsAppConnectionsPage() {
     try {
       toast.loading('Configurando webhook...', { id: 'webhook-config' });
 
-      const response = await authenticatedFetch(
-        `/webhook-management/sessions/${sessionId}/webhook/configure`,
-        { method: 'POST' }
-      );
+      // Usar endpoint específico baseado no provider
+      const endpoint = session.provider === 'WAHA' 
+        ? `/waha/sessions/${sessionId}/webhook`
+        : `/webhook-management/sessions/${sessionId}/webhook/configure`;
+
+      const response = await authenticatedFetch(endpoint, {
+        method: 'POST',
+        body: JSON.stringify({
+          events: ['message', 'message.ack', 'session.status']
+        })
+      });
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({ error: 'Erro desconhecido' }));
@@ -354,9 +361,12 @@ export function WhatsAppConnectionsPage() {
       toast.success(data.message || 'Webhook configurado com sucesso!', { id: 'webhook-config' });
 
       // Mostrar detalhes
-      toast.success(`Webhook URL: ${data.webhookUrl}\nProvider: ${data.session.provider}`, {
+      toast.success(`✅ Webhook configurado!\nURL: ${data.webhookUrl}\nProvider: ${session.provider}`, {
         duration: 5000,
       });
+
+      // Recarregar sessões para atualizar status
+      await loadSessions(false);
     } catch (error) {
       console.error('Erro ao configurar webhook:', error);
       toast.error(error instanceof Error ? error.message : 'Erro ao configurar webhook', {
@@ -775,13 +785,25 @@ export function WhatsAppConnectionsPage() {
                             {actionLoading === `logout-${session.name}` ? '⏳' : '🔌'} Desconectar
                           </button>
 
-                          <button
-                            onClick={() => openConnectionModeModal(session)}
-                            className="px-3 py-1 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700"
-                            title="Configurar modo de recebimento de mensagens (Webhook ou WebSocket)"
-                          >
-                            📡 Modo de Conexão
-                          </button>
+                          {/* Botão de webhook específico para cada provider */}
+                          {session.provider === 'WAHA' ? (
+                            <button
+                              onClick={() => configureWebhook(session)}
+                              disabled={configuringWebhook === session.name}
+                              className="px-3 py-1 bg-purple-600 text-white text-sm rounded-md hover:bg-purple-700 disabled:opacity-50"
+                              title="Configurar webhook para receber mensagens"
+                            >
+                              {configuringWebhook === session.name ? '⏳' : '🔗'} Webhook
+                            </button>
+                          ) : (
+                            <button
+                              onClick={() => openConnectionModeModal(session)}
+                              className="px-3 py-1 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700"
+                              title="Configurar modo de recebimento de mensagens (Webhook ou WebSocket)"
+                            >
+                              📡 Modo de Conexão
+                            </button>
+                          )}
 
                           <button
                             onClick={() => openSettingsModal(session)}

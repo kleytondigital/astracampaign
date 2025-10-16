@@ -265,6 +265,51 @@ router.post('/sessions/:sessionName/start', authMiddleware, async (req: Authenti
       result = await wahaRequest(`/api/sessions/${sessionName}/start`, {
         method: 'POST'
       });
+
+      // Configurar webhook automaticamente para WAHA
+      try {
+        const backendUrl = process.env.BACKEND_URL || 'http://localhost:3001';
+        const webhookUrl = `${backendUrl}/api/webhooks/whatsapp`;
+        
+        console.log(`🔧 Configurando webhook automático para ${sessionName}:`, webhookUrl);
+        
+        const wahaConfig = await settingsService.getWahaConfig();
+        await fetch(`${wahaConfig.host}/api/sessions/${sessionName}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Api-Key': wahaConfig.apiKey
+          },
+          body: JSON.stringify({
+            name: sessionName,
+            config: {
+              webhooks: [
+                {
+                  url: webhookUrl,
+                  events: ['message', 'message.ack', 'session.status'],
+                  hmac: null,
+                  retries: 3,
+                  customHeaders: null
+                }
+              ]
+            }
+          })
+        });
+
+        // Atualizar banco com webhook habilitado
+        await prisma.whatsAppSession.update({
+          where: { name: sessionName },
+          data: {
+            webhookEnabled: true,
+            webhookUrl: webhookUrl,
+            atualizadoEm: new Date()
+          }
+        });
+
+        console.log(`✅ Webhook WAHA configurado automaticamente para ${sessionName}`);
+      } catch (webhookError) {
+        console.warn(`⚠️ Erro ao configurar webhook automático (não crítico):`, webhookError);
+      }
     }
 
     res.json(result);
