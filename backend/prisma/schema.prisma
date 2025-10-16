@@ -1097,6 +1097,7 @@ model DataSource {
   tenant      Tenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   campaigns   CampaignData[]   // Dados das campanhas desta fonte
   reports     Report[]         // Relatórios gerados
+  schedules   ReportSchedule[] // Agendamentos de relatórios
 
   @@index([tenantId])
   @@index([active])
