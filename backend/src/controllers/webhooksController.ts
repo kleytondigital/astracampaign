@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { PrismaClient } from '@prisma/client';
 import { websocketService } from '../services/websocketService';
 import { settingsService } from '../services/settingsService';
+import { ensureDefaultDepartment } from './departmentsController';
 import * as fs from 'fs';
 import * as path from 'path';
 import fetch from 'node-fetch';
@@ -589,6 +590,9 @@ async function findOrCreateChat(
     );
   }
 
+  // Garantir que existe o departamento "Atendimento Geral"
+  const defaultDepartment = await ensureDefaultDepartment(tenantId);
+
   // Criar chat
   const session = await prisma.whatsAppSession.findUnique({
     where: { name: sessionName }
@@ -602,12 +606,15 @@ async function findOrCreateChat(
       contactId,
       leadId,
       status: 'OPEN',
+      serviceStatus: 'WAITING', // Aguardando atendimento
+      departmentId: defaultDepartment.id, // Atribuir ao Atendimento Geral
       sessionId: session?.id,
       assignedTo: contact?.assignedTo
     },
     include: {
       contact: true,
-      lead: true
+      lead: true,
+      department: true
     }
   });
 

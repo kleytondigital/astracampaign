@@ -46,7 +46,8 @@ export const formatMessageWithSignature = async (
     }
 
     // USER assina com nome e departamento padrão (antes da mensagem)
-    const departmentName = user.departments?.[0]?.department?.name || 'Sem Departamento';
+    const defaultDepartment = user.departments?.find(ud => ud.isDefault)?.department?.name;
+    const departmentName = defaultDepartment || user.departments?.[0]?.department?.name || 'Atendimento Geral';
     const signature = `_*${user.nome} [${departmentName}]*_\n\n`;
     
     return signature + messageBody;

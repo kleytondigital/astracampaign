@@ -12,6 +12,65 @@ interface AuthenticatedRequest extends Request {
 }
 
 // ============================================================================
+// GARANTIR DEPARTAMENTO PADRÃO
+// ============================================================================
+export const ensureDefaultDepartment = async (tenantId: string) => {
+  try {
+    // Verificar se já existe o departamento "Atendimento Geral"
+    let defaultDepartment = await prisma.department.findFirst({
+      where: {
+        tenantId,
+        name: 'Atendimento Geral'
+      }
+    });
+
+    // Se não existir, criar
+    if (!defaultDepartment) {
+      console.log('🏢 Criando departamento padrão "Atendimento Geral"...');
+      
+      defaultDepartment = await prisma.department.create({
+        data: {
+          tenantId,
+          name: 'Atendimento Geral',
+          description: 'Departamento padrão para atendimento de leads',
+          color: '#3B82F6',
+          active: true
+        }
+      });
+
+      // Adicionar todos os usuários ADMIN e SUPERADMIN ao departamento
+      const adminUsers = await prisma.user.findMany({
+        where: {
+          tenantId,
+          role: { in: ['ADMIN', 'SUPERADMIN'] },
+          ativo: true
+        },
+        select: { id: true }
+      });
+
+      if (adminUsers.length > 0) {
+        await prisma.userDepartment.createMany({
+          data: adminUsers.map(admin => ({
+            userId: admin.id,
+            departmentId: defaultDepartment.id,
+            isDefault: true
+          })),
+          skipDuplicates: true
+        });
+        console.log(`✅ Adicionados ${adminUsers.length} admins ao departamento padrão`);
+      }
+
+      console.log('✅ Departamento "Atendimento Geral" criado com sucesso');
+    }
+
+    return defaultDepartment;
+  } catch (error) {
+    console.error('❌ Erro ao garantir departamento padrão:', error);
+    throw error;
+  }
+};
+
+// ============================================================================
 // LISTAR DEPARTAMENTOS
 // ============================================================================
 export const getDepartments = async (req: AuthenticatedRequest, res: Response) => {

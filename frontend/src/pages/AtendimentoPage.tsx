@@ -10,7 +10,7 @@ import { MediaPreviewModal } from '../components/MediaPreviewModal';
 import { MediaCaptionModal } from '../components/MediaCaptionModal';
 import { TransferChatModal } from '../components/TransferChatModal';
 import { EditContactModal } from '../components/EditContactModal';
-import { Image, Video, Mic, Paperclip, Send, MicOff, Square, Users, CheckCircle, XCircle, Edit3 } from 'lucide-react';
+import { Image, Video, Mic, Paperclip, Send, MicOff, Square, Users, CheckCircle, XCircle, Edit3, Clock, User } from 'lucide-react';
 
 export default function AtendimentoPage() {
   const { user } = useAuth();
@@ -811,9 +811,9 @@ export default function AtendimentoPage() {
                         )}
                       </div>
                       <p className="text-xs text-gray-500">{chat.phone}</p>
-                      {/* Badge do Departamento */}
-                      {chat.department && (
-                        <div className="mt-1">
+                      {/* Badge do Departamento e Status */}
+                      <div className="mt-1 flex flex-wrap gap-1">
+                        {chat.department && (
                           <span
                             className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium rounded-full"
                             style={{
@@ -824,8 +824,23 @@ export default function AtendimentoPage() {
                             <Users className="w-3 h-3" />
                             {chat.department.name}
                           </span>
-                        </div>
-                      )}
+                        )}
+                        
+                        {/* Status do Atendimento */}
+                        {chat.serviceStatus === 'WAITING' && (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium rounded-full bg-orange-100 text-orange-700">
+                            <Clock className="w-3 h-3" />
+                            Aguardando
+                          </span>
+                        )}
+                        
+                        {chat.serviceStatus === 'ACTIVE' && chat.assignedUser && (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium rounded-full bg-green-100 text-green-700">
+                            <User className="w-3 h-3" />
+                            {chat.assignedUser.nome}
+                          </span>
+                        )}
+                      </div>
                     </div>
                   </div>
                   <div className="text-right">

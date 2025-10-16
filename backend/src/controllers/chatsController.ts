@@ -113,6 +113,13 @@ export const getChats = async (req: AuthenticatedRequest, res: Response) => {
               email: true
             }
           },
+          department: {
+            select: {
+              id: true,
+              name: true,
+              color: true
+            }
+          },
           _count: {
             select: {
               messages: true
