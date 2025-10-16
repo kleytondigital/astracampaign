@@ -440,8 +440,8 @@ async function findOrCreateChat(
         lastName: phone.slice(-4), // Últimos 4 dígitos
         email: `${phone}@whatsapp.com`,
         phone,
-        source: 'whatsapp_campaign', // Origem clara
-        status: 'contacted', // Já foi contatado (iniciou conversa)
+        source: 'WHATSAPP_CAMPAIGN', // Origem clara (enum correto)
+        status: 'CONTACTED', // Já foi contatado (iniciou conversa)
         score: 70, // Score alto pois iniciou contato proativamente
         tags: ['WhatsApp', 'Auto-Criado']
       }
