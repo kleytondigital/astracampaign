@@ -25,7 +25,7 @@ function MenuItem({ item, isExpanded, location }: { item: any; isExpanded: boole
           }
           title={!isExpanded ? item.label : undefined}
         >
-          <div className="flex-shrink-0">{item.icon}</div>
+          <div className="flex-shrink-0 flex items-center justify-center w-6 h-6">{item.icon}</div>
 
           {/* Título (visível quando expandido) */}
           {isExpanded && (
@@ -63,7 +63,7 @@ function MenuItem({ item, isExpanded, location }: { item: any; isExpanded: boole
           }`}
           title={!isExpanded ? item.label : undefined}
         >
-          <div className="flex-shrink-0">{item.icon}</div>
+          <div className="flex-shrink-0 flex items-center justify-center w-6 h-6">{item.icon}</div>
 
           {/* Título (visível quando expandido) */}
           {isExpanded && (
@@ -114,7 +114,7 @@ function MenuItem({ item, isExpanded, location }: { item: any; isExpanded: boole
                     location.pathname === subItem.path ? { color: 'var(--astra-dark-blue)' } : undefined
                   }
                 >
-                  <div className="flex-shrink-0">{subItem.icon}</div>
+                  <div className="flex-shrink-0 flex items-center justify-center w-5 h-5">{subItem.icon}</div>
                   <span className="font-medium whitespace-nowrap overflow-hidden text-ellipsis">
                     {subItem.label}
                   </span>
@@ -144,7 +144,7 @@ export function Navigation() {
       path: '/empresas',
       label: 'Empresas',
       icon: (
-        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path
             strokeLinecap="round"
             strokeLinejoin="round"
@@ -158,7 +158,7 @@ export function Navigation() {
       path: '/usuarios',
       label: 'Usuários',
       icon: (
-        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path
             strokeLinecap="round"
             strokeLinejoin="round"
@@ -172,7 +172,7 @@ export function Navigation() {
       path: '/configuracoes',
       label: 'Configurações',
       icon: (
-        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path
             strokeLinecap="round"
             strokeLinejoin="round"
@@ -192,7 +192,7 @@ export function Navigation() {
       path: '/super-admin',
       label: 'Super Admin',
       icon: (
-        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path
             strokeLinecap="round"
             strokeLinejoin="round"
@@ -211,7 +211,7 @@ export function Navigation() {
       path: '/admin-dashboard',
       label: 'Dashboard',
       icon: (
-        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path
             strokeLinecap="round"
             strokeLinejoin="round"
@@ -225,7 +225,7 @@ export function Navigation() {
       type: 'group',
       label: 'Gestão',
       icon: (
-        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path
             strokeLinecap="round"
             strokeLinejoin="round"
@@ -239,7 +239,7 @@ export function Navigation() {
           path: '/departamentos',
           label: 'Departamentos',
           icon: (
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path
                 strokeLinecap="round"
                 strokeLinejoin="round"
@@ -255,7 +255,7 @@ export function Navigation() {
                 path: '/usuarios',
                 label: 'Usuários',
                 icon: (
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path
                       strokeLinecap="round"
                       strokeLinejoin="round"
@@ -271,7 +271,7 @@ export function Navigation() {
           path: '/configuracoes',
           label: 'Configurações',
           icon: (
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path
                 strokeLinecap="round"
                 strokeLinejoin="round"
@@ -293,7 +293,7 @@ export function Navigation() {
       type: 'group',
       label: 'Comunicação',
       icon: (
-        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path
             strokeLinecap="round"
             strokeLinejoin="round"
@@ -307,7 +307,7 @@ export function Navigation() {
           path: '/whatsapp',
           label: 'Conexões',
           icon: (
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path
                 strokeLinecap="round"
                 strokeLinejoin="round"
@@ -321,7 +321,7 @@ export function Navigation() {
           path: '/atendimento',
           label: 'Atendimento',
           icon: (
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path
                 strokeLinecap="round"
                 strokeLinejoin="round"
@@ -335,7 +335,7 @@ export function Navigation() {
           path: '/campanhas',
           label: 'Campanhas',
           icon: (
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path
                 strokeLinecap="round"
                 strokeLinejoin="round"
@@ -351,7 +351,7 @@ export function Navigation() {
       type: 'group',
       label: 'CRM',
       icon: (
-        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path
             strokeLinecap="round"
             strokeLinejoin="round"
@@ -365,7 +365,7 @@ export function Navigation() {
           path: '/contatos',
           label: 'Contatos',
           icon: (
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path
                 strokeLinecap="round"
                 strokeLinejoin="round"
@@ -379,7 +379,7 @@ export function Navigation() {
           path: '/leads',
           label: 'Leads',
           icon: (
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path
                 strokeLinecap="round"
                 strokeLinejoin="round"
@@ -393,7 +393,7 @@ export function Navigation() {
           path: '/oportunidades',
           label: 'Oportunidades',
           icon: (
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path
                 strokeLinecap="round"
                 strokeLinejoin="round"
@@ -407,7 +407,7 @@ export function Navigation() {
           path: '/atividades',
           label: 'Atividades',
           icon: (
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path
                 strokeLinecap="round"
                 strokeLinejoin="round"
@@ -423,7 +423,7 @@ export function Navigation() {
       type: 'group',
       label: 'Vendas',
       icon: (
-        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path
             strokeLinecap="round"
             strokeLinejoin="round"
@@ -437,7 +437,7 @@ export function Navigation() {
           path: '/vendas-dashboard',
           label: 'Dashboard',
           icon: (
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path
                 strokeLinecap="round"
                 strokeLinejoin="round"
@@ -451,7 +451,7 @@ export function Navigation() {
           path: '/automacoes-vendas',
           label: 'Automações',
           icon: (
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path
                 strokeLinecap="round"
                 strokeLinejoin="round"
@@ -468,7 +468,7 @@ export function Navigation() {
       path: '/relatorios',
       label: 'Relatórios',
       icon: (
-        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path
             strokeLinecap="round"
             strokeLinejoin="round"
@@ -496,12 +496,12 @@ export function Navigation() {
       <div className="p-4 flex-shrink-0">
         <div className="flex items-center gap-3">
           <div className={`flex items-center gap-3 ${!isExpanded && 'justify-center w-full'}`}>
-            <div className="w-12 h-12 bg-white/10 rounded-xl flex items-center justify-center backdrop-blur-sm flex-shrink-0">
+            <div className="w-14 h-14 bg-white/10 rounded-xl flex items-center justify-center backdrop-blur-sm flex-shrink-0">
               {settings?.iconUrl ? (
                 <img
                   src={settings.iconUrl}
                   alt={settings?.companyName || 'Sistema'}
-                  className="max-h-8 max-w-8 object-contain"
+                  className="max-h-10 max-w-10 object-contain"
                   onError={(e) => {
                     // Se falhar ao carregar, esconder a imagem e mostrar letra
                     e.currentTarget.style.display = 'none';
@@ -509,7 +509,7 @@ export function Navigation() {
                 />
               ) : null}
               {!settings?.iconUrl && (
-                <span className="text-white font-bold text-lg">
+                <span className="text-white font-bold text-xl">
                   {settings?.companyName?.charAt(0)?.toUpperCase() || 'A'}
                 </span>
               )}
@@ -547,7 +547,7 @@ export function Navigation() {
           title={!isExpanded ? 'Sair' : undefined}
         >
           <svg
-            className="w-5 h-5 flex-shrink-0"
+            className="w-6 h-6 flex-shrink-0"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
