@@ -292,7 +292,7 @@ export function SuperAdminManagerPage() {
 
   const loadGeneralSettings = async () => {
     try {
-      const response = await authenticatedFetch('/api/settings');
+      const response = await authenticatedFetch('/settings');
       if (response.ok) {
         const data = await response.json();
         setGeneralSettings(data);
@@ -307,7 +307,7 @@ export function SuperAdminManagerPage() {
 
   const onGeneralSubmit = async (data: GeneralSettingsFormData) => {
     try {
-      const response = await authenticatedFetch('/api/settings', {
+      const response = await authenticatedFetch('/settings', {
         method: 'PUT',
         body: JSON.stringify(data),
       });
@@ -327,7 +327,7 @@ export function SuperAdminManagerPage() {
 
   const loadIntegrationSettings = async () => {
     try {
-      const response = await authenticatedFetch('/api/settings');
+      const response = await authenticatedFetch('/settings');
       if (response.ok) {
         const data = await response.json();
         setIntegrationSettings(data);
@@ -343,7 +343,7 @@ export function SuperAdminManagerPage() {
 
   const onIntegrationSubmit = async (data: SettingsFormData) => {
     try {
-      const response = await authenticatedFetch('/api/settings', {
+      const response = await authenticatedFetch('/settings', {
         method: 'PUT',
         body: JSON.stringify(data),
       });
@@ -407,7 +407,7 @@ export function SuperAdminManagerPage() {
 
   const removeLogo = async () => {
     try {
-      const response = await authenticatedFetch('/api/settings/logo', {
+      const response = await authenticatedFetch('/settings/logo', {
         method: 'DELETE',
       });
 
@@ -468,7 +468,7 @@ export function SuperAdminManagerPage() {
 
   const removeFavicon = async () => {
     try {
-      const response = await authenticatedFetch('/api/settings/favicon', {
+      const response = await authenticatedFetch('/settings/favicon', {
         method: 'DELETE',
       });
 
@@ -529,7 +529,7 @@ export function SuperAdminManagerPage() {
 
   const removeIcon = async () => {
     try {
-      const response = await authenticatedFetch('/api/settings/icon', {
+      const response = await authenticatedFetch('/settings/icon', {
         method: 'DELETE',
       });
 
