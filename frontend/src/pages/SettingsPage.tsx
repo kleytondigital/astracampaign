@@ -73,12 +73,12 @@ export function SettingsPage() {
 
   const loadSettings = async () => {
     try {
-      let url = '/api/settings';
+      let url = '/settings';
 
       if (user?.role === 'SUPERADMIN') {
         const selectedTenantId = localStorage.getItem('superadmin_selected_tenant');
         if (selectedTenantId) {
-          url = `/api/settings?tenantId=${selectedTenantId}`;
+          url = `/settings?tenantId=${selectedTenantId}`;
         }
       }
 

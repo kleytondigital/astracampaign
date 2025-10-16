@@ -54,7 +54,7 @@ export function useUsers({ search, page = 1, pageSize = 20 }: UseUsersParams = {
         params.set('search', search);
       }
 
-      const response = await authenticatedFetch(`/api/users?${params}`);
+      const response = await authenticatedFetch(`/users?${params}`);
 
       if (!response.ok) {
         throw new Error('Erro ao carregar usuários');
@@ -75,7 +75,7 @@ export function useUsers({ search, page = 1, pageSize = 20 }: UseUsersParams = {
 
   const deleteUser = async (id: string) => {
     try {
-      const response = await authenticatedFetch(`/api/users/${id}`, {
+      const response = await authenticatedFetch(`/users/${id}`, {
         method: 'DELETE',
       });
 
