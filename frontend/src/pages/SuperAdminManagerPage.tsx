@@ -6,6 +6,7 @@ import { toast } from 'react-hot-toast';
 import { SystemBackup } from '../components/SystemBackup';
 import { AnalyticsDashboard } from '../components/AnalyticsDashboard';
 import { useSettings } from '../hooks/useSettings';
+import { apiFetch } from '../config/api';
 
 interface Tenant {
   id: string;
@@ -267,7 +268,7 @@ export function SuperAdminManagerPage() {
       (headers as Record<string, string>).Authorization = `Bearer ${token}`;
     }
 
-    return fetch(url, {
+    return apiFetch(url, {
       ...options,
       headers,
     });
