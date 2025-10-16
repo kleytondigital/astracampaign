@@ -821,6 +821,7 @@ model Chat {
   id              String     @id @default(uuid())
   tenantId        String     @map("tenant_id")
   phone           String     // Telefone do cliente (com código do país)
+  whatsappChatId  String?    @map("whatsapp_chat_id") // ChatId original do WhatsApp (ex: 556295473360@c.us)
   contactName     String?    @map("contact_name") // Nome do contato
   profilePicture  String?    @map("profile_picture") // URL da foto de perfil
   contactId       String?    @map("contact_id")

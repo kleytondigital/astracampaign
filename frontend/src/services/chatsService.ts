@@ -1,4 +1,5 @@
 import { api } from './api';
+import { apiFetch } from '../config/api';
 import {
   Chat,
   ChatsResponse,
@@ -60,7 +61,7 @@ export const chatsService = {
       headers.Authorization = `Bearer ${token}`;
     }
 
-    const response = await fetch('/api/media/upload', {
+    const response = await apiFetch('/media/upload', {
       method: 'POST',
       body: formData,
       headers,

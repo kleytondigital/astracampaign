@@ -65,6 +65,9 @@ async function handleWAHAMessage(payload: any) {
 
     const tenantId = session.tenantId;
 
+    // ChatId original do WhatsApp (ex: 556295473360@c.us)
+    const whatsappChatId = messageData.from;
+
     // Extrair telefone (remover @c.us ou @s.whatsapp.net)
     const phone = messageData.from.replace(/@c\.us|@s\.whatsapp\.net/g, '');
 
@@ -72,9 +75,10 @@ async function handleWAHAMessage(payload: any) {
     const normalizedPhone = normalizePhone(phone);
 
     console.log(`📞 Telefone normalizado: ${normalizedPhone}`);
+    console.log(`📱 WhatsApp ChatId: ${whatsappChatId}`);
 
     // Buscar ou criar chat
-    let chat = await findOrCreateChat(tenantId, normalizedPhone, sessionName);
+    let chat = await findOrCreateChat(tenantId, normalizedPhone, sessionName, whatsappChatId);
 
     // Salvar mensagem
     const message = await prisma.message.create({
@@ -395,7 +399,8 @@ async function handleEvolutionMessage(payload: any) {
 async function findOrCreateChat(
   tenantId: string,
   phone: string,
-  sessionName: string
+  sessionName: string,
+  whatsappChatId?: string
 ) {
   // Tentar encontrar chat existente
   let chat = await prisma.chat.findUnique({
@@ -491,6 +496,7 @@ async function findOrCreateChat(
     data: {
       tenantId,
       phone,
+      whatsappChatId: whatsappChatId || null,
       contactId,
       leadId,
       status: 'OPEN',
