@@ -91,7 +91,14 @@ export const assignChat = async (req: AuthenticatedRequest, res: Response) => {
     }
 
     // Verificar se o usuário pertence ao departamento
-    if (targetUser.departmentId !== departmentId) {
+    const userInDepartment = await prisma.userDepartment.findFirst({
+      where: {
+        userId,
+        departmentId
+      }
+    });
+
+    if (!userInDepartment) {
       return res.status(400).json({ error: 'Usuário não pertence ao departamento especificado' });
     }
 
@@ -225,14 +232,25 @@ export const transferChat = async (req: AuthenticatedRequest, res: Response) => 
       targetUser = await prisma.user.findFirst({
         where: {
           id: userId,
-          departmentId,
           tenantId: user.tenantId,
           ativo: true
         }
       });
 
       if (!targetUser) {
-        return res.status(404).json({ error: 'Usuário não encontrado ou não pertence ao departamento' });
+        return res.status(404).json({ error: 'Usuário não encontrado' });
+      }
+
+      // Verificar se o usuário está no departamento alvo
+      const userInDepartment = await prisma.userDepartment.findFirst({
+        where: {
+          userId,
+          departmentId
+        }
+      });
+
+      if (!userInDepartment) {
+        return res.status(400).json({ error: 'Usuário não pertence ao departamento especificado' });
       }
     }
 
@@ -440,15 +458,29 @@ export const getAvailableChats = async (req: AuthenticatedRequest, res: Response
       return res.status(401).json({ error: 'Usuário não autenticado' });
     }
 
-    // ADMIN pode ver todos os chats, USER só vê do seu departamento
+    // ADMIN pode ver todos os chats, USER só vê dos seus departamentos
     const where: any = {
       tenantId: user.tenantId,
       status: status === 'closed' ? 'RESOLVED' : 'OPEN'
     };
 
-    if (user.role === 'USER' && user.departmentId) {
-      where.departmentId = user.departmentId;
+    // Se for USER, buscar apenas chats dos departamentos que ele pertence
+    if (user.role === 'USER') {
+      const userDepartments = await prisma.userDepartment.findMany({
+        where: { userId: user.id },
+        select: { departmentId: true }
+      });
+
+      const userDepartmentIds = userDepartments.map(ud => ud.departmentId);
+      
+      if (userDepartmentIds.length > 0) {
+        where.departmentId = { in: userDepartmentIds };
+      } else {
+        // Se o usuário não tem departamentos, não retorna nenhum chat
+        where.departmentId = 'impossible-id';
+      }
     } else if (departmentId) {
+      // Se ADMIN especificou um departamento específico
       where.departmentId = departmentId;
     }
 
