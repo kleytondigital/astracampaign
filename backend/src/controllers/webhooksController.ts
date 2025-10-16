@@ -77,13 +77,31 @@ async function handleWAHAMessage(payload: any) {
     // Buscar ou criar chat
     let chat = await findOrCreateChat(tenantId, phone, sessionName, whatsappChatId);
 
+    // Processar mídia se houver
+    const hasMedia = messageData.hasMedia || messageData.media;
+    let mediaUrl = hasMedia ? messageData.media?.url : null;
+    const body = messageData.body || messageData.caption || (hasMedia ? '[Mídia]' : '');
+
+    console.log(`📎 Mídia detectada: ${hasMedia ? 'Sim' : 'Não'}`);
+    
+    // Converter URL da mídia do WAHA para usar proxy do backend
+    if (mediaUrl && mediaUrl.includes('/api/files/')) {
+      const mediaPath = mediaUrl.split('/api/files/')[1];
+      const backendUrl = process.env.BACKEND_URL || 'http://localhost:3001';
+      mediaUrl = `${backendUrl}/api/waha/media/${mediaPath}`;
+      console.log(`🔄 URL da mídia convertida para proxy: ${mediaUrl}`);
+    } else if (mediaUrl) {
+      console.log(`📸 URL da mídia original: ${mediaUrl}`);
+    }
+
     // Salvar mensagem
     const message = await prisma.message.create({
       data: {
         chatId: chat.id,
         phone: phone,
         fromMe: false,
-        body: messageData.body || messageData.caption || '[Mídia]',
+        body: body,
+        mediaUrl: mediaUrl,
         type: mapWAHAMessageType(messageData.type || messageData._data?.type),
         timestamp: new Date(messageData.timestamp * 1000),
         ack: messageData.ack || 0,

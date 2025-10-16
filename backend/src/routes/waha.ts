@@ -823,4 +823,41 @@ router.patch('/sessions/:sessionName/assign-tenant', authMiddleware, async (req:
   }
 });
 
+// Proxy para arquivos de mídia do WAHA (requer autenticação)
+router.get('/media/*', authMiddleware, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const mediaPath = req.params[0]; // Captura tudo após /media/
+    console.log('📥 Proxy de mídia WAHA:', mediaPath);
+
+    const wahaConfig = await settingsService.getWahaConfig();
+    const mediaUrl = `${wahaConfig.host}/api/files/${mediaPath}`;
+
+    console.log('🔗 Buscando mídia:', mediaUrl);
+
+    const response = await fetch(mediaUrl, {
+      headers: {
+        'X-Api-Key': wahaConfig.apiKey
+      }
+    });
+
+    if (!response.ok) {
+      console.error('❌ Erro ao buscar mídia do WAHA:', response.status);
+      return res.status(response.status).json({ error: 'Erro ao buscar mídia' });
+    }
+
+    // Obter tipo de conteúdo
+    const contentType = response.headers.get('content-type');
+    if (contentType) {
+      res.setHeader('Content-Type', contentType);
+    }
+
+    // Fazer pipe da resposta
+    const buffer = await response.buffer();
+    res.send(buffer);
+  } catch (error) {
+    console.error('Erro ao fazer proxy de mídia:', error);
+    res.status(500).json({ error: 'Erro ao buscar mídia' });
+  }
+});
+
 export default router;
