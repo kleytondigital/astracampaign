@@ -18,9 +18,13 @@ export const apiFetch = (endpoint: string, options?: RequestInit): Promise<Respo
   
   // Preparar headers
   const headers: Record<string, string> = {
-    'Content-Type': 'application/json',
     ...(options?.headers as Record<string, string>),
   };
+  
+  // Só definir Content-Type se não for FormData (upload de arquivos)
+  if (!(options?.body instanceof FormData)) {
+    headers['Content-Type'] = 'application/json';
+  }
   
   // Adicionar token se disponível
   if (token) {
