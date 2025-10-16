@@ -9,25 +9,29 @@ import fs from 'fs';
 
 const tenantSettingsService = new TenantSettingsService();
 
-// Configuração do multer para upload de logos
-const storage = multer.diskStorage({
+// Configuração do multer para upload de branding (público)
+const brandingStorage = multer.diskStorage({
   destination: (req, file, cb) => {
-    const uploadDir = path.join(__dirname, '../../uploads');
+    const brandingDir = path.join(__dirname, '../../uploads/branding');
     // Garantir que o diretório existe
-    if (!fs.existsSync(uploadDir)) {
-      fs.mkdirSync(uploadDir, { recursive: true });
+    if (!fs.existsSync(brandingDir)) {
+      fs.mkdirSync(brandingDir, { recursive: true });
     }
-    cb(null, uploadDir);
+    cb(null, brandingDir);
   },
   filename: (req, file, cb) => {
     const ext = path.extname(file.originalname);
-    const fileName = `logo_${Date.now()}${ext}`;
+    // Nome baseado no tipo de arquivo (logo, favicon, icon)
+    const fileType = req.route?.path.includes('logo') ? 'logo' : 
+                     req.route?.path.includes('favicon') ? 'favicon' : 
+                     req.route?.path.includes('icon') ? 'icon' : 'branding';
+    const fileName = `${fileType}${ext}`;
     cb(null, fileName);
   }
 });
 
-const upload = multer({
-  storage,
+const brandingUpload = multer({
+  storage: brandingStorage,
   limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
   fileFilter: (req, file, cb) => {
     const allowedTypes = [
@@ -264,15 +268,15 @@ export const updateSettings = async (
 
 // Upload logo
 export const uploadLogo = [
-  upload.single('logo'),
+  brandingUpload.single('logo'),
   async (req: Request, res: Response) => {
     try {
       if (!req.file) {
         return res.status(400).json({ error: 'Nenhum arquivo enviado' });
       }
 
-      // URL da logo (será servida estaticamente)
-      const logoUrl = `/api/uploads/${req.file.filename}`;
+      // URL da logo (acesso público via /branding/)
+      const logoUrl = `/branding/${req.file.filename}`;
 
       // Atualizar configurações com nova logo
       const settings = await settingsService.updateSettings({
@@ -301,15 +305,15 @@ export const uploadLogo = [
 
 // Upload favicon
 export const uploadFavicon = [
-  upload.single('favicon'),
+  brandingUpload.single('favicon'),
   async (req: Request, res: Response) => {
     try {
       if (!req.file) {
         return res.status(400).json({ error: 'Nenhum arquivo enviado' });
       }
 
-      // URL do favicon (será servida estaticamente)
-      const faviconUrl = `/api/uploads/${req.file.filename}`;
+      // URL do favicon (acesso público via /branding/)
+      const faviconUrl = `/branding/${req.file.filename}`;
 
       // Atualizar configurações com novo favicon
       const settings = await settingsService.updateSettings({
@@ -344,8 +348,8 @@ export const removeFavicon = async (req: Request, res: Response) => {
     if (settings.faviconUrl) {
       // Remover arquivo físico
       const filePath = path.join(
-        '/app/uploads',
-        path.basename(settings.faviconUrl.replace('/api/uploads/', ''))
+        __dirname, '../../uploads/branding',
+        path.basename(settings.faviconUrl.replace('/branding/', ''))
       );
       if (fs.existsSync(filePath)) {
         fs.unlinkSync(filePath);
@@ -375,8 +379,8 @@ export const removeLogo = async (req: Request, res: Response) => {
     if (settings.logoUrl) {
       // Remover arquivo físico
       const filePath = path.join(
-        '/app/uploads',
-        path.basename(settings.logoUrl.replace('/api/uploads/', ''))
+        __dirname, '../../uploads/branding',
+        path.basename(settings.logoUrl.replace('/branding/', ''))
       );
       if (fs.existsSync(filePath)) {
         fs.unlinkSync(filePath);
@@ -400,15 +404,15 @@ export const removeLogo = async (req: Request, res: Response) => {
 
 // Upload icon
 export const uploadIcon = [
-  upload.single('icon'),
+  brandingUpload.single('icon'),
   async (req: Request, res: Response) => {
     try {
       if (!req.file) {
         return res.status(400).json({ error: 'Nenhum arquivo enviado' });
       }
 
-      // URL do ícone (será servida estaticamente)
-      const iconUrl = `/api/uploads/${req.file.filename}`;
+      // URL do ícone (acesso público via /branding/)
+      const iconUrl = `/branding/${req.file.filename}`;
 
       // Atualizar configurações com novo ícone
       const settings = await settingsService.updateSettings({
@@ -443,8 +447,8 @@ export const removeIcon = async (req: Request, res: Response) => {
     if (settings.iconUrl) {
       // Remover arquivo físico
       const filePath = path.join(
-        '/app/uploads',
-        path.basename(settings.iconUrl.replace('/api/uploads/', ''))
+        __dirname, '../../uploads/branding',
+        path.basename(settings.iconUrl.replace('/branding/', ''))
       );
       if (fs.existsSync(filePath)) {
         fs.unlinkSync(filePath);

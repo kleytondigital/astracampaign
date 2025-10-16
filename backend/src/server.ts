@@ -64,6 +64,18 @@ if (!fs.existsSync(uploadDir)) {
   fs.mkdirSync(uploadDir, { recursive: true });
 }
 
+// Criar diretório para branding público
+const brandingDir = './uploads/branding';
+if (!fs.existsSync(brandingDir)) {
+  fs.mkdirSync(brandingDir, { recursive: true });
+}
+
+// Criar diretório para uploads privados
+const privateDir = './uploads/private';
+if (!fs.existsSync(privateDir)) {
+  fs.mkdirSync(privateDir, { recursive: true });
+}
+
 // Criar diretório para uploads temporários
 const tempUploadDir = '/tmp/uploads';
 if (!fs.existsSync(tempUploadDir)) {
@@ -162,6 +174,9 @@ app.use((req, res, next) => {
 
 // Servir arquivos estáticos de uploads (acesso público aos arquivos)
 app.use('/uploads', express.static('uploads'));
+
+// Servir arquivos de branding público (SEM autenticação)
+app.use('/branding', express.static('uploads/branding'));
 
 // Rotas públicas (autenticação) - rate limiting temporariamente desabilitado
 app.use('/api/auth', authRoutes);
