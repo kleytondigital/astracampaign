@@ -41,6 +41,7 @@ export default function AtendimentoPage() {
   const [audioRecorder, setAudioRecorder] = useState<MediaRecorder | null>(null);
   const [recordedAudio, setRecordedAudio] = useState<Blob | null>(null);
   const [recordingTime, setRecordingTime] = useState(0);
+  const [finalRecordingTime, setFinalRecordingTime] = useState(0);
   const recordingIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   // WebSocket para receber mensagens em tempo real
@@ -394,6 +395,9 @@ export default function AtendimentoPage() {
     if (audioRecorder && isRecording) {
       audioRecorder.stop();
       setIsRecording(false);
+      
+      // Salvar o tempo final antes de limpar o timer
+      setFinalRecordingTime(recordingTime);
 
       if (recordingIntervalRef.current) {
         clearInterval(recordingIntervalRef.current);
@@ -423,7 +427,7 @@ export default function AtendimentoPage() {
       }
 
       const response = await chatsService.sendMessage(selectedChat.id, {
-        body: `Áudio gravado (${formatRecordingTime(recordingTime)})`,
+        body: `Áudio gravado (${formatRecordingTime(finalRecordingTime)})`,
         type: 'AUDIO',
         mediaUrl: uploadResponse.data.url,
       });
@@ -431,6 +435,7 @@ export default function AtendimentoPage() {
       setMessages((prev) => [...prev, response.message]);
       setRecordedAudio(null);
       setRecordingTime(0);
+      setFinalRecordingTime(0);
       toast.success('Áudio enviado com sucesso!', { id: 'audio-upload' });
     } catch (error: any) {
       console.error('Erro ao enviar áudio gravado:', error);
@@ -447,6 +452,7 @@ export default function AtendimentoPage() {
     setIsRecording(false);
     setRecordedAudio(null);
     setRecordingTime(0);
+    setFinalRecordingTime(0);
 
     if (recordingIntervalRef.current) {
       clearInterval(recordingIntervalRef.current);
@@ -888,7 +894,7 @@ export default function AtendimentoPage() {
                     <div className="flex items-center space-x-3">
                       <Mic size={20} className="text-green-600" />
                       <span className="text-green-700 font-medium">
-                        Áudio gravado ({formatRecordingTime(recordingTime)})
+                        Áudio gravado ({formatRecordingTime(finalRecordingTime)})
                       </span>
                     </div>
                     <div className="flex items-center space-x-2">

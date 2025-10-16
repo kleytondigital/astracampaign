@@ -146,12 +146,12 @@ async function handleWAHAMessage(payload: any) {
     console.log(`📞 Telefone (sem normalização): ${phone}`);
 
     // Buscar ou criar chat
-    let chat = await findOrCreateChat(tenantId, phone, sessionName, whatsappChatId);
+    let chat = await findOrCreateChat(tenantId, phone, sessionName, whatsappChatId || undefined);
 
     // Processar mídia se houver
     const hasMedia = messageData.hasMedia || messageData.media;
     const wahaMediaUrl = hasMedia ? messageData.media?.url : null;
-    const body = messageData.body || messageData.caption || (hasMedia ? '[Mídia]' : '');
+    const body = messageData.body || messageData.caption || '';
 
     console.log(`📎 Mídia detectada: ${hasMedia ? 'Sim' : 'Não'}`);
     
@@ -174,7 +174,12 @@ async function handleWAHAMessage(payload: any) {
     const mediaType = messageData._data?.Info?.MediaType; // "image", "video", etc.
     const mappedType = mapWAHAMessageType(messageType, mediaType);
     
-    console.log(`📝 Tipo da mensagem: ${messageType}, MediaType: ${mediaType}, Mapeado: ${mappedType}`);
+    console.log(`📝 DEBUG TIPO MENSAGEM:`);
+    console.log(`   - messageData.type: ${messageData.type}`);
+    console.log(`   - messageData._data?.Info?.Type: ${messageData._data?.Info?.Type}`);
+    console.log(`   - messageData._data?.Info?.MediaType: ${mediaType}`);
+    console.log(`   - messageType final: ${messageType}`);
+    console.log(`   - mappedType: ${mappedType}`);
 
     // Salvar mensagem
     const message = await prisma.message.create({
@@ -221,8 +226,8 @@ async function handleWAHAMessage(payload: any) {
           tenantId: chat.tenantId,
           userId: chat.assignedTo,
           type: 'NEW_MESSAGE',
-          title: `Nova mensagem de ${chat.contact?.nome || chat.lead?.firstName || normalizedPhone}`,
-          message: message.body || '[Mídia]',
+          title: `Nova mensagem de ${chat.contact?.nome || chat.lead?.firstName || phone}`,
+          message: message.body || 'Mensagem de mídia',
           link: `/atendimento?chat=${chat.id}`
         }
       });
@@ -285,7 +290,7 @@ async function handleEvolutionMessage(payload: any) {
     console.log(`📞 Telefone normalizado: ${normalizedPhone}`);
 
     // Buscar ou criar chat
-    let chat = await findOrCreateChat(tenantId, normalizedPhone, instanceName);
+    let chat = await findOrCreateChat(tenantId, normalizedPhone, instanceName, undefined);
 
     // Extrair texto da mensagem e processar mídia
     let bodyText = '';
@@ -428,7 +433,7 @@ async function handleEvolutionMessage(payload: any) {
         );
       }
     } else {
-      bodyText = '[Mídia]';
+      bodyText = '';
     }
 
     // Salvar mensagem
@@ -477,8 +482,8 @@ async function handleEvolutionMessage(payload: any) {
           tenantId: chat.tenantId,
           userId: chat.assignedTo,
           type: 'NEW_MESSAGE',
-          title: `Nova mensagem de ${chat.contact?.nome || chat.lead?.firstName || normalizedPhone}`,
-          message: message.body || '[Mídia]',
+          title: `Nova mensagem de ${chat.contact?.nome || chat.lead?.firstName || phone}`,
+          message: message.body || 'Mensagem de mídia',
           link: `/atendimento?chat=${chat.id}`
         }
       });
