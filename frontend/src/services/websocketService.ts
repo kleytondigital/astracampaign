@@ -10,7 +10,9 @@ class WebSocketService {
       return;
     }
 
-    const wsUrl = import.meta.env.VITE_WS_URL || 'http://localhost:3001';
+    // Usar mesma URL base da API mas sem /api no final
+    const apiUrl = (window as any).APP_CONFIG?.API_URL || import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
+    const wsUrl = apiUrl.replace('/api', ''); // Remove /api para obter base URL
 
     console.log('🔌 Conectando ao WebSocket...', { wsUrl, tenantId });
 

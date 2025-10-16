@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import toast from 'react-hot-toast';
 import { Header } from '../components/Header';
+import { apiFetch } from '../config/api';
 
 type MessageContent =
   | { text: string }
@@ -99,7 +100,7 @@ export function CampaignsPage() {
       (headers as Record<string, string>).Authorization = `Bearer ${token}`;
     }
 
-    return fetch(url, {
+    return apiFetch(url, {
       ...options,
       headers,
     });
