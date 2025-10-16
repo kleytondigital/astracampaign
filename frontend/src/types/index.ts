@@ -353,6 +353,8 @@ export interface Chat {
   contactId?: string | null;
   leadId?: string | null;
   assignedTo?: string | null;
+  departmentId?: string | null;
+  serviceStatus?: ChatServiceStatus | null;
   lastMessage?: string | null;
   lastMessageAt?: string | null;
   unreadCount: number;
@@ -364,10 +366,19 @@ export interface Chat {
   contact?: Contact | null;
   lead?: Lead | null;
   assignedUser?: User | null;
+  department?: Department | null;
   messages?: Message[];
   _count?: {
     messages: number;
   };
+}
+
+export interface Department {
+  id: string;
+  name: string;
+  description?: string | null;
+  color: string;
+  active: boolean;
 }
 
 export interface Message {
@@ -391,6 +402,14 @@ export enum ChatStatus {
   RESOLVED = 'RESOLVED',
   PENDING = 'PENDING',
   ARCHIVED = 'ARCHIVED',
+}
+
+export enum ChatServiceStatus {
+  WAITING = 'WAITING',
+  ACTIVE = 'ACTIVE',
+  TRANSFERRED = 'TRANSFERRED',
+  CLOSED = 'CLOSED',
+  PAUSED = 'PAUSED',
 }
 
 export enum ChatMessageType {

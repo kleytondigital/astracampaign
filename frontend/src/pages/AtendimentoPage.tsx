@@ -2,12 +2,14 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { toast } from 'react-hot-toast';
 import { chatsService } from '../services/chatsService';
 import { websocketService } from '../services/websocketService';
+import { chatAssignmentsService } from '../services/chatAssignmentsService';
 import { Chat, Message, ChatStatus } from '../types';
 import { useAuth } from '../contexts/AuthContext';
 import { MessageBubble } from '../components/MessageBubble';
 import { MediaPreviewModal } from '../components/MediaPreviewModal';
 import { MediaCaptionModal } from '../components/MediaCaptionModal';
-import { Image, Video, Mic, Paperclip, Send, MicOff, Square } from 'lucide-react';
+import { TransferChatModal } from '../components/TransferChatModal';
+import { Image, Video, Mic, Paperclip, Send, MicOff, Square, Users, CheckCircle, XCircle } from 'lucide-react';
 
 export default function AtendimentoPage() {
   const { user } = useAuth();
@@ -43,6 +45,10 @@ export default function AtendimentoPage() {
   const [recordingTime, setRecordingTime] = useState(0);
   const [finalRecordingTime, setFinalRecordingTime] = useState(0);
   const recordingIntervalRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Estados para modal de transferência
+  const [transferModalOpen, setTransferModalOpen] = useState(false);
+  const [closingChat, setClosingChat] = useState(false);
 
   // WebSocket para receber mensagens em tempo real
   useEffect(() => {
@@ -466,6 +472,81 @@ export default function AtendimentoPage() {
     }
   };
 
+  // ============================================================================
+  // FUNÇÕES DE GERENCIAMENTO DE CHAT
+  // ============================================================================
+
+  const handleTransferSuccess = () => {
+    toast.success('Chat transferido com sucesso!');
+    // Recarregar lista de chats
+    loadChats();
+    // Recarregar chat selecionado se ainda estiver aberto
+    if (selectedChat) {
+      loadMessages(selectedChat.id);
+    }
+  };
+
+  const handleCloseChat = async () => {
+    if (!selectedChat) return;
+
+    const confirmed = window.confirm(
+      'Tem certeza que deseja encerrar este atendimento? O chat será marcado como fechado.'
+    );
+
+    if (!confirmed) return;
+
+    setClosingChat(true);
+    try {
+      await chatAssignmentsService.closeChat(selectedChat.id, 'Atendimento encerrado pelo usuário');
+      toast.success('Atendimento encerrado com sucesso!');
+      
+      // Atualizar status local do chat
+      setSelectedChat({
+        ...selectedChat,
+        status: ChatStatus.RESOLVED,
+        serviceStatus: 'CLOSED' as any,
+      });
+      
+      // Recarregar lista de chats
+      loadChats();
+    } catch (error: any) {
+      console.error('Erro ao encerrar atendimento:', error);
+      toast.error(error.message || 'Erro ao encerrar atendimento');
+    } finally {
+      setClosingChat(false);
+    }
+  };
+
+  const handleResolveChat = async () => {
+    if (!selectedChat) return;
+
+    const confirmed = window.confirm(
+      'Tem certeza que deseja marcar este chat como resolvido?'
+    );
+
+    if (!confirmed) return;
+
+    setClosingChat(true);
+    try {
+      await chatsService.updateChatStatus(selectedChat.id, ChatStatus.RESOLVED);
+      toast.success('Chat marcado como resolvido!');
+      
+      // Atualizar status local do chat
+      setSelectedChat({
+        ...selectedChat,
+        status: ChatStatus.RESOLVED,
+      });
+      
+      // Recarregar lista de chats
+      loadChats();
+    } catch (error: any) {
+      console.error('Erro ao resolver chat:', error);
+      toast.error(error.message || 'Erro ao marcar chat como resolvido');
+    } finally {
+      setClosingChat(false);
+    }
+  };
+
   const formatRecordingTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
@@ -726,6 +807,21 @@ export default function AtendimentoPage() {
                         )}
                       </div>
                       <p className="text-xs text-gray-500">{chat.phone}</p>
+                      {/* Badge do Departamento */}
+                      {chat.department && (
+                        <div className="mt-1">
+                          <span
+                            className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium rounded-full"
+                            style={{
+                              backgroundColor: `${chat.department.color}20`,
+                              color: chat.department.color,
+                            }}
+                          >
+                            <Users className="w-3 h-3" />
+                            {chat.department.name}
+                          </span>
+                        </div>
+                      )}
                     </div>
                   </div>
                   <div className="text-right">
@@ -813,10 +909,59 @@ export default function AtendimentoPage() {
                         </span>
                       )}
                     </div>
-                    <p className="text-sm text-gray-500">{selectedChat.phone}</p>
+                    <div className="flex items-center gap-2">
+                      <p className="text-sm text-gray-500">{selectedChat.phone}</p>
+                      {/* Badge do Departamento */}
+                      {selectedChat.department && (
+                        <span
+                          className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium rounded-full"
+                          style={{
+                            backgroundColor: `${selectedChat.department.color}20`,
+                            color: selectedChat.department.color,
+                          }}
+                        >
+                          <Users className="w-3 h-3" />
+                          {selectedChat.department.name}
+                        </span>
+                      )}
+                    </div>
                   </div>
                 </div>
-                <div>{getStatusBadge(selectedChat.status)}</div>
+                <div className="flex items-center gap-2">
+                  {/* Botões de Ação */}
+                  <button
+                    onClick={() => setTransferModalOpen(true)}
+                    disabled={closingChat}
+                    className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-blue-700 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    title="Transferir Chat"
+                  >
+                    <Users className="w-4 h-4" />
+                    Transferir
+                  </button>
+                  
+                  <button
+                    onClick={handleResolveChat}
+                    disabled={closingChat || selectedChat.status === ChatStatus.RESOLVED}
+                    className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-green-700 bg-green-50 hover:bg-green-100 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    title="Marcar como Resolvido"
+                  >
+                    <CheckCircle className="w-4 h-4" />
+                    Resolvido
+                  </button>
+                  
+                  <button
+                    onClick={handleCloseChat}
+                    disabled={closingChat}
+                    className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-red-700 bg-red-50 hover:bg-red-100 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    title="Encerrar Atendimento"
+                  >
+                    <XCircle className="w-4 h-4" />
+                    Encerrar
+                  </button>
+                  
+                  {/* Badge de Status */}
+                  <div>{getStatusBadge(selectedChat.status)}</div>
+                </div>
               </div>
             </div>
 
@@ -1133,6 +1278,15 @@ export default function AtendimentoPage() {
           </div>
         </div>
       )}
+
+      {/* Transfer Chat Modal */}
+      <TransferChatModal
+        isOpen={transferModalOpen}
+        onClose={() => setTransferModalOpen(false)}
+        chatId={selectedChat?.id || ''}
+        chatName={selectedChat ? getContactName(selectedChat) : ''}
+        onSuccess={handleTransferSuccess}
+      />
 
       {/* Modal de Preview de Mídia Recebida */}
       {previewMedia && (
