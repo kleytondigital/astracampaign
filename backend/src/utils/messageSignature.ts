@@ -45,11 +45,11 @@ export const formatMessageWithSignature = async (
       return messageBody;
     }
 
-    // USER assina com nome e departamento padrão
+    // USER assina com nome e departamento padrão (antes da mensagem)
     const departmentName = user.departments?.[0]?.department?.name || 'Sem Departamento';
-    const signature = `\n\n_**${user.nome} [${departmentName}]**_`;
+    const signature = `_*${user.nome} [${departmentName}]*_\n\n`;
     
-    return messageBody + signature;
+    return signature + messageBody;
   } catch (error) {
     console.error('❌ Erro ao formatar assinatura da mensagem:', error);
     return messageBody; // Retorna mensagem original em caso de erro
@@ -67,8 +67,8 @@ export const extractSignature = (messageBody: string): {
   };
 } => {
   try {
-    // Regex para capturar assinatura no formato: **_Nome [Departamento]_**
-    const signatureRegex = /\n\n\*\*_([^[]+)\[([^\]]+)\]_?\*\*/;
+    // Regex para capturar assinatura no formato: _*Nome [Departamento]*_ no início da mensagem
+    const signatureRegex = /^_\*([^[]+)\[([^\]]+)\]\*_\n\n/;
     const match = messageBody.match(signatureRegex);
 
     if (match) {
