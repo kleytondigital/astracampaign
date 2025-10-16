@@ -141,14 +141,20 @@ const aiLimiter = rateLimit({
 
 // Middleware para todas as rotas exceto upload
 app.use((req, res, next) => {
-  if (req.path.includes('/media/upload')) {
+  if (req.path.includes('/media/upload') || 
+      req.path.includes('/settings/logo') || 
+      req.path.includes('/settings/favicon') || 
+      req.path.includes('/settings/icon')) {
     return next();
   }
   express.json({ limit: '50mb' })(req, res, next);
 });
 
 app.use((req, res, next) => {
-  if (req.path.includes('/media/upload')) {
+  if (req.path.includes('/media/upload') || 
+      req.path.includes('/settings/logo') || 
+      req.path.includes('/settings/favicon') || 
+      req.path.includes('/settings/icon')) {
     return next();
   }
   express.urlencoded({ limit: '50mb', extended: true })(req, res, next);
