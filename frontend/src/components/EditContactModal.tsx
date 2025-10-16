@@ -96,6 +96,8 @@ export function EditContactModal({
           score: chat.lead.score,
         };
 
+        console.log('📤 Enviando atualização de lead:', updateData);
+
         const response = await apiFetch(`/leads/${chat.leadId}`, {
           method: 'PUT',
           body: JSON.stringify(updateData),
@@ -103,7 +105,8 @@ export function EditContactModal({
 
         if (!response.ok) {
           const error = await response.json();
-          throw new Error(error.message || 'Erro ao atualizar lead');
+          console.error('❌ Erro do backend:', error);
+          throw new Error(error.message || error.error || 'Erro ao atualizar lead');
         }
 
         // Se marcou para converter em contato
