@@ -171,7 +171,7 @@ export const getTenantMetrics = async (req: AuthenticatedRequest, res: Response)
     });
 
     // Gráfico de mensagens por dia (últimos 7 dias)
-    const dailyMessages = await prisma.$queryRaw`
+    const dailyMessagesRaw = await prisma.$queryRaw<Array<{ date: Date; count: bigint }>>`
       SELECT 
         DATE(created_at) as date,
         COUNT(*) as count
@@ -183,6 +183,12 @@ export const getTenantMetrics = async (req: AuthenticatedRequest, res: Response)
       GROUP BY DATE(created_at)
       ORDER BY date ASC
     `;
+
+    // Converter BigInt para Number
+    const dailyMessages = dailyMessagesRaw.map(item => ({
+      date: item.date,
+      count: Number(item.count)
+    }));
 
     res.json({
       success: true,
