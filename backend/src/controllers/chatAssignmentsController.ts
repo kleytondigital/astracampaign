@@ -37,7 +37,17 @@ export const assignChat = async (req: AuthenticatedRequest, res: Response) => {
       },
       include: {
         assignedUser: {
-          select: { id: true, nome: true, department: { select: { name: true } } }
+          select: { 
+            id: true, 
+            nome: true,
+            departments: {
+              include: {
+                department: {
+                  select: { name: true }
+                }
+              }
+            }
+          }
         }
       }
     });
@@ -54,7 +64,13 @@ export const assignChat = async (req: AuthenticatedRequest, res: Response) => {
         ativo: true
       },
       include: {
-        department: true
+        departments: {
+          include: {
+            department: {
+              select: { id: true, name: true }
+            }
+          }
+        }
       }
     });
 
@@ -168,9 +184,21 @@ export const transferChat = async (req: AuthenticatedRequest, res: Response) => 
       },
       include: {
         assignedUser: {
-          select: { id: true, nome: true, department: { select: { name: true } } }
+          select: { 
+            id: true, 
+            nome: true,
+            departments: {
+              include: {
+                department: {
+                  select: { name: true, color: true }
+                }
+              }
+            }
+          }
         },
-        department: true
+        department: {
+          select: { id: true, name: true, color: true }
+        }
       }
     });
 
