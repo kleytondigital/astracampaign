@@ -63,11 +63,12 @@ async function downloadAndSaveMedia(mediaUrl: string, messageId: string): Promis
     fs.writeFileSync(filePath, buffer);
     console.log('💾 Mídia salva:', filePath);
     
-    // Retornar URL relativa para o banco
-    const relativeUrl = `/uploads/chats/${yearMonth}/${fileName}`;
-    console.log('🔗 URL local da mídia:', relativeUrl);
+    // Retornar URL completa do backend para o banco
+    const backendUrl = process.env.BACKEND_URL || 'http://localhost:3001';
+    const fullUrl = `${backendUrl}/uploads/chats/${yearMonth}/${fileName}`;
+    console.log('🔗 URL completa da mídia:', fullUrl);
     
-    return relativeUrl;
+    return fullUrl;
   } catch (error) {
     console.error('❌ Erro ao baixar e salvar mídia:', error);
     return null;
