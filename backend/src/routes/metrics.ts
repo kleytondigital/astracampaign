@@ -1,5 +1,4 @@
 import { Router } from 'express';
-import { authMiddleware } from '../middleware/auth';
 import {
   getTenantMetrics,
   getDepartmentMetrics,
@@ -8,8 +7,7 @@ import {
 
 const router = Router();
 
-// Todas as rotas requerem autenticação
-router.use(authMiddleware);
+// Middleware de autenticação já aplicado no server.ts
 
 // ============================================================================
 // ROTAS DE MÉTRICAS

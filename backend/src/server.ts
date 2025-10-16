@@ -191,9 +191,9 @@ app.use('/api/activities', authMiddleware, activitiesRoutes); // CRM Activities 
 app.use('/api/companies', authMiddleware, companiesRoutes); // CRM Companies system
 app.use('/api/leads', authMiddleware, leadsRoutes); // CRM Leads system
 app.use('/api/chats', authMiddleware, chatsRoutes); // Chat/Atendimento WhatsApp system
-app.use('/api/departments', departmentsRoutes); // Department management system
-app.use('/api/chat-assignments', chatAssignmentsRoutes); // Chat assignment system
-app.use('/api/metrics', metricsRoutes); // Metrics and analytics system
+app.use('/api/departments', authMiddleware, departmentsRoutes); // Department management system
+app.use('/api/chat-assignments', authMiddleware, chatAssignmentsRoutes); // Chat assignment system
+app.use('/api/metrics', authMiddleware, metricsRoutes); // Metrics and analytics system
 app.use('/api/webhooks', webhooksRoutes); // Webhooks públicos (WAHA, Evolution, etc) - SEM autenticação
 app.use('/api/webhook-management', authMiddleware, webhookManagementRoutes); // Gerenciamento de webhooks - COM autenticação
 app.use('/api/instance-management', authMiddleware, instanceManagementRoutes); // Gerenciamento de instâncias (logout, delete, restart, websocket) - COM autenticação
