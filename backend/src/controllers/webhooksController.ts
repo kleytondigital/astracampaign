@@ -466,6 +466,7 @@ async function findOrCreateChat(
     for (const user of users) {
       await prisma.cRMNotification.create({
         data: {
+          tenantId: tenantId,
           userId: user.id,
           type: 'lead_new',
           title: `🔥 Novo lead quente via WhatsApp!`,
