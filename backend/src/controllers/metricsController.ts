@@ -149,8 +149,12 @@ export const getTenantMetrics = async (req: AuthenticatedRequest, res: Response)
         }
       },
       include: {
-        department: {
-          select: { name: true, color: true }
+        departments: {
+          include: {
+            department: {
+              select: { name: true, color: true }
+            }
+          }
         },
         _count: {
           select: {
@@ -328,7 +332,11 @@ export const getDepartmentMetrics = async (req: AuthenticatedRequest, res: Respo
     // Usuários do departamento com métricas
     const departmentUsers = await prisma.user.findMany({
       where: {
-        departmentId,
+        departments: {
+          some: {
+            departmentId: departmentId
+          }
+        },
         tenantId: user.tenantId,
         ativo: true
       },
