@@ -9,7 +9,8 @@ import { MessageBubble } from '../components/MessageBubble';
 import { MediaPreviewModal } from '../components/MediaPreviewModal';
 import { MediaCaptionModal } from '../components/MediaCaptionModal';
 import { TransferChatModal } from '../components/TransferChatModal';
-import { Image, Video, Mic, Paperclip, Send, MicOff, Square, Users, CheckCircle, XCircle } from 'lucide-react';
+import { EditContactModal } from '../components/EditContactModal';
+import { Image, Video, Mic, Paperclip, Send, MicOff, Square, Users, CheckCircle, XCircle, Edit3 } from 'lucide-react';
 
 export default function AtendimentoPage() {
   const { user } = useAuth();
@@ -49,6 +50,9 @@ export default function AtendimentoPage() {
   // Estados para modal de transferência
   const [transferModalOpen, setTransferModalOpen] = useState(false);
   const [closingChat, setClosingChat] = useState(false);
+  
+  // Estados para modal de edição de contato
+  const [editContactModalOpen, setEditContactModalOpen] = useState(false);
 
   // WebSocket para receber mensagens em tempo real
   useEffect(() => {
@@ -1218,6 +1222,15 @@ export default function AtendimentoPage() {
             <div className="text-center mb-4">
               <h4 className="font-bold text-gray-900">{getContactName(selectedChat)}</h4>
               <p className="text-sm text-gray-500">{selectedChat.phone}</p>
+              
+              {/* Botão Editar Informações */}
+              <button
+                onClick={() => setEditContactModalOpen(true)}
+                className="mt-3 inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-blue-700 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors"
+              >
+                <Edit3 className="w-4 h-4" />
+                Editar Informações
+              </button>
             </div>
 
             {selectedChat.contact && (
@@ -1226,14 +1239,40 @@ export default function AtendimentoPage() {
                 {selectedChat.contact.email && (
                   <p className="text-sm text-gray-700">📧 {selectedChat.contact.email}</p>
                 )}
+                {selectedChat.contact.telefone && (
+                  <p className="text-sm text-gray-700">📱 {selectedChat.contact.telefone}</p>
+                )}
               </div>
             )}
 
             {selectedChat.lead && (
               <div className="bg-purple-50 p-3 rounded-lg mb-4">
                 <p className="text-xs font-semibold text-purple-900 mb-1">LEAD</p>
+                <p className="text-sm text-gray-700">
+                  {selectedChat.lead.firstName} {selectedChat.lead.lastName}
+                </p>
+                {selectedChat.lead.email && (
+                  <p className="text-sm text-gray-700">📧 {selectedChat.lead.email}</p>
+                )}
+                {selectedChat.lead.company && (
+                  <p className="text-sm text-gray-700">🏢 {selectedChat.lead.company}</p>
+                )}
                 <p className="text-sm text-gray-700">📊 Score: {selectedChat.lead.score}</p>
                 <p className="text-sm text-gray-700">📍 Status: {selectedChat.lead.status}</p>
+              </div>
+            )}
+            
+            {!selectedChat.contact && !selectedChat.lead && (
+              <div className="bg-gray-50 p-3 rounded-lg mb-4 text-center">
+                <p className="text-xs text-gray-600">
+                  Nenhum contato ou lead associado
+                </p>
+                <button
+                  onClick={() => setEditContactModalOpen(true)}
+                  className="mt-2 text-sm text-blue-600 hover:text-blue-700 font-medium"
+                >
+                  Criar agora
+                </button>
               </div>
             )}
           </div>
@@ -1287,6 +1326,22 @@ export default function AtendimentoPage() {
         chatName={selectedChat ? getContactName(selectedChat) : ''}
         onSuccess={handleTransferSuccess}
       />
+
+      {/* Edit Contact Modal */}
+      {selectedChat && (
+        <EditContactModal
+          isOpen={editContactModalOpen}
+          onClose={() => setEditContactModalOpen(false)}
+          chat={selectedChat}
+          onSuccess={() => {
+            // Recarregar lista de chats e mensagens
+            loadChats();
+            if (selectedChat) {
+              loadMessages(selectedChat.id);
+            }
+          }}
+        />
+      )}
 
       {/* Modal de Preview de Mídia Recebida */}
       {previewMedia && (

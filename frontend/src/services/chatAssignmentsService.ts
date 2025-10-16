@@ -47,9 +47,10 @@ export const chatAssignmentsService = {
 
   // Transferir chat
   async transferChat(data: TransferChatRequest): Promise<void> {
-    const response = await apiFetch('/chat-assignments/transfer', {
+    const { chatId, ...rest } = data;
+    const response = await apiFetch(`/chat-assignments/${chatId}/transfer`, {
       method: 'POST',
-      body: JSON.stringify(data),
+      body: JSON.stringify(rest),
     });
 
     if (!response.ok) {
@@ -60,7 +61,7 @@ export const chatAssignmentsService = {
 
   // Fechar chat
   async closeChat(chatId: string, notes?: string): Promise<void> {
-    const response = await apiFetch(`/chat-assignments/close/${chatId}`, {
+    const response = await apiFetch(`/chat-assignments/${chatId}/close`, {
       method: 'POST',
       body: JSON.stringify({ notes }),
     });
@@ -73,9 +74,9 @@ export const chatAssignmentsService = {
 
   // Atribuir chat a usuário
   async assignChat(chatId: string, userId: string, departmentId: string, notes?: string): Promise<void> {
-    const response = await apiFetch('/chat-assignments/assign', {
+    const response = await apiFetch(`/chat-assignments/${chatId}/assign`, {
       method: 'POST',
-      body: JSON.stringify({ chatId, userId, departmentId, notes }),
+      body: JSON.stringify({ userId, departmentId, notes }),
     });
 
     if (!response.ok) {
