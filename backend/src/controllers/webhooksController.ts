@@ -468,7 +468,7 @@ async function findOrCreateChat(
         data: {
           tenantId: tenantId,
           userId: user.id,
-          type: 'lead_new',
+          type: 'LEAD_HOT',
           title: `🔥 Novo lead quente via WhatsApp!`,
           message: `Lead ${phone} iniciou conversa e foi criado automaticamente. Score inicial: 70/100`,
           link: `/leads/${lead.id}`,
