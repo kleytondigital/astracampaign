@@ -70,19 +70,35 @@ export function EditContactModal({
       return;
     }
 
+    if (!formData.lastName.trim()) {
+      toast.error('Sobrenome é obrigatório');
+      return;
+    }
+
+    // Validar email se fornecido
+    if (formData.email.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email.trim())) {
+      toast.error('Email inválido');
+      return;
+    }
+
     setLoading(true);
     try {
       if (chat.lead) {
         // Atualizar lead existente
+        const updateData: any = {
+          firstName: formData.firstName.trim(),
+          lastName: formData.lastName.trim(),
+          email: formData.email.trim() || `${chat.phone}@temp.com`,
+          phone: formData.phone.trim() || chat.phone,
+          company: formData.company.trim() || null,
+          source: chat.lead.source,
+          status: chat.lead.status,
+          score: chat.lead.score,
+        };
+
         const response = await apiFetch(`/leads/${chat.leadId}`, {
           method: 'PUT',
-          body: JSON.stringify({
-            firstName: formData.firstName.trim(),
-            lastName: formData.lastName.trim(),
-            email: formData.email.trim() || null,
-            phone: formData.phone.trim(),
-            company: formData.company.trim() || null,
-          }),
+          body: JSON.stringify(updateData),
         });
 
         if (!response.ok) {
@@ -217,7 +233,7 @@ export function EditContactModal({
           {/* Sobrenome */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Sobrenome
+              Sobrenome *
             </label>
             <input
               type="text"
@@ -225,6 +241,7 @@ export function EditContactModal({
               onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               placeholder="Sobrenome"
+              required
             />
           </div>
 
