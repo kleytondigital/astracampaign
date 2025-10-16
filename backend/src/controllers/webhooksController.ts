@@ -68,23 +68,20 @@ async function handleWAHAMessage(payload: any) {
     // ChatId original do WhatsApp (ex: 556295473360@c.us)
     const whatsappChatId = messageData.from;
 
-    // Extrair telefone (remover @c.us ou @s.whatsapp.net)
+    // Extrair telefone SEM NORMALIZAR (ex: 556295473360)
     const phone = messageData.from.replace(/@c\.us|@s\.whatsapp\.net/g, '');
 
-    // Normalizar para formato brasileiro
-    const normalizedPhone = normalizePhone(phone);
-
-    console.log(`📞 Telefone normalizado: ${normalizedPhone}`);
     console.log(`📱 WhatsApp ChatId: ${whatsappChatId}`);
+    console.log(`📞 Telefone (sem normalização): ${phone}`);
 
     // Buscar ou criar chat
-    let chat = await findOrCreateChat(tenantId, normalizedPhone, sessionName, whatsappChatId);
+    let chat = await findOrCreateChat(tenantId, phone, sessionName, whatsappChatId);
 
     // Salvar mensagem
     const message = await prisma.message.create({
       data: {
         chatId: chat.id,
-        phone: normalizedPhone,
+        phone: phone,
         fromMe: false,
         body: messageData.body || messageData.caption || '[Mídia]',
         type: mapWAHAMessageType(messageData.type || messageData._data?.type),
