@@ -552,7 +552,7 @@ export function SuperAdminManagerPage() {
       const token = localStorage.getItem('auth_token');
 
       if (activeTab === 'tenants') {
-        const response = await fetch('/api/tenants', {
+        const response = await apiFetch('/tenants', {
           headers: { 'Authorization': `Bearer ${token}` }
         });
         if (response.ok) {
@@ -561,7 +561,7 @@ export function SuperAdminManagerPage() {
         }
       } else if (activeTab === 'users') {
         // Usar endpoint global para SuperAdmin (visão de todos os usuários)
-        const response = await fetch('/api/users/global', {
+        const response = await apiFetch('/users/global', {
           headers: { 'Authorization': `Bearer ${token}` }
         });
         if (response.ok) {
@@ -569,7 +569,7 @@ export function SuperAdminManagerPage() {
           setUsers(data.data?.users || []);
         }
       } else if (activeTab === 'backup') {
-        const response = await fetch('/api/backup/stats', {
+        const response = await apiFetch('/backup/stats', {
           headers: { 'Authorization': `Bearer ${token}` }
         });
         if (response.ok) {
@@ -588,7 +588,7 @@ export function SuperAdminManagerPage() {
   const handleToggleTenantStatus = async (tenant: Tenant) => {
     try {
       const token = localStorage.getItem('auth_token');
-      const response = await fetch(`/api/tenants/${tenant.id}`, {
+      const response = await apiFetch(`/tenants/${tenant.id}`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -656,7 +656,7 @@ export function SuperAdminManagerPage() {
 
     try {
       const token = localStorage.getItem('auth_token');
-      const response = await fetch(`/api/tenants/${tenant.id}`, {
+      const response = await apiFetch(`/tenants/${tenant.id}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`
@@ -735,7 +735,7 @@ export function SuperAdminManagerPage() {
       const token = localStorage.getItem('auth_token');
       console.log('🔍 Loading tenants, token exists:', !!token);
 
-      const response = await fetch('/api/users/tenants', {
+      const response = await apiFetch('/users/tenants', {
         headers: { 'Authorization': `Bearer ${token}` }
       });
 
@@ -779,7 +779,7 @@ export function SuperAdminManagerPage() {
     let userTenantIds: string[] = [];
     try {
       const token = localStorage.getItem('auth_token');
-      const response = await fetch(`/api/user-tenants/users/${user.id}/tenants`, {
+      const response = await apiFetch(`/user-tenants/users/${user.id}/tenants`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -858,7 +858,7 @@ export function SuperAdminManagerPage() {
           if (editingUser) {
             try {
               // Buscar associações existentes
-              const existingAssociationsResponse = await fetch(`/api/user-tenants`, {
+              const existingAssociationsResponse = await apiFetch(`/user-tenants`, {
                 headers: { 'Authorization': `Bearer ${token}` }
               });
 
@@ -868,7 +868,7 @@ export function SuperAdminManagerPage() {
                 for (const association of existingData.tenants || []) {
                   if (!userFormData.tenantIds.includes(association.id)) {
                     try {
-                      await fetch(`/api/user-tenants/associations/${userId}/${association.id}`, {
+                      await apiFetch(`/user-tenants/associations/${userId}/${association.id}`, {
                         method: 'DELETE',
                         headers: { 'Authorization': `Bearer ${token}` }
                       });
@@ -886,7 +886,7 @@ export function SuperAdminManagerPage() {
           // Criar associações para todos os tenants selecionados
           for (const tenantId of userFormData.tenantIds) {
             try {
-              const associationResponse = await fetch('/api/user-tenants/associations', {
+              const associationResponse = await apiFetch('/user-tenants/associations', {
                 method: 'POST',
                 headers: {
                   'Authorization': `Bearer ${token}`,
@@ -937,7 +937,7 @@ export function SuperAdminManagerPage() {
   const handleToggleUserStatus = async (user: User) => {
     try {
       const token = localStorage.getItem('auth_token');
-      const response = await fetch(`/api/users/${user.id}`, {
+      const response = await apiFetch(`/users/${user.id}`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -967,7 +967,7 @@ export function SuperAdminManagerPage() {
 
     try {
       const token = localStorage.getItem('auth_token');
-      const response = await fetch(`/api/users/${user.id}`, {
+      const response = await apiFetch(`/users/${user.id}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`

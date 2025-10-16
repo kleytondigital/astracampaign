@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { toast } from 'react-hot-toast';
+import { apiFetch } from '../config/api';
 
 interface BackupFile {
   fileName: string;
@@ -49,7 +50,7 @@ export function SystemBackup() {
 
   const authenticatedFetch = async (url: string, options: RequestInit = {}) => {
     const token = localStorage.getItem('auth_token');
-    return fetch(url, {
+    return apiFetch(url, {
       ...options,
       headers: {
         'Content-Type': 'application/json',
@@ -61,7 +62,7 @@ export function SystemBackup() {
 
   const loadBackups = async () => {
     try {
-      const response = await authenticatedFetch('/api/backup/system');
+      const response = await authenticatedFetch('/backup/system');
       if (response.ok) {
         const data = await response.json();
         setBackups(data.backups || []);
@@ -78,7 +79,7 @@ export function SystemBackup() {
 
   const loadConfig = async () => {
     try {
-      const response = await authenticatedFetch('/api/backup/system/config');
+      const response = await authenticatedFetch('/backup/system/config');
       if (response.ok) {
         const data = await response.json();
         if (data.config) {
@@ -93,7 +94,7 @@ export function SystemBackup() {
   const handleCreateBackup = async () => {
     setCreating(true);
     try {
-      const response = await authenticatedFetch('/api/backup/system', {
+      const response = await authenticatedFetch('/backup/system', {
         method: 'POST'
       });
 
@@ -114,7 +115,7 @@ export function SystemBackup() {
 
   const handleSaveConfig = async () => {
     try {
-      const response = await authenticatedFetch('/api/backup/system/configure', {
+      const response = await authenticatedFetch('/backup/system/configure', {
         method: 'POST',
         body: JSON.stringify(config)
       });
@@ -149,7 +150,7 @@ export function SystemBackup() {
         return;
       }
 
-      const response = await authenticatedFetch('/api/backup/system/restore', {
+      const response = await authenticatedFetch('/backup/system/restore', {
         method: 'POST',
         body: JSON.stringify({ fileName: selectedBackup.fileName })
       });
@@ -173,7 +174,7 @@ export function SystemBackup() {
   const handleDownloadBackup = async (fileName: string) => {
     try {
       const token = localStorage.getItem('auth_token');
-      const response = await fetch(`/api/backup/system/download/${fileName}`, {
+      const response = await apiFetch(`/backup/system/download/${fileName}`, {
         method: 'GET',
         headers: {
           Authorization: `Bearer ${token}`
@@ -234,7 +235,7 @@ export function SystemBackup() {
       formData.append('backup', uploadFile);
 
       const token = localStorage.getItem('auth_token');
-      const response = await fetch('/api/backup/system/upload', {
+      const response = await apiFetch('/backup/system/upload', {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${token}`
