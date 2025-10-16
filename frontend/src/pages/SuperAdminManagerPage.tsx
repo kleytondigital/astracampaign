@@ -285,7 +285,7 @@ export function SuperAdminManagerPage() {
       (headers as Record<string, string>).Authorization = `Bearer ${token}`;
     }
 
-    return fetch(url, {
+    return apiFetch(url, {
       ...options,
       headers,
     });
