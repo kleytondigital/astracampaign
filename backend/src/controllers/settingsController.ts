@@ -12,7 +12,11 @@ const tenantSettingsService = new TenantSettingsService();
 // Configuração do multer para upload de logos
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    const uploadDir = '/app/uploads';
+    const uploadDir = './uploads';
+    // Garantir que o diretório existe
+    if (!fs.existsSync(uploadDir)) {
+      fs.mkdirSync(uploadDir, { recursive: true });
+    }
     cb(null, uploadDir);
   },
   filename: (req, file, cb) => {

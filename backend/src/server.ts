@@ -175,7 +175,7 @@ app.get('/api/health', (req, res) => {
 });
 
 // Servir uploads estaticamente (público)
-app.use('/api/uploads', express.static('/app/uploads'));
+app.use('/api/uploads', express.static('uploads'));
 
 // Rotas protegidas (requerem autenticação)
 app.use('/api/contatos', authMiddleware, contactRoutes);
