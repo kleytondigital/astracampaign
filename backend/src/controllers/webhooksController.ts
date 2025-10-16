@@ -168,6 +168,13 @@ async function handleWAHAMessage(payload: any) {
       }
     }
 
+    // Mapear tipo de mensagem
+    const messageType = messageData.type || messageData._data?.Info?.Type || 'text';
+    const mediaType = messageData._data?.Info?.MediaType; // "image", "video", etc.
+    const mappedType = mapWAHAMessageType(messageType, mediaType);
+    
+    console.log(`📝 Tipo da mensagem: ${messageType}, MediaType: ${mediaType}, Mapeado: ${mappedType}`);
+
     // Salvar mensagem
     const message = await prisma.message.create({
       data: {
@@ -176,7 +183,7 @@ async function handleWAHAMessage(payload: any) {
         fromMe: false,
         body: body,
         mediaUrl: mediaUrl,
-        type: mapWAHAMessageType(messageData.type || messageData._data?.type),
+        type: mappedType,
         timestamp: new Date(messageData.timestamp * 1000),
         ack: messageData.ack || 0,
         messageId: messageData.id,
@@ -630,10 +637,12 @@ function normalizePhone(phone: string): string {
   return cleaned.startsWith('+') ? cleaned : `+${cleaned}`;
 }
 
-function mapWAHAMessageType(type: string): any {
+function mapWAHAMessageType(type: string, mediaType?: string): any {
   const typeMap: any = {
     chat: 'TEXT',
+    text: 'TEXT',
     image: 'IMAGE',
+    media: 'IMAGE', // WAHA usa "media" genérico
     video: 'VIDEO',
     audio: 'AUDIO',
     ptt: 'VOICE',
@@ -643,6 +652,14 @@ function mapWAHAMessageType(type: string): any {
     vcard: 'CONTACT',
     link: 'LINK'
   };
+
+  // Se tipo é "media", verificar mediaType específico
+  if (type === 'media' && mediaType) {
+    if (mediaType === 'image') return 'IMAGE';
+    if (mediaType === 'video') return 'VIDEO';
+    if (mediaType === 'audio') return 'AUDIO';
+    if (mediaType === 'document') return 'DOCUMENT';
+  }
 
   return typeMap[type] || 'OTHER';
 }
