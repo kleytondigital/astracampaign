@@ -19,30 +19,33 @@ const leadValidators = [
   body('lastName').notEmpty().withMessage('O sobrenome é obrigatório.'),
   body('email').isEmail().withMessage('E-mail inválido.'),
   body('phone')
-    .optional()
+    .optional({ nullable: true })
     .isString()
     .withMessage('Telefone deve ser uma string.'),
   body('company')
-    .optional()
-    .isString()
+    .optional({ nullable: true })
+    .custom((value) => {
+      if (value === null || value === undefined || value === '') return true;
+      return typeof value === 'string';
+    })
     .withMessage('Empresa deve ser uma string.'),
   body('source')
     .isIn(Object.values(LeadSource))
     .withMessage('Fonte do lead inválida.'),
   body('status')
-    .optional()
+    .optional({ nullable: true })
     .isIn(Object.values(LeadStatus))
     .withMessage('Status do lead inválido.'),
   body('score')
-    .optional()
+    .optional({ nullable: true })
     .isInt({ min: 0, max: 100 })
     .withMessage('Score deve ser um número entre 0 e 100.'),
   body('tags')
-    .optional()
+    .optional({ nullable: true })
     .isArray()
     .withMessage('Tags devem ser um array de strings.'),
   body('assignedTo')
-    .optional()
+    .optional({ nullable: true })
     .isUUID()
     .withMessage('ID de usuário atribuído inválido.')
 ];
