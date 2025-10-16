@@ -33,6 +33,7 @@ import leadsRoutes from './routes/leads';
 import chatsRoutes from './routes/chats';
 import departmentsRoutes from './routes/departments';
 import chatAssignmentsRoutes from './routes/chatAssignments';
+import metricsRoutes from './routes/metrics';
 import webhooksRoutes from './routes/webhooks';
 import webhookManagementRoutes from './routes/webhookManagement';
 import instanceManagementRoutes from './routes/instanceManagement';
@@ -192,6 +193,7 @@ app.use('/api/leads', authMiddleware, leadsRoutes); // CRM Leads system
 app.use('/api/chats', authMiddleware, chatsRoutes); // Chat/Atendimento WhatsApp system
 app.use('/api/departments', departmentsRoutes); // Department management system
 app.use('/api/chat-assignments', chatAssignmentsRoutes); // Chat assignment system
+app.use('/api/metrics', metricsRoutes); // Metrics and analytics system
 app.use('/api/webhooks', webhooksRoutes); // Webhooks públicos (WAHA, Evolution, etc) - SEM autenticação
 app.use('/api/webhook-management', authMiddleware, webhookManagementRoutes); // Gerenciamento de webhooks - COM autenticação
 app.use('/api/instance-management', authMiddleware, instanceManagementRoutes); // Gerenciamento de instâncias (logout, delete, restart, websocket) - COM autenticação

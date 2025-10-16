@@ -25,6 +25,8 @@ import { LoginPage } from './pages/LoginPage';
 import { SuperAdminPage } from './pages/SuperAdminPage';
 import { SuperAdminDashboard } from './pages/SuperAdminDashboard';
 import { SuperAdminManagerPage } from './pages/SuperAdminManagerPage';
+import AdminDashboard from './pages/AdminDashboard';
+import DepartmentsPage from './pages/DepartmentsPage';
 import { useGlobalSettings } from './hooks/useGlobalSettings';
 import './styles/globals.css';
 
@@ -219,6 +221,22 @@ function AppContent() {
             element={
               <ProtectedRoute>
                 <AtendimentoPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin-dashboard"
+            element={
+              <ProtectedRoute>
+                <AdminDashboard />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/departamentos"
+            element={
+              <ProtectedRoute>
+                <DepartmentsPage />
               </ProtectedRoute>
             }
           />
