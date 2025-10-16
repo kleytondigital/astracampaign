@@ -384,7 +384,7 @@ export function SuperAdminManagerPage() {
       const formData = new FormData();
       formData.append('logo', logoFile);
 
-      const response = await authenticatedUpload('/api/settings/logo', {
+      const response = await authenticatedUpload('/settings/logo', {
         method: 'POST',
         body: formData,
       });
@@ -445,7 +445,7 @@ export function SuperAdminManagerPage() {
       const formData = new FormData();
       formData.append('favicon', faviconFile);
 
-      const response = await authenticatedUpload('/api/settings/favicon', {
+      const response = await authenticatedUpload('/settings/favicon', {
         method: 'POST',
         body: formData,
       });
@@ -506,7 +506,7 @@ export function SuperAdminManagerPage() {
       const formData = new FormData();
       formData.append('icon', iconFile);
 
-      const response = await authenticatedUpload('/api/settings/icon', {
+      const response = await authenticatedUpload('/settings/icon', {
         method: 'POST',
         body: formData,
       });
