@@ -34,6 +34,8 @@ import chatsRoutes from './routes/chats';
 import departmentsRoutes from './routes/departments';
 import chatAssignmentsRoutes from './routes/chatAssignments';
 import metricsRoutes from './routes/metrics';
+import dataSourcesRoutes from './routes/dataSources';
+import reportsRoutes from './routes/reports';
 import webhooksRoutes from './routes/webhooks';
 import webhookManagementRoutes from './routes/webhookManagement';
 import instanceManagementRoutes from './routes/instanceManagement';
@@ -194,6 +196,8 @@ app.use('/api/chats', authMiddleware, chatsRoutes); // Chat/Atendimento WhatsApp
 app.use('/api/departments', authMiddleware, departmentsRoutes); // Department management system
 app.use('/api/chat-assignments', authMiddleware, chatAssignmentsRoutes); // Chat assignment system
 app.use('/api/metrics', authMiddleware, metricsRoutes); // Metrics and analytics system
+app.use('/api/data-sources', authMiddleware, dataSourcesRoutes); // Data sources management (Google Sheets, etc)
+app.use('/api/reports', authMiddleware, reportsRoutes); // Reports and dashboards system
 app.use('/api/webhooks', webhooksRoutes); // Webhooks públicos (WAHA, Evolution, etc) - SEM autenticação
 app.use('/api/webhook-management', authMiddleware, webhookManagementRoutes); // Gerenciamento de webhooks - COM autenticação
 app.use('/api/instance-management', authMiddleware, instanceManagementRoutes); // Gerenciamento de instâncias (logout, delete, restart, websocket) - COM autenticação

@@ -44,6 +44,10 @@ model Tenant {
   crmNotifications     CRMNotification[]
   preRegisteredMedia   PreRegisteredMedia[]
   chatMetrics          ChatMetrics[] // Métricas de atendimento
+  dataSources          DataSource[] // Fontes de dados para relatórios
+  campaignData         CampaignData[] // Dados de campanhas
+  reports              Report[] // Relatórios gerados
+  reportSchedules      ReportSchedule[] // Agendamentos de relatórios
 
   @@map("tenants")
 }
@@ -289,6 +293,7 @@ model User {
   chatAssignments  ChatAssignment[]    // Atribuições de chat
   chatMetrics      ChatMetrics[]       // Métricas de atendimento
   sentMessages     Message[]           // Mensagens enviadas pelo usuário
+  createdReports   Report[]            // Relatórios criados pelo usuário
 
   @@index([tenantId])
   @@index([email])
@@ -1069,4 +1074,106 @@ enum ChatServiceStatus {
   TRANSFERRED // Transferido
   CLOSED    // Fechado
   PAUSED    // Pausado
+}
+
+// ============================================================================
+// MÓDULO DE RELATÓRIOS E DASHBOARDS
+// ============================================================================
+
+model DataSource {
+  id          String   @id @default(uuid())
+  tenantId    String   @map("tenant_id")
+  name        String   // Nome identificador (ex: "Cliente X - Campanhas de Outubro")
+  type        String   @default("GOOGLE_SHEETS") // Tipo de fonte de dados
+  url         String   // URL da planilha ou endpoint
+  credentials String?  // Credenciais de acesso (JSON encriptado)
+  active      Boolean  @default(true)
+  lastSync    DateTime? @map("last_sync") // Última sincronização
+  syncStatus  String   @default("PENDING") @map("sync_status") // PENDING, SUCCESS, ERROR
+  errorMessage String? @map("error_message")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  tenant      Tenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  campaigns   CampaignData[]   // Dados das campanhas desta fonte
+  reports     Report[]         // Relatórios gerados
+
+  @@index([tenantId])
+  @@index([active])
+  @@index([syncStatus])
+  @@map("data_sources")
+}
+
+model CampaignData {
+  id           String   @id @default(uuid())
+  dataSourceId String   @map("data_source_id")
+  tenantId     String   @map("tenant_id")
+  campaignName String   @map("campaign_name")
+  date         DateTime @db.Date
+  cost         Decimal  @db.Decimal(10,2) // Custo
+  reach        Int      // Alcance
+  impressions  Int      // Impressões
+  clicks       Int      // Cliques
+  ctr          Decimal  @db.Decimal(5,2) // CTR (%)
+  conversions  Int      // Conversões
+  costPerConversion Decimal? @db.Decimal(10,2) @map("cost_per_conversion") // Custo por conversão
+  roi          Decimal? @db.Decimal(5,2) // ROI (%)
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  dataSource   DataSource @relation(fields: [dataSourceId], references: [id], onDelete: Cascade)
+  tenant       Tenant     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([dataSourceId, campaignName, date])
+  @@index([tenantId])
+  @@index([dataSourceId])
+  @@index([date])
+  @@index([campaignName])
+  @@map("campaign_data")
+}
+
+model Report {
+  id          String   @id @default(uuid())
+  tenantId    String   @map("tenant_id")
+  dataSourceId String? @map("data_source_id")
+  name        String   // Nome do relatório
+  type        String   @default("DASHBOARD") // DASHBOARD, SUMMARY, CUSTOM
+  config      Json     // Configuração do relatório (filtros, visualizações, etc.)
+  isPublic    Boolean  @default(false) @map("is_public") // Se pode ser compartilhado
+  shareToken  String?  @unique @map("share_token") // Token para compartilhamento
+  createdBy   String   @map("created_by") // ID do usuário que criou
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  tenant      Tenant      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  dataSource  DataSource? @relation(fields: [dataSourceId], references: [id], onDelete: SetNull)
+  creator     User        @relation(fields: [createdBy], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([dataSourceId])
+  @@index([createdBy])
+  @@index([isPublic])
+  @@map("reports")
+}
+
+model ReportSchedule {
+  id          String   @id @default(uuid())
+  tenantId    String   @map("tenant_id")
+  dataSourceId String  @map("data_source_id")
+  name        String   // Nome do agendamento
+  frequency   String   // DAILY, WEEKLY, MONTHLY
+  time        String   // Horário (HH:MM)
+  isActive    Boolean  @default(true) @map("is_active")
+  lastRun     DateTime? @map("last_run")
+  nextRun     DateTime? @map("next_run")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  tenant      Tenant     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  dataSource  DataSource @relation(fields: [dataSourceId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([dataSourceId])
+  @@index([isActive])
+  @@map("report_schedules")
 }
