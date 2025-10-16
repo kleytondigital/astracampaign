@@ -108,7 +108,7 @@ export function CampaignsPage() {
   const loadCampaigns = async () => {
     try {
       setLoading(true);
-      const response = await authenticatedFetch('/api/campaigns');
+      const response = await authenticatedFetch('/campaigns');
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}`);
       }
@@ -124,7 +124,7 @@ export function CampaignsPage() {
 
   const loadContactTags = async () => {
     try {
-      const response = await authenticatedFetch('/api/campaigns/tags');
+      const response = await authenticatedFetch('/campaigns/tags');
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}`);
       }
@@ -137,7 +137,7 @@ export function CampaignsPage() {
 
   const loadWhatsAppSessions = async () => {
     try {
-      const response = await authenticatedFetch('/api/campaigns/sessions');
+      const response = await authenticatedFetch('/campaigns/sessions');
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}`);
       }
@@ -207,7 +207,7 @@ export function CampaignsPage() {
         scheduledFor: formData.startImmediately ? null : formData.scheduledFor || null
       };
 
-      const response = await authenticatedFetch('/api/campaigns', {
+      const response = await authenticatedFetch('/campaigns', {
         method: 'POST',
         body: JSON.stringify(campaignData)
       });
@@ -265,7 +265,7 @@ export function CampaignsPage() {
         headers.Authorization = `Bearer ${token}`;
       }
 
-      const response = await fetch('/api/media/upload', {
+      const response = await fetch('/media/upload', {
         method: 'POST',
         body: uploadFormData,
         headers
@@ -391,7 +391,7 @@ export function CampaignsPage() {
 
   const handleToggleCampaign = async (campaignId: string, action: 'pause' | 'resume') => {
     try {
-      const response = await authenticatedFetch(`/api/campaigns/${campaignId}/toggle`, {
+      const response = await authenticatedFetch(`/campaigns/${campaignId}/toggle`, {
         method: 'PATCH',
         body: JSON.stringify({ action })
       });
@@ -414,7 +414,7 @@ export function CampaignsPage() {
     }
 
     try {
-      const response = await authenticatedFetch(`/api/campaigns/${campaignId}`, {
+      const response = await authenticatedFetch(`/campaigns/${campaignId}`, {
         method: 'DELETE'
       });
 
@@ -437,7 +437,7 @@ export function CampaignsPage() {
     setShowReportModal(true);
 
     try {
-      const response = await authenticatedFetch(`/api/campaigns/${campaignId}/report`);
+      const response = await authenticatedFetch(`/campaigns/${campaignId}/report`);
 
       if (response.ok) {
         const data = await response.json();
@@ -495,7 +495,7 @@ export function CampaignsPage() {
 
     setReportLoading(true);
     try {
-      const response = await authenticatedFetch(`/api/campaigns/${currentReportCampaignId}/report`);
+      const response = await authenticatedFetch(`/campaigns/${currentReportCampaignId}/report`);
 
       if (response.ok) {
         const data = await response.json();
@@ -516,7 +516,7 @@ export function CampaignsPage() {
     if (!currentReportCampaignId || !reportData) return;
 
     try {
-      const response = await authenticatedFetch(`/api/campaigns/${currentReportCampaignId}/report/download`);
+      const response = await authenticatedFetch(`/campaigns/${currentReportCampaignId}/report/download`);
 
       if (response.ok) {
         const blob = await response.blob();
