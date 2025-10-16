@@ -21,7 +21,10 @@ export const getCompanies = async (
     } = req.query;
 
     const tenantId = req.user?.tenantId;
-    if (!tenantId) {
+    const userRole = req.user?.role;
+
+    // SUPERADMIN não precisa de tenant
+    if (!tenantId && userRole !== 'SUPERADMIN') {
       console.log('❌ Tenant não identificado:', {
         user: req.user,
         tenantId: req.tenantId
@@ -39,9 +42,12 @@ export const getCompanies = async (
     const skip = (pageNum - 1) * pageSizeNum;
 
     // Construir filtros
-    const where: any = {
-      tenantId
-    };
+    const where: any = {};
+
+    // SUPERADMIN vê todas as empresas, outros veem apenas do seu tenant
+    if (userRole !== 'SUPERADMIN' && tenantId) {
+      where.tenantId = tenantId;
+    }
 
     if (search) {
       where.OR = [
@@ -118,8 +124,10 @@ export const getCompanyById = async (
   try {
     const { id } = req.params;
     const tenantId = req.user?.tenantId;
+    const userRole = req.user?.role;
 
-    if (!tenantId) {
+    // SUPERADMIN não precisa de tenant
+    if (!tenantId && userRole !== 'SUPERADMIN') {
       console.log('❌ Tenant não identificado:', {
         user: req.user,
         tenantId: req.tenantId
@@ -132,11 +140,14 @@ export const getCompanyById = async (
       });
     }
 
+    // Construir where baseado no role
+    const where: any = { id };
+    if (userRole !== 'SUPERADMIN' && tenantId) {
+      where.tenantId = tenantId;
+    }
+
     const company = await prisma.company.findFirst({
-      where: {
-        id,
-        tenantId
-      },
+      where,
       include: {
         assignedUser: {
           select: {
