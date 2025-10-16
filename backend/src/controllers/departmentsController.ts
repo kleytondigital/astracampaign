@@ -347,14 +347,14 @@ export const getDepartmentUsers = async (req: AuthenticatedRequest, res: Respons
     // Buscar usuários através da tabela intermediária
     const userDepartments = await prisma.userDepartment.findMany({
       where: {
-        departmentId: id
+        departmentId: id,
+        user: {
+          tenantId: user.tenantId,
+          ativo: true
+        }
       },
       include: {
         user: {
-          where: {
-            tenantId: user.tenantId,
-            ativo: true
-          },
           select: {
             id: true,
             nome: true,
@@ -378,7 +378,6 @@ export const getDepartmentUsers = async (req: AuthenticatedRequest, res: Respons
     });
 
     const users = userDepartments
-      .filter(ud => ud.user !== null)
       .map(ud => ({
         ...ud.user,
         isDefault: ud.isDefault,
