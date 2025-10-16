@@ -289,6 +289,7 @@ model User {
   crmNotifications CRMNotification[]
   chatAssignments  ChatAssignment[]    // Atribuições de chat
   chatMetrics      ChatMetrics[]       // Métricas de atendimento
+  sentMessages     Message[]           // Mensagens enviadas pelo usuário
 
   @@index([tenantId])
   @@index([departmentId])
@@ -877,14 +878,20 @@ model Message {
   messageId       String?     @map("message_id") // ID da mensagem no WhatsApp
   quotedMsgId     String?     @map("quoted_msg_id") // ID da mensagem citada
   metadata        Json?       // Metadados adicionais
+  // Campos para assinatura de mensagens
+  sentBy          String?     @map("sent_by") // ID do usuário que enviou (se fromMe = true)
+  departmentName  String?     @map("department_name") // Nome do departamento (se fromMe = true)
+  isSigned        Boolean     @default(false) @map("is_signed") // Se a mensagem foi assinada
   createdAt       DateTime    @default(now()) @map("created_at")
   
   // Relations
   chat            Chat        @relation(fields: [chatId], references: [id], onDelete: Cascade)
+  sender          User?       @relation(fields: [sentBy], references: [id], onDelete: SetNull)
   
   @@index([chatId])
   @@index([timestamp])
   @@index([fromMe])
+  @@index([sentBy])
   @@map("messages")
 }
 

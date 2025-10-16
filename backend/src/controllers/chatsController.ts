@@ -3,6 +3,7 @@ import { PrismaClient, ChatStatus, ChatMessageType } from '@prisma/client';
 import { AuthenticatedRequest } from '../middleware/auth';
 import { sendMessage as sendWAHA } from '../services/wahaApiService';
 import { sendMessageViaEvolution } from '../services/evolutionMessageService';
+import { formatMessageWithSignature, shouldSignMessage } from '../utils/messageSignature';
 
 const prisma = new PrismaClient();
 
@@ -248,6 +249,11 @@ export const sendMessage = async (req: AuthenticatedRequest, res: Response) => {
     let finalMediaUrl = mediaUrl;
     let finalType = type;
     let finalBody = body;
+    
+    // Aplicar assinatura se necessário (apenas para mensagens de texto)
+    if (finalBody && finalType === 'TEXT' && shouldSignMessage(userRole || 'USER')) {
+      finalBody = await formatMessageWithSignature(finalBody, userId || '', true);
+    }
 
     if (preRegisteredMediaId) {
       const preRegisteredMedia = await prisma.preRegisteredMedia.findUnique({
@@ -395,26 +401,40 @@ export const sendMessage = async (req: AuthenticatedRequest, res: Response) => {
         .json({ error: 'Erro ao enviar mensagem via WhatsApp' });
     }
 
+    // Buscar informações do usuário para assinatura
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      include: {
+        department: {
+          select: { name: true }
+        }
+      }
+    });
+
     // Criar mensagem no banco
     const message = await prisma.message.create({
       data: {
         chatId,
         phone: chat.phone,
         fromMe: true,
-        body,
-        type: type as ChatMessageType,
-        mediaUrl,
+        body: finalBody, // Usar o body final (com assinatura se aplicável)
+        type: finalType as ChatMessageType,
+        mediaUrl: finalMediaUrl,
         timestamp: new Date(),
         ack: 1, // Enviado
-        messageId: sentResult?.id || sentResult?.key?.id
+        messageId: sentResult?.id || sentResult?.key?.id,
+        // Campos de assinatura
+        sentBy: userId,
+        departmentName: user?.department?.name || null,
+        isSigned: shouldSignMessage(userRole || 'USER')
       }
     });
 
-    // Atualizar última mensagem do chat
+    // Atualizar última mensagem do chat (sem assinatura)
     await prisma.chat.update({
       where: { id: chatId },
       data: {
-        lastMessage: body || '[Mídia]',
+        lastMessage: body || '[Mídia]', // Usar o body original, sem assinatura
         lastMessageAt: new Date()
       }
     });
