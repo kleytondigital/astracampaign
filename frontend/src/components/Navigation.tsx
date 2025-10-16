@@ -8,20 +8,8 @@ export function Navigation() {
   const { settings } = useSettings();
   const { user, logout } = useAuth();
 
-  // Estado da sidebar (expandida ou não)
-  const [isExpanded, setIsExpanded] = useState(() => {
-    const saved = localStorage.getItem('sidebar-expanded');
-    return saved ? JSON.parse(saved) : false;
-  });
-
-  // Salvar estado no localStorage
-  useEffect(() => {
-    localStorage.setItem('sidebar-expanded', JSON.stringify(isExpanded));
-  }, [isExpanded]);
-
-  const toggleSidebar = () => {
-    setIsExpanded(!isExpanded);
-  };
+  // Estado da sidebar (expandida no hover)
+  const [isExpanded, setIsExpanded] = useState(false);
 
   const menuItems = [
     {
@@ -108,20 +96,24 @@ export function Navigation() {
         </svg>
       ),
     },
-    {
-      path: '/empresas',
-      label: 'Empresas',
-      icon: (
-        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
-          />
-        </svg>
-      ),
-    },
+    ...(user?.role === 'SUPERADMIN'
+      ? [
+          {
+            path: '/empresas',
+            label: 'Empresas',
+            icon: (
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
+                />
+              </svg>
+            ),
+          },
+        ]
+      : []),
     {
       path: '/leads',
       label: 'Leads',
@@ -228,10 +220,12 @@ export function Navigation() {
         isExpanded ? 'w-64' : 'w-20'
       }`}
       style={{ background: 'var(--sidebar-bg)' }}
+      onMouseEnter={() => setIsExpanded(true)}
+      onMouseLeave={() => setIsExpanded(false)}
     >
-      {/* Header - Logo/Ícone + Título + Botão Toggle - Fixo */}
+      {/* Header - Logo/Ícone + Título - Fixo */}
       <div className="p-4 flex-shrink-0">
-        <div className="flex items-center justify-between gap-3">
+        <div className="flex items-center gap-3">
           <div className={`flex items-center gap-3 ${!isExpanded && 'justify-center w-full'}`}>
             <div className="w-12 h-12 bg-white/10 rounded-xl flex items-center justify-center backdrop-blur-sm flex-shrink-0">
               {settings?.iconUrl ? (
@@ -257,91 +251,7 @@ export function Navigation() {
               </div>
             )}
           </div>
-
-          {/* Botão de Toggle - Ao lado do Logo */}
-          {isExpanded && (
-            <button onClick={toggleSidebar} className="group flex-shrink-0" title="Recolher menu">
-              <div className="relative">
-                {/* Círculo principal */}
-                <div
-                  className="w-8 h-8 rounded-full shadow-lg transition-all duration-300 flex items-center justify-center group-hover:scale-110"
-                  style={{
-                    background:
-                      'linear-gradient(135deg, var(--astra-dark-blue) 0%, var(--astra-blue) 100%)',
-                  }}
-                >
-                  {/* Ícone */}
-                  <svg
-                    className="w-4 h-4 text-white transition-transform duration-300"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                    strokeWidth={2.5}
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      d="M11 19l-7-7 7-7m8 14l-7-7 7-7"
-                    />
-                  </svg>
-                </div>
-
-                {/* Sombra animada */}
-                <div
-                  className="absolute inset-0 rounded-full -z-10 opacity-0 group-hover:opacity-60 transition-opacity duration-300 blur-md"
-                  style={{
-                    background:
-                      'linear-gradient(135deg, var(--astra-blue) 0%, var(--astra-dark-blue) 100%)',
-                  }}
-                />
-              </div>
-            </button>
-          )}
         </div>
-
-        {/* Botão quando compacto - Na borda direita */}
-        {!isExpanded && (
-          <button
-            onClick={toggleSidebar}
-            className="absolute -right-3 top-6 z-[100] group"
-            title="Expandir menu"
-          >
-            <div className="relative">
-              {/* Círculo principal */}
-              <div
-                className="w-8 h-8 rounded-full shadow-lg transition-all duration-300 flex items-center justify-center group-hover:scale-110"
-                style={{
-                  background:
-                    'linear-gradient(135deg, var(--astra-dark-blue) 0%, var(--astra-blue) 100%)',
-                }}
-              >
-                {/* Ícone */}
-                <svg
-                  className="w-4 h-4 text-white transition-transform duration-300"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                  strokeWidth={2.5}
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M13 5l7 7-7 7M5 5l7 7-7 7"
-                  />
-                </svg>
-              </div>
-
-              {/* Sombra animada */}
-              <div
-                className="absolute inset-0 rounded-full -z-10 opacity-0 group-hover:opacity-60 transition-opacity duration-300 blur-md"
-                style={{
-                  background:
-                    'linear-gradient(135deg, var(--astra-blue) 0%, var(--astra-dark-blue) 100%)',
-                }}
-              />
-            </div>
-          </button>
-        )}
       </div>
 
       {/* Menu Items - Scrollable */}
