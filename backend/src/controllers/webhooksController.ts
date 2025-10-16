@@ -1,8 +1,78 @@
 import { Request, Response } from 'express';
 import { PrismaClient } from '@prisma/client';
 import { websocketService } from '../services/websocketService';
+import { settingsService } from '../services/settingsService';
+import * as fs from 'fs';
+import * as path from 'path';
+import fetch from 'node-fetch';
 
 const prisma = new PrismaClient();
+
+// ============================================================================
+// FUNÇÃO DE DOWNLOAD E SALVAMENTO DE MÍDIA
+// ============================================================================
+
+async function downloadAndSaveMedia(mediaUrl: string, messageId: string): Promise<string | null> {
+  try {
+    console.log('📥 Baixando mídia:', mediaUrl);
+
+    const wahaConfig = await settingsService.getWahaConfig();
+    
+    // Fazer download da mídia do WAHA com autenticação
+    const response = await fetch(mediaUrl, {
+      headers: {
+        'X-Api-Key': wahaConfig.apiKey
+      }
+    });
+
+    if (!response.ok) {
+      console.error('❌ Erro ao baixar mídia:', response.status);
+      return null;
+    }
+
+    // Obter buffer da mídia
+    const buffer = await response.buffer();
+    
+    // Extrair extensão do arquivo da URL ou mimetype
+    const contentType = response.headers.get('content-type');
+    let extension = 'bin';
+    
+    if (contentType?.includes('image/jpeg')) extension = 'jpeg';
+    else if (contentType?.includes('image/png')) extension = 'png';
+    else if (contentType?.includes('image/gif')) extension = 'gif';
+    else if (contentType?.includes('video/mp4')) extension = 'mp4';
+    else if (contentType?.includes('audio/')) extension = 'ogg';
+    else if (contentType?.includes('application/pdf')) extension = 'pdf';
+    
+    // Criar estrutura de pastas: uploads/chats/YYYY-MM/
+    const now = new Date();
+    const yearMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+    const uploadDir = path.join(process.cwd(), 'uploads', 'chats', yearMonth);
+    
+    // Criar diretório se não existir
+    if (!fs.existsSync(uploadDir)) {
+      fs.mkdirSync(uploadDir, { recursive: true });
+      console.log('📁 Diretório criado:', uploadDir);
+    }
+    
+    // Nome do arquivo: messageId + extensão
+    const fileName = `${messageId}.${extension}`;
+    const filePath = path.join(uploadDir, fileName);
+    
+    // Salvar arquivo
+    fs.writeFileSync(filePath, buffer);
+    console.log('💾 Mídia salva:', filePath);
+    
+    // Retornar URL relativa para o banco
+    const relativeUrl = `/uploads/chats/${yearMonth}/${fileName}`;
+    console.log('🔗 URL local da mídia:', relativeUrl);
+    
+    return relativeUrl;
+  } catch (error) {
+    console.error('❌ Erro ao baixar e salvar mídia:', error);
+    return null;
+  }
+}
 
 // ============================================================================
 // WEBHOOK WHATSAPP - Receber mensagens de WAHA e Evolution
@@ -79,19 +149,23 @@ async function handleWAHAMessage(payload: any) {
 
     // Processar mídia se houver
     const hasMedia = messageData.hasMedia || messageData.media;
-    let mediaUrl = hasMedia ? messageData.media?.url : null;
+    const wahaMediaUrl = hasMedia ? messageData.media?.url : null;
     const body = messageData.body || messageData.caption || (hasMedia ? '[Mídia]' : '');
 
     console.log(`📎 Mídia detectada: ${hasMedia ? 'Sim' : 'Não'}`);
     
-    // Converter URL da mídia do WAHA para usar proxy do backend
-    if (mediaUrl && mediaUrl.includes('/api/files/')) {
-      const mediaPath = mediaUrl.split('/api/files/')[1];
-      const backendUrl = process.env.BACKEND_URL || 'http://localhost:3001';
-      mediaUrl = `${backendUrl}/api/waha/media/${mediaPath}`;
-      console.log(`🔄 URL da mídia convertida para proxy: ${mediaUrl}`);
-    } else if (mediaUrl) {
-      console.log(`📸 URL da mídia original: ${mediaUrl}`);
+    // Baixar e salvar mídia localmente
+    let mediaUrl: string | null = null;
+    if (wahaMediaUrl) {
+      console.log(`📸 URL da mídia WAHA: ${wahaMediaUrl}`);
+      mediaUrl = await downloadAndSaveMedia(wahaMediaUrl, messageData.id);
+      
+      if (mediaUrl) {
+        console.log(`✅ Mídia salva localmente: ${mediaUrl}`);
+      } else {
+        console.warn(`⚠️ Falha ao salvar mídia, usando URL do WAHA como fallback`);
+        mediaUrl = wahaMediaUrl; // Fallback para URL original se download falhar
+      }
     }
 
     // Salvar mensagem
