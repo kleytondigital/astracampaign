@@ -352,6 +352,89 @@ router.post('/sessions/:sessionName/restart', async (req, res) => {
   }
 });
 
+// Configurar webhook para sessão WAHA
+router.post('/sessions/:sessionName/webhook', authMiddleware, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const { sessionName } = req.params;
+    const { webhookUrl, events } = req.body;
+    
+    console.log('🔧 POST /sessions/:sessionName/webhook - sessionName:', sessionName, 'webhookUrl:', webhookUrl);
+
+    if (!webhookUrl) {
+      return res.status(400).json({ error: 'URL do webhook é obrigatória' });
+    }
+
+    // SUPERADMIN pode configurar qualquer sessão, outros usuários só do seu tenant
+    const tenantId = req.user?.role === 'SUPERADMIN' ? undefined : req.tenantId;
+
+    // Verificar se a sessão existe e pertence ao tenant
+    const session = await WhatsAppSessionService.getSession(sessionName, tenantId);
+    
+    if (session.provider !== 'WAHA') {
+      return res.status(400).json({ error: 'Webhook só pode ser configurado para sessões WAHA. Use o endpoint de Evolution para sessões Evolution.' });
+    }
+
+    // Obter webhook URL do backend
+    const backendUrl = process.env.BACKEND_URL || 'http://localhost:3001';
+    const internalWebhookUrl = `${backendUrl}/api/webhooks/whatsapp`;
+
+    // Configurar webhook na WAHA API usando o formato correto da documentação
+    const wahaConfig = await settingsService.getWahaConfig();
+    
+    const response = await fetch(`${wahaConfig.host}/api/sessions/${sessionName}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Api-Key': wahaConfig.apiKey
+      },
+      body: JSON.stringify({
+        name: sessionName,
+        config: {
+          webhooks: [
+            {
+              url: internalWebhookUrl,
+              events: events || ['message', 'message.ack', 'session.status'],
+              hmac: null,
+              retries: 3,
+              customHeaders: null
+            }
+          ]
+        }
+      })
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('❌ Erro ao configurar webhook WAHA:', errorText);
+      return res.status(500).json({ error: 'Erro ao configurar webhook no WAHA' });
+    }
+
+    const result = await response.json();
+
+    // Atualizar sessão no banco
+    await prisma.whatsAppSession.update({
+      where: { name: sessionName },
+      data: {
+        webhookEnabled: true,
+        webhookUrl: internalWebhookUrl,
+        atualizadoEm: new Date()
+      }
+    });
+
+    console.log('✅ Webhook WAHA configurado:', sessionName);
+
+    res.json({
+      success: true,
+      message: 'Webhook configurado com sucesso',
+      webhookUrl: internalWebhookUrl,
+      result
+    });
+  } catch (error) {
+    console.error('Erro ao configurar webhook WAHA:', error);
+    res.status(500).json({ error: error instanceof Error ? error.message : 'Erro ao configurar webhook' });
+  }
+});
+
 // Deletar sessão
 router.delete('/sessions/:sessionName', authMiddleware, async (req: AuthenticatedRequest, res: Response) => {
   try {
