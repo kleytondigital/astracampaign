@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Edit, Trash2, Users, MessageSquare, Settings, AlertCircle } from 'lucide-react';
+import { Plus, Edit, Trash2, Users, MessageSquare, Settings, AlertCircle, UserCog } from 'lucide-react';
 import { Header } from '../components/Header';
 import { useAuth } from '../contexts/AuthContext';
 import { apiFetch } from '../config/api';
 import toast from 'react-hot-toast';
+import { ManageUsersModal } from '../components/ManageUsersModal';
 
 interface Department {
   id: string;
@@ -46,6 +47,10 @@ export default function DepartmentsPage() {
     description: '',
     color: '#3B82F6'
   });
+  
+  // Estados para gerenciamento de usuários
+  const [showManageUsersModal, setShowManageUsersModal] = useState(false);
+  const [selectedDepartment, setSelectedDepartment] = useState<Department | null>(null);
 
   // Verificar permissões
   if (user?.role !== 'ADMIN' && user?.role !== 'SUPERADMIN') {
@@ -252,7 +257,7 @@ export default function DepartmentsPage() {
                 </div>
 
                 <div className="mt-4 pt-4 border-t border-gray-100">
-                  <div className="flex items-center justify-between text-xs text-gray-500">
+                  <div className="flex items-center justify-between text-xs text-gray-500 mb-3">
                     <span>Criado em {new Date(department.createdAt).toLocaleDateString('pt-BR')}</span>
                     <span className={`px-2 py-1 rounded-full ${
                       department.active 
@@ -262,6 +267,18 @@ export default function DepartmentsPage() {
                       {department.active ? 'Ativo' : 'Inativo'}
                     </span>
                   </div>
+                  
+                  {/* Botão Gerenciar Usuários */}
+                  <button
+                    onClick={() => {
+                      setSelectedDepartment(department);
+                      setShowManageUsersModal(true);
+                    }}
+                    className="w-full flex items-center justify-center gap-2 px-3 py-2 text-sm font-medium text-blue-700 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors"
+                  >
+                    <UserCog className="w-4 h-4" />
+                    Gerenciar Usuários
+                  </button>
                 </div>
               </div>
             ))}
@@ -353,6 +370,23 @@ export default function DepartmentsPage() {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Modal de Gerenciar Usuários */}
+      {showManageUsersModal && selectedDepartment && (
+        <ManageUsersModal
+          isOpen={showManageUsersModal}
+          onClose={() => {
+            setShowManageUsersModal(false);
+            setSelectedDepartment(null);
+          }}
+          departmentId={selectedDepartment.id}
+          departmentName={selectedDepartment.name}
+          onSuccess={() => {
+            // Recarregar lista de departamentos para atualizar contadores
+            loadDepartments();
+          }}
+        />
       )}
     </div>
   );
