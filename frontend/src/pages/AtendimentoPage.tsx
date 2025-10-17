@@ -248,6 +248,13 @@ export default function AtendimentoPage() {
     scrollToBottom();
   }, [messages]);
 
+  // Debug: monitorar mudanças no recordingTime
+  useEffect(() => {
+    if (isRecording) {
+      console.log('🎬 [UI] recordingTime mudou para:', recordingTime);
+    }
+  }, [recordingTime, isRecording]);
+
   // ============================================================================
   // HANDLERS DE AÇÕES
   // ============================================================================
@@ -393,10 +400,13 @@ export default function AtendimentoPage() {
 
       // Timer de gravação
       recordingIntervalRef.current = setInterval(() => {
-        recordingTimeRef.current += 1;
-        setRecordingTime(recordingTimeRef.current);
-        console.log('⏱️ Timer incrementando:', recordingTimeRef.current);
+        const newTime = recordingTimeRef.current + 1;
+        recordingTimeRef.current = newTime;
+        setRecordingTime(newTime);
+        console.log('⏱️ Timer incrementando:', newTime, '- State será atualizado para:', newTime);
       }, 1000);
+      
+      console.log('✅ Timer iniciado, interval ID:', recordingIntervalRef.current);
 
       toast.success('🎤 Gravação iniciada!');
     } catch (error) {
@@ -1047,6 +1057,7 @@ export default function AtendimentoPage() {
                       <div className="w-3 h-3 bg-red-500 rounded-full animate-pulse"></div>
                       <span className="text-red-700 font-medium">
                         Gravando... {formatRecordingTime(recordingTime)}
+                        {/* Debug: valor atual: {recordingTime} */}
                       </span>
                     </div>
                     <div className="flex items-center space-x-2">
