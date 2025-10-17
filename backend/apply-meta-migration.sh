@@ -1,12 +1,12 @@
 #!/bin/bash
 
-echo "🚀 Iniciando migração para integração Meta Ads..."
+echo "🚀 Iniciando aplicação de migração Meta Ads..."
 
 # Navegar para o diretório backend
 cd /app
 
 # Aplicar as mudanças do schema diretamente no banco de dados
-echo "📊 Executando npx prisma db push..."
+echo "📝 Executando npx prisma db push..."
 npx prisma db push --accept-data-loss
 
 if [ $? -ne 0 ]; then
@@ -15,7 +15,7 @@ if [ $? -ne 0 ]; then
 fi
 
 # Regenerar o Prisma Client
-echo "🔄 Executando npx prisma generate..."
+echo "🔄 Regenerando Prisma Client..."
 npx prisma generate
 
 if [ $? -ne 0 ]; then
@@ -23,9 +23,10 @@ if [ $? -ne 0 ]; then
   exit 1
 fi
 
-echo "✅ Migração Meta Ads aplicada e Prisma Client regenerado com sucesso!"
-echo "📋 Próximos passos:"
-echo "   1. Configure as variáveis de ambiente: ENCRYPTION_KEY"
-echo "   2. Reinicie o container do backend"
-echo "   3. Configure o App Meta no painel SuperAdmin"
-echo "   4. Teste a integração OAuth"
+echo "✅ Migração Meta Ads aplicada com sucesso!"
+echo "⚠️  IMPORTANTE: Reinicie o container do backend para que as mudanças entrem em vigor."
+echo ""
+echo "Para reiniciar o container:"
+echo "1. Acesse Easypanel"
+echo "2. Vá em Services → backend"
+echo "3. Clique em 'Restart'"
