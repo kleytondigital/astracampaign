@@ -5,6 +5,7 @@ import { superadminService, Tenant } from '../services/superadminService';
 import { Company } from '../types';
 import { Pagination } from '../components/Pagination';
 import { useAuth } from '../contexts/AuthContext';
+import { ListPageContainer } from '../components/PageContainer';
 import toast from 'react-hot-toast';
 
 export default function CompaniesPage() {
@@ -204,21 +205,17 @@ export default function CompaniesPage() {
   };
 
   return (
-    <div className="p-6">
-      {/* Header */}
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">
-          {isSuperAdmin ? 'Gestão de Tenants/Empresas' : 'Gestão de Empresas'}
-        </h1>
-        <p className="text-gray-600">
-          {isSuperAdmin 
-            ? 'Gerencie todos os tenants e empresas do sistema' 
-            : 'Gerencie suas empresas e contas'}
-        </p>
-      </div>
+    <ListPageContainer
+      title={isSuperAdmin ? 'Gestão de Tenants/Empresas' : 'Gestão de Empresas'}
+      subtitle={isSuperAdmin 
+        ? 'Gerencie todos os tenants e empresas do sistema' 
+        : 'Gerencie suas empresas e contas'}
+      maxWidth="full"
+    >
 
       {/* Filtros e Ações */}
-      <div className="mb-6 flex gap-4">
+      <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200 mb-6">
+        <div className="flex gap-4">
         <div className="flex-1">
           <input
             type="text"
@@ -235,6 +232,7 @@ export default function CompaniesPage() {
         >
           + Nova Empresa
         </button>
+        </div>
       </div>
 
       {/* Debug Info */}
@@ -248,12 +246,13 @@ export default function CompaniesPage() {
       )}
 
       {/* Lista de Empresas */}
-      {loading ? (
-        <div className="text-center py-12">
-          <div className="inline-block animate-spin rounded-full h-8 w-8 border-4 border-gray-300 border-t-blue-600"></div>
-          <p className="mt-2 text-gray-600">Carregando empresas...</p>
-        </div>
-      ) : (isSuperAdmin ? tenants.length === 0 : companies.length === 0) ? (
+      <div className="bg-white rounded-lg shadow-sm border border-gray-200">
+        {loading ? (
+          <div className="text-center py-12">
+            <div className="inline-block animate-spin rounded-full h-8 w-8 border-4 border-gray-300 border-t-blue-600"></div>
+            <p className="mt-2 text-gray-600">Carregando empresas...</p>
+          </div>
+        ) : (isSuperAdmin ? tenants.length === 0 : companies.length === 0) ? (
         <div className="text-center py-12 bg-gray-50 rounded-lg">
           <svg
             className="mx-auto h-12 w-12 text-gray-400"
@@ -496,7 +495,7 @@ export default function CompaniesPage() {
 
       {/* Paginação */}
       {!loading && totalItems > 0 && (
-        <div className="bg-white rounded-lg shadow mt-4">
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 mt-6">
           <Pagination
             currentPage={currentPage}
             totalPages={totalPages}
@@ -749,6 +748,6 @@ export default function CompaniesPage() {
           </div>
         </div>
       )}
-    </div>
+    </ListPageContainer>
   );
 }
