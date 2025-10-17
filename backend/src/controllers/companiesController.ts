@@ -202,9 +202,15 @@ export const createCompany = async (
   res: Response
 ) => {
   try {
+    // Validar dados de entrada
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
-      return res.status(400).json({ errors: errors.array() });
+      console.log('❌ Erros de validação ao criar empresa:', errors.array());
+      return res.status(400).json({ 
+        success: false,
+        error: 'Dados inválidos',
+        errors: errors.array() 
+      });
     }
 
     const tenantId = req.user?.tenantId;
@@ -235,20 +241,30 @@ export const createCompany = async (
       assignedTo
     } = req.body;
 
+    console.log('📝 Criando empresa:', {
+      name,
+      industry,
+      size,
+      website,
+      phone,
+      email,
+      tenantId
+    });
+
     const company = await prisma.company.create({
       data: {
         tenantId,
         name,
-        industry,
-        size,
-        website,
-        phone,
-        email,
-        address: address || undefined,
-        description,
+        industry: industry || null,
+        size: size || null,
+        website: website || null,
+        phone: phone || null,
+        email: email || null,
+        address: address || null,
+        description: description || null,
         tags,
-        customFields: customFields || undefined,
-        assignedTo
+        customFields: customFields || {},
+        assignedTo: assignedTo || null
       },
       include: {
         assignedUser: {
@@ -261,10 +277,24 @@ export const createCompany = async (
       }
     });
 
-    res.status(201).json(company);
-  } catch (error) {
-    console.error('Erro ao criar empresa:', error);
-    res.status(500).json({ error: 'Erro interno do servidor' });
+    console.log('✅ Empresa criada com sucesso:', company.id);
+
+    res.status(201).json({
+      success: true,
+      data: company
+    });
+  } catch (error: any) {
+    console.error('❌ Erro ao criar empresa:', error);
+    console.error('📊 Detalhes do erro:', {
+      message: error.message,
+      code: error.code,
+      meta: error.meta
+    });
+    res.status(500).json({ 
+      success: false,
+      error: 'Erro interno do servidor',
+      message: error.message 
+    });
   }
 };
 

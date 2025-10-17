@@ -13,38 +13,88 @@ const router = Router();
 
 // Validações comuns para criação e atualização de empresas
 const companyValidators = [
-  body('name').notEmpty().withMessage('O nome da empresa é obrigatório.'),
-  body('industry')
-    .optional()
+  body('name')
+    .notEmpty()
+    .withMessage('O nome da empresa é obrigatório.')
     .isString()
+    .withMessage('O nome deve ser uma string.'),
+  body('industry')
+    .optional({ nullable: true })
+    .custom((value) => {
+      if (value === null || value === undefined || value === '') return true;
+      return typeof value === 'string';
+    })
     .withMessage('A indústria deve ser uma string.'),
   body('size')
-    .optional()
-    .isIn(Object.values(CompanySize))
+    .optional({ nullable: true })
+    .custom((value) => {
+      if (value === null || value === undefined || value === '') return true;
+      return Object.values(CompanySize).includes(value);
+    })
     .withMessage('Tamanho da empresa inválido.'),
   body('website')
-    .optional()
-    .isURL()
+    .optional({ nullable: true })
+    .custom((value) => {
+      if (value === null || value === undefined || value === '') return true;
+      // Validação de URL mais flexível
+      try {
+        new URL(value);
+        return true;
+      } catch {
+        return false;
+      }
+    })
     .withMessage('Website deve ser uma URL válida.'),
   body('phone')
-    .optional()
-    .isString()
+    .optional({ nullable: true })
+    .custom((value) => {
+      if (value === null || value === undefined || value === '') return true;
+      return typeof value === 'string';
+    })
     .withMessage('Telefone deve ser uma string.'),
   body('email')
-    .optional()
-    .isEmail()
+    .optional({ nullable: true })
+    .custom((value) => {
+      if (value === null || value === undefined || value === '') return true;
+      // Validação de email simples
+      return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+    })
     .withMessage('E-mail deve ser um email válido.'),
+  body('address')
+    .optional({ nullable: true })
+    .custom((value) => {
+      if (value === null || value === undefined || value === '') return true;
+      return typeof value === 'string';
+    })
+    .withMessage('O endereço deve ser uma string.'),
   body('description')
-    .optional()
-    .isString()
+    .optional({ nullable: true })
+    .custom((value) => {
+      if (value === null || value === undefined || value === '') return true;
+      return typeof value === 'string';
+    })
     .withMessage('A descrição deve ser uma string.'),
   body('tags')
-    .optional()
-    .isArray()
+    .optional({ nullable: true })
+    .custom((value) => {
+      if (value === null || value === undefined) return true;
+      return Array.isArray(value);
+    })
     .withMessage('Tags devem ser um array de strings.'),
+  body('customFields')
+    .optional({ nullable: true })
+    .custom((value) => {
+      if (value === null || value === undefined) return true;
+      return typeof value === 'object';
+    })
+    .withMessage('Custom fields devem ser um objeto.'),
   body('assignedTo')
-    .optional()
-    .isUUID()
+    .optional({ nullable: true })
+    .custom((value) => {
+      if (value === null || value === undefined || value === '') return true;
+      // Validação UUID
+      return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value);
+    })
     .withMessage('ID de usuário atribuído inválido.')
 ];
 
