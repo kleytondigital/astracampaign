@@ -74,7 +74,7 @@ npx prisma db execute --stdin <<< "SELECT tablename FROM pg_tables WHERE scheman
 ```
 
 Deve retornar:
-- `meta_global_settings`
+- `meta_global_settings` (inclui campo `api_version`)
 - `meta_tenant_connections`
 - `meta_accounts`
 - `meta_campaigns`
