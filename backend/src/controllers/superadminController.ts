@@ -101,15 +101,26 @@ export const createTenantCompany = async (
     console.log('📝 Criando tenant...');
     const tenant = await prisma.tenant.create({
       data: {
-        nome: companyName,
+        name: companyName,
         slug,
-        ativo: true,
-        maxUsers: maxUsers || 10,
-        maxWhatsappSessions: maxWhatsappSessions || 5
+        active: true
       }
     });
 
     console.log('✅ Tenant criado:', tenant.id);
+    
+    // Criar quotas do tenant
+    await prisma.tenantQuota.create({
+      data: {
+        tenantId: tenant.id,
+        maxUsers: maxUsers || 10,
+        maxConnections: maxWhatsappSessions || 5,
+        maxContacts: 10000,
+        maxCampaigns: 100
+      }
+    });
+
+    console.log('✅ Quotas do tenant criadas');
 
     // 5. Criar User ADMIN do tenant
     console.log('📝 Criando usuário ADMIN...');
@@ -125,6 +136,17 @@ export const createTenantCompany = async (
     });
 
     console.log('✅ Usuário ADMIN criado:', adminUser.id);
+
+    // Criar relação UserTenant (muitos-para-muitos)
+    await prisma.userTenant.create({
+      data: {
+        userId: adminUser.id,
+        tenantId: tenant.id,
+        role: 'ADMIN'
+      }
+    });
+
+    console.log('✅ Relação UserTenant criada');
 
     // 6. Criar Company (registro no CRM) - OPCIONAL
     let company = null;
@@ -198,12 +220,10 @@ export const createTenantCompany = async (
       data: {
         tenant: {
           id: tenant.id,
-          nome: tenant.nome,
+          name: tenant.name,
           slug: tenant.slug,
-          ativo: tenant.ativo,
-          maxUsers: tenant.maxUsers,
-          maxWhatsappSessions: tenant.maxWhatsappSessions,
-          createdAt: tenant.criadoEm
+          active: tenant.active,
+          createdAt: tenant.createdAt
         },
         admin: {
           id: adminUser.id,
@@ -272,13 +292,13 @@ export const getTenants = async (
 
     if (search) {
       where.OR = [
-        { nome: { contains: search, mode: 'insensitive' } },
+        { name: { contains: search, mode: 'insensitive' } },
         { slug: { contains: search, mode: 'insensitive' } }
       ];
     }
 
     if (ativo !== '') {
-      where.ativo = ativo === 'true';
+      where.active = ativo === 'true';
     }
 
     // Buscar tenants com paginação
@@ -296,7 +316,7 @@ export const getTenants = async (
             }
           }
         },
-        orderBy: { criadoEm: 'desc' },
+        orderBy: { createdAt: 'desc' }, // Corrigido de criadoEm para createdAt
         skip,
         take: pageSizeNum
       }),
@@ -341,10 +361,10 @@ export const toggleTenantStatus = async (
 
     const tenant = await prisma.tenant.update({
       where: { id },
-      data: { ativo }
+      data: { active: ativo }
     });
 
-    console.log(`✅ Tenant ${tenant.nome} ${ativo ? 'ativado' : 'desativado'} por SUPERADMIN`);
+    console.log(`✅ Tenant ${tenant.name} ${ativo ? 'ativado' : 'desativado'} por SUPERADMIN`);
 
     res.json({
       success: true,

@@ -25,11 +25,9 @@ export interface CreateTenantRequest {
 
 export interface Tenant {
   id: string;
-  nome: string;
+  name: string;
   slug: string;
-  ativo: boolean;
-  maxUsers: number;
-  maxWhatsappSessions: number;
+  active: boolean;
   createdAt: string;
   _count?: {
     users: number;

@@ -268,18 +268,18 @@ export default function CompaniesPage() {
               <div className="mb-4 flex items-start justify-between">
                 <div>
                   <h3 className="text-lg font-semibold text-gray-900">
-                    {tenant.nome}
+                    {tenant.name}
                   </h3>
                   <p className="text-sm text-gray-500 mt-1">
                     Slug: <code className="bg-gray-100 px-2 py-0.5 rounded">{tenant.slug}</code>
                   </p>
                 </div>
                 <span className={`px-2 py-1 text-xs font-medium rounded-full ${
-                  tenant.ativo 
+                  tenant.active 
                     ? 'bg-green-100 text-green-800' 
                     : 'bg-red-100 text-red-800'
                 }`}>
-                  {tenant.ativo ? 'Ativo' : 'Inativo'}
+                  {tenant.active ? 'Ativo' : 'Inativo'}
                 </span>
               </div>
 
@@ -288,13 +288,13 @@ export default function CompaniesPage() {
                 <div>
                   <p className="text-xs text-gray-500">Usuários</p>
                   <p className="text-lg font-semibold text-gray-900">
-                    {tenant._count?.users || 0} / {tenant.maxUsers}
+                    {tenant._count?.users || 0}
                   </p>
                 </div>
                 <div>
                   <p className="text-xs text-gray-500">Sessões WhatsApp</p>
                   <p className="text-lg font-semibold text-gray-900">
-                    {tenant._count?.whatsappSessions || 0} / {tenant.maxWhatsappSessions}
+                    {tenant._count?.whatsappSessions || 0}
                   </p>
                 </div>
                 <div>
@@ -314,17 +314,17 @@ export default function CompaniesPage() {
               {/* Ações */}
               <div className="flex gap-2">
                 <button
-                  onClick={() => superadminService.toggleTenantStatus(tenant.id, !tenant.ativo).then(() => {
-                    toast.success(`Tenant ${tenant.ativo ? 'desativado' : 'ativado'} com sucesso!`);
+                  onClick={() => superadminService.toggleTenantStatus(tenant.id, !tenant.active).then(() => {
+                    toast.success(`Tenant ${tenant.active ? 'desativado' : 'ativado'} com sucesso!`);
                     loadCompanies();
                   })}
                   className={`flex-1 px-3 py-2 text-sm rounded transition-colors ${
-                    tenant.ativo
+                    tenant.active
                       ? 'bg-red-50 text-red-600 hover:bg-red-100'
                       : 'bg-green-50 text-green-600 hover:bg-green-100'
                   }`}
                 >
-                  {tenant.ativo ? 'Desativar' : 'Ativar'}
+                  {tenant.active ? 'Desativar' : 'Ativar'}
                 </button>
               </div>
             </div>
