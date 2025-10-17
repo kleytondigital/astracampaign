@@ -492,6 +492,7 @@ export default function CompaniesPage() {
           ))}
         </div>
       )}
+      </div>
 
       {/* Paginação */}
       {!loading && totalItems > 0 && (
