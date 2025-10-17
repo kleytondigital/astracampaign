@@ -80,18 +80,24 @@ const MetaIntegrationPage: React.FC = () => {
   };
 
   const handleConnect = async () => {
-    console.log('🔗 Iniciando conexão com Meta Ads...', { tenantId: currentTenant?.id });
+    // Usar tenant do contexto ou do usuário logado
+    const tenantId = currentTenant?.id || user?.tenantId;
+    console.log('🔗 Iniciando conexão com Meta Ads...', { 
+      currentTenant: currentTenant?.id, 
+      userTenant: user?.tenantId,
+      finalTenantId: tenantId 
+    });
     
-    if (!currentTenant?.id) {
+    if (!tenantId) {
       console.error('❌ Tenant ID não encontrado');
-      toast.error('Erro: Tenant não encontrado');
+      toast.error('Erro: Tenant não encontrado. Verifique se você está logado em um tenant válido.');
       return;
     }
     
     try {
       setLoading(true);
       console.log('📡 Chamando startOAuthFlow...');
-      const result = await metaService.startOAuthFlow(currentTenant.id);
+      const result = await metaService.startOAuthFlow(tenantId);
       console.log('✅ OAuth flow iniciado:', result);
       
       // Redirecionar para OAuth
