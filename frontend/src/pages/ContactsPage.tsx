@@ -7,6 +7,7 @@ import { CSVImportModal } from '../components/CSVImportModal';
 import { SearchAndFilters } from '../components/SearchAndFilters';
 import { Pagination } from '../components/Pagination';
 import { Header } from '../components/Header';
+import TestNavigation from '../components/TestNavigation';
 import { Contact } from '../types';
 
 export function ContactsPage() {
@@ -180,6 +181,9 @@ export function ContactsPage() {
         onClose={handleCloseCSVImportModal}
         onSuccess={handleCSVImportSuccess}
       />
+      
+      {/* Componente de teste temporário */}
+      <TestNavigation />
     </>
   );
 }
