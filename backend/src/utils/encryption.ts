@@ -9,7 +9,8 @@ const ALGORITHM = 'aes-256-gcm';
 export function encrypt(text: string): string {
   try {
     const iv = crypto.randomBytes(16);
-    const cipher = crypto.createCipher(ALGORITHM, ENCRYPTION_KEY);
+    const cipher = crypto.createCipherGCM(ALGORITHM, ENCRYPTION_KEY);
+    cipher.setAAD(Buffer.from('meta-ads', 'utf8'));
     
     let encrypted = cipher.update(text, 'utf8', 'hex');
     encrypted += cipher.final('hex');
@@ -38,7 +39,8 @@ export function decrypt(encryptedText: string): string {
     const authTag = Buffer.from(parts[1], 'hex');
     const encrypted = parts[2];
     
-    const decipher = crypto.createDecipher(ALGORITHM, ENCRYPTION_KEY);
+    const decipher = crypto.createDecipherGCM(ALGORITHM, ENCRYPTION_KEY);
+    decipher.setAAD(Buffer.from('meta-ads', 'utf8'));
     decipher.setAuthTag(authTag);
     
     let decrypted = decipher.update(encrypted, 'hex', 'utf8');

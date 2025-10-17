@@ -87,10 +87,10 @@ export const setGlobalSettings = async (req: AuthenticatedRequest, res: Response
       };
 
       const metaService = new MetaApiService(tempSettings);
-      // Testar com uma chamada simples
-      await metaService.validateToken('test'); // Isso falhará, mas validará a configuração
+      // Testar com uma chamada simples - apenas validar se o serviço pode ser criado
+      console.log('✅ MetaApiService criado com sucesso');
     } catch (error) {
-      console.log('⚠️ Validação de credenciais falhou (esperado):', error);
+      console.log('⚠️ Erro ao criar MetaApiService:', error);
       // Não falhar aqui, pois é um teste de validação
     }
 

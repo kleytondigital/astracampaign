@@ -81,6 +81,9 @@ export class MetaApiService {
     this.client = axios.create({
       baseURL: 'https://graph.facebook.com/v19.0',
       timeout: 30000,
+      headers: {
+        'Content-Type': 'application/json',
+      },
     });
   }
 
