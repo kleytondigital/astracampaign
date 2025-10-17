@@ -28,6 +28,8 @@ import { SuperAdminManagerPage } from './pages/SuperAdminManagerPage';
 import AdminDashboard from './pages/AdminDashboard';
 import DepartmentsPage from './pages/DepartmentsPage';
 import ReportsPage from './pages/ReportsPage';
+import MetaSettingsPage from './pages/MetaSettingsPage';
+import MetaIntegrationPage from './pages/MetaIntegrationPage';
 import { useGlobalSettings } from './hooks/useGlobalSettings';
 import './styles/globals.css';
 
@@ -250,6 +252,14 @@ function AppContent() {
             }
           />
           <Route
+            path="/meta-integration"
+            element={
+              <ProtectedRoute>
+                <MetaIntegrationPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
             path="/configuracoes"
             element={
               <ProtectedRoute>
@@ -262,6 +272,14 @@ function AppContent() {
             element={
               <ProtectedRoute superAdminOnly={true}>
                 <SuperAdminManagerPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/meta-settings"
+            element={
+              <ProtectedRoute superAdminOnly={true}>
+                <MetaSettingsPage />
               </ProtectedRoute>
             }
           />
