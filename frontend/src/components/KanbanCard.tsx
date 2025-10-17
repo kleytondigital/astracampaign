@@ -124,3 +124,4 @@ export const KanbanCard: React.FC<KanbanCardProps> = ({ opportunity, index, onCl
 
 
 
+

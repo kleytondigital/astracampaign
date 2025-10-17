@@ -38,8 +38,9 @@ export const getGlobalSettings = async (req: AuthenticatedRequest, res: Response
     }
 
     // Gerar URL sugerida de callback
-    const backendUrl = process.env.BACKEND_URL || process.env.API_URL || 'http://localhost:3000';
-    const suggestedRedirectUri = `${backendUrl}/api/meta/callback`;
+    // IMPORTANTE: Usar URL do FRONTEND porque Facebook só aceita crm.aoseudispor.com.br
+    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+    const suggestedRedirectUri = `${frontendUrl}/api/meta/callback`;
 
     // Retornar dados sem o secret criptografado
     const responseData = {
@@ -84,10 +85,12 @@ export const setGlobalSettings = async (req: AuthenticatedRequest, res: Response
     }
 
     // Se não forneceu Redirect URI, gerar automaticamente
+    // IMPORTANTE: Usar URL do FRONTEND porque Facebook só aceita crm.aoseudispor.com.br
+    // O Nginx do frontend faz proxy para o backend
     if (!redirectUri) {
-      const backendUrl = process.env.BACKEND_URL || process.env.API_URL || 'http://localhost:3000';
-      redirectUri = `${backendUrl}/api/meta/callback`;
-      console.log(`📍 Redirect URI gerada automaticamente: ${redirectUri}`);
+      const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+      redirectUri = `${frontendUrl}/api/meta/callback`;
+      console.log(`📍 Redirect URI gerada automaticamente (via frontend): ${redirectUri}`);
     }
 
     // Se não forneceu versão da API, usar padrão
