@@ -7,6 +7,9 @@ import { useState, useEffect } from 'react';
 function MenuItem({ item, isExpanded, location }: { item: any; isExpanded: boolean; location: any }) {
   const [isSubmenuOpen, setIsSubmenuOpen] = useState(false);
   
+  // Debug log
+  console.log('🔍 MenuItem Debug:', { item: item.label, type: item.type, isExpanded });
+  
   // Se for um item simples
   if (item.type === 'item') {
     return (
@@ -510,6 +513,15 @@ export function Navigation() {
 
   // Escolher menu baseado no role
   const menuItems = user?.role === 'SUPERADMIN' ? superAdminMenuItems : regularMenuItems;
+  
+  // Debug logs
+  console.log('🔍 Navigation Debug:', {
+    user: user?.role,
+    menuItemsLength: menuItems.length,
+    superAdminLength: superAdminMenuItems.length,
+    regularLength: regularMenuItems.length,
+    menuItems: menuItems
+  });
 
   return (
     <nav
