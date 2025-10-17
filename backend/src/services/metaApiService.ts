@@ -298,6 +298,12 @@ export class MetaApiService {
       state: state,
     });
 
-    return `https://www.facebook.com/v19.0/dialog/oauth?${params.toString()}`;
+    // Usar versão configurada ao invés de hardcoded
+    const apiVersion = this.globalSettings.apiVersion || 'v21.0';
+    const authUrl = `https://www.facebook.com/${apiVersion}/dialog/oauth?${params.toString()}`;
+    
+    console.log(`🔗 URL de autorização gerada com ${apiVersion}:`, authUrl);
+    
+    return authUrl;
   }
 }

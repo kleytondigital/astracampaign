@@ -65,8 +65,16 @@ export const tenantRedirect = async (req: AuthenticatedRequest, res: Response) =
       appId: globalSettings.appId,
       appSecretEnc: globalSettings.appSecretEnc,
       redirectUri: globalSettings.redirectUri,
+      apiVersion: globalSettings.apiVersion, // Incluir versão da API
       scopes: globalSettings.scopes
     };
+
+    console.log('🔧 Configurações Meta para OAuth:', {
+      appId: globalSettings.appId,
+      redirectUri: globalSettings.redirectUri,
+      apiVersion: globalSettings.apiVersion,
+      scopes: globalSettings.scopes
+    });
 
     const metaService = new MetaApiService(metaSettings);
     const authUrl = metaService.generateAuthUrl(state);
@@ -161,6 +169,7 @@ export const oauthCallback = async (req: Request, res: Response) => {
       appId: globalSettings.appId,
       appSecretEnc: globalSettings.appSecretEnc,
       redirectUri: globalSettings.redirectUri,
+      apiVersion: globalSettings.apiVersion, // Incluir versão da API
       scopes: globalSettings.scopes
     };
 
@@ -262,6 +271,7 @@ export const listAccounts = async (req: AuthenticatedRequest, res: Response) => 
       appId: globalSettings.appId,
       appSecretEnc: globalSettings.appSecretEnc,
       redirectUri: globalSettings.redirectUri,
+      apiVersion: globalSettings.apiVersion, // Incluir versão da API
       scopes: globalSettings.scopes
     };
 
@@ -346,6 +356,7 @@ export const linkAccount = async (req: AuthenticatedRequest, res: Response) => {
       appId: globalSettings.appId,
       appSecretEnc: globalSettings.appSecretEnc,
       redirectUri: globalSettings.redirectUri,
+      apiVersion: globalSettings.apiVersion, // Incluir versão da API
       scopes: globalSettings.scopes
     };
 
