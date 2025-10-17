@@ -2,10 +2,16 @@ import { Link, useLocation } from 'react-router-dom';
 import { useGlobalSettings } from '../hooks/useGlobalSettings';
 import { useAuth } from '../contexts/AuthContext';
 import { useState, useEffect } from 'react';
+import { canAccessRoute, UserRole } from '../utils/permissions';
 
 // Componente para renderizar item de menu (suporta submenus)
-function MenuItem({ item, isExpanded, location }: { item: any; isExpanded: boolean; location: any }) {
+function MenuItem({ item, isExpanded, location, userRole }: { item: any; isExpanded: boolean; location: any; userRole: UserRole }) {
   const [isSubmenuOpen, setIsSubmenuOpen] = useState(false);
+  
+  // Verificar se usuário pode acessar este item
+  if (item.path && !canAccessRoute(userRole, item.path)) {
+    return null;
+  }
   
   // Se for um item simples
   if (item.type === 'item') {
@@ -101,7 +107,9 @@ function MenuItem({ item, isExpanded, location }: { item: any; isExpanded: boole
         {/* Submenu */}
         {isExpanded && isSubmenuOpen && item.items && (
           <ul className="ml-6 mt-2 space-y-1">
-            {item.items.map((subItem: any) => (
+            {item.items
+              .filter((subItem: any) => canAccessRoute(userRole, subItem.path))
+              .map((subItem: any) => (
               <li key={subItem.path}>
                 <Link
                   to={subItem.path}
@@ -427,7 +435,7 @@ export function Navigation() {
       <div className="flex-1 overflow-y-auto overflow-x-hidden px-4 scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent hover:scrollbar-thumb-white/20">
         <ul className="space-y-2 pb-4">
           {menuItems.map((item, index) => (
-            <MenuItem key={item.path || item.label} item={item} isExpanded={isExpanded} location={location} />
+            <MenuItem key={item.path || item.label} item={item} isExpanded={isExpanded} location={location} userRole={user?.role as UserRole || 'USER'} />
           ))}
         </ul>
       </div>
