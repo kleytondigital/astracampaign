@@ -1,8 +1,5 @@
-"use client";
-
 import React, { useState } from 'react';
-import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { Link, useLocation } from 'react-router-dom';
 import { 
   Home, 
   Users, 
@@ -22,10 +19,14 @@ import {
   Menu,
   X
 } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { useAuth } from '../../contexts/AuthContext';
+import { useGlobalSettings } from '../../hooks/useGlobalSettings';
+import { canAccessRoute, UserRole } from '../../utils/permissions';
 
-// Tipos de usuário
-type UserRole = 'SUPERADMIN' | 'ADMIN' | 'TENANT_ADMIN' | 'USER';
+// Função utilitária para classes CSS
+function cn(...classes: (string | undefined | null | false)[]): string {
+  return classes.filter(Boolean).join(' ');
+}
 
 // Interface para itens do menu
 interface SidebarItemProps {
@@ -46,12 +47,6 @@ interface SidebarSectionProps {
 
 // Interface principal do Sidebar
 interface SidebarProps {
-  userRole?: UserRole;
-  userName?: string;
-  userEmail?: string;
-  companyName?: string;
-  logoUrl?: string;
-  onLogout?: () => void;
   className?: string;
 }
 
@@ -71,8 +66,8 @@ const SidebarItem: React.FC<SidebarItemProps> = ({
       className={cn(
         "group relative flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 text-sm font-medium",
         isActive
-          ? "bg-primary text-primary-foreground shadow-sm"
-          : "text-muted-foreground hover:text-foreground hover:bg-accent"
+          ? "bg-white text-gray-900 shadow-sm"
+          : "text-white/70 hover:text-white hover:bg-white/10"
       )}
     >
       <div className="flex-shrink-0 w-5 h-5 flex items-center justify-center">
@@ -80,7 +75,7 @@ const SidebarItem: React.FC<SidebarItemProps> = ({
       </div>
       <span className="truncate">{label}</span>
       {badge && (
-        <span className="ml-auto bg-destructive text-destructive-foreground text-xs px-2 py-0.5 rounded-full min-w-[20px] text-center">
+        <span className="ml-auto bg-red-500 text-white text-xs px-2 py-0.5 rounded-full min-w-[20px] text-center">
           {badge}
         </span>
       )}
@@ -97,7 +92,7 @@ const SidebarSection: React.FC<SidebarSectionProps> = ({
   return (
     <div className={cn("space-y-1", className)}>
       {title && (
-        <h3 className="px-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+        <h3 className="px-3 text-xs font-semibold text-white/60 uppercase tracking-wider">
           {title}
         </h3>
       )}
@@ -109,43 +104,18 @@ const SidebarSection: React.FC<SidebarSectionProps> = ({
 };
 
 // Componente principal do Sidebar
-export const Sidebar: React.FC<SidebarProps> = ({
-  userRole = 'USER',
-  userName = 'Usuário',
-  userEmail = 'usuario@exemplo.com',
-  companyName = 'Astra CRM',
-  logoUrl,
-  onLogout,
-  className
-}) => {
+export const Sidebar: React.FC<SidebarProps> = ({ className }) => {
   const [isCollapsed, setIsCollapsed] = useState(false);
-  const pathname = usePathname();
+  const location = useLocation();
+  const { user, logout } = useAuth();
+  const { settings } = useGlobalSettings();
+  
+  const userRole = (user?.role as UserRole) || 'USER';
+  const userName = user?.nome || 'Usuário';
+  const userEmail = user?.email || 'usuario@exemplo.com';
+  const companyName = settings?.companyName || 'Astra CRM';
+  const logoUrl = settings?.iconUrl;
 
-  // Função para verificar se usuário pode acessar uma rota
-  const canAccessRoute = (route: string): boolean => {
-    const routePermissions: Record<string, UserRole[]> = {
-      '/empresas': ['SUPERADMIN'],
-      '/meta-settings': ['SUPERADMIN'],
-      '/usuarios': ['SUPERADMIN', 'ADMIN', 'TENANT_ADMIN'],
-      '/configuracoes': ['SUPERADMIN', 'ADMIN', 'TENANT_ADMIN'],
-      '/admin-dashboard': ['SUPERADMIN', 'ADMIN', 'TENANT_ADMIN'],
-      '/departamentos': ['SUPERADMIN', 'ADMIN', 'TENANT_ADMIN', 'USER'],
-      '/whatsapp': ['SUPERADMIN', 'ADMIN', 'TENANT_ADMIN', 'USER'],
-      '/atendimento': ['SUPERADMIN', 'ADMIN', 'TENANT_ADMIN', 'USER'],
-      '/campanhas': ['SUPERADMIN', 'ADMIN', 'TENANT_ADMIN', 'USER'],
-      '/contatos': ['SUPERADMIN', 'ADMIN', 'TENANT_ADMIN', 'USER'],
-      '/leads': ['SUPERADMIN', 'ADMIN', 'TENANT_ADMIN', 'USER'],
-      '/oportunidades': ['SUPERADMIN', 'ADMIN', 'TENANT_ADMIN', 'USER'],
-      '/atividades': ['SUPERADMIN', 'ADMIN', 'TENANT_ADMIN', 'USER'],
-      '/vendas-dashboard': ['SUPERADMIN', 'ADMIN', 'TENANT_ADMIN'],
-      '/automacoes-vendas': ['SUPERADMIN', 'ADMIN', 'TENANT_ADMIN'],
-      '/meta-integration': ['SUPERADMIN', 'ADMIN', 'TENANT_ADMIN'],
-      '/relatorios': ['SUPERADMIN', 'ADMIN', 'TENANT_ADMIN', 'USER'],
-    };
-
-    const allowedRoles = routePermissions[route] || [];
-    return allowedRoles.includes(userRole);
-  };
 
   // Itens do menu baseados no role
   const getMenuItems = () => {
@@ -267,15 +237,19 @@ export const Sidebar: React.FC<SidebarProps> = ({
   return (
     <div
       className={cn(
-        "flex flex-col h-screen bg-background border-r border-border transition-all duration-300",
+        "flex flex-col h-screen transition-all duration-300",
         isCollapsed ? "w-16" : "w-64",
         className
       )}
+      style={{ 
+        background: 'var(--sidebar-bg)',
+        borderRight: '1px solid rgba(255, 255, 255, 0.1)'
+      }}
     >
       {/* Header com Logo */}
-      <div className="flex items-center justify-between p-4 border-b border-border">
+      <div className="flex items-center justify-between p-4 border-b border-white/10">
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center flex-shrink-0">
+          <div className="w-8 h-8 bg-white/10 rounded-lg flex items-center justify-center flex-shrink-0">
             {logoUrl ? (
               <img
                 src={logoUrl}
@@ -283,15 +257,15 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 className="w-6 h-6 object-contain"
               />
             ) : (
-              <span className="text-primary-foreground font-bold text-sm">
+              <span className="text-white font-bold text-sm">
                 {companyName.charAt(0).toUpperCase()}
               </span>
             )}
           </div>
           {!isCollapsed && (
             <div className="flex flex-col">
-              <span className="font-semibold text-sm truncate">{companyName}</span>
-              <span className="text-xs text-muted-foreground truncate">
+              <span className="font-semibold text-sm truncate text-white">{companyName}</span>
+              <span className="text-xs text-white/60 truncate">
                 {userRole === 'SUPERADMIN' ? 'Super Admin' : 
                  userRole === 'ADMIN' ? 'Admin' : 
                  userRole === 'TENANT_ADMIN' ? 'Tenant Admin' : 'Usuário'}
@@ -303,7 +277,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         {/* Botão de toggle */}
         <button
           onClick={() => setIsCollapsed(!isCollapsed)}
-          className="p-1.5 rounded-md hover:bg-accent transition-colors"
+          className="p-1.5 rounded-md hover:bg-white/10 transition-colors text-white/70 hover:text-white"
         >
           {isCollapsed ? (
             <ChevronRight className="w-4 h-4" />
@@ -322,30 +296,30 @@ export const Sidebar: React.FC<SidebarProps> = ({
               icon={item.icon}
               label={item.label}
               href={item.href}
-              isActive={pathname === item.href}
+              isActive={location.pathname === item.href}
             />
           ))}
         </SidebarSection>
       </div>
 
       {/* Footer com usuário e logout */}
-      <div className="border-t border-border p-4">
+      <div className="border-t border-white/10 p-4">
         {!isCollapsed ? (
           <div className="space-y-3">
             <div className="flex items-center gap-3">
-              <div className="w-8 h-8 bg-muted rounded-full flex items-center justify-center">
-                <span className="text-sm font-medium">
+              <div className="w-8 h-8 bg-white/10 rounded-full flex items-center justify-center">
+                <span className="text-sm font-medium text-white">
                   {userName.charAt(0).toUpperCase()}
                 </span>
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium truncate">{userName}</p>
-                <p className="text-xs text-muted-foreground truncate">{userEmail}</p>
+                <p className="text-sm font-medium truncate text-white">{userName}</p>
+                <p className="text-xs text-white/60 truncate">{userEmail}</p>
               </div>
             </div>
             <button
-              onClick={onLogout}
-              className="w-full flex items-center gap-3 px-3 py-2 text-sm text-muted-foreground hover:text-foreground hover:bg-accent rounded-lg transition-colors"
+              onClick={logout}
+              className="w-full flex items-center gap-3 px-3 py-2 text-sm text-white/70 hover:text-white hover:bg-white/10 rounded-lg transition-colors"
             >
               <LogOut className="w-4 h-4" />
               Sair
@@ -353,14 +327,14 @@ export const Sidebar: React.FC<SidebarProps> = ({
           </div>
         ) : (
           <div className="flex flex-col items-center space-y-2">
-            <div className="w-8 h-8 bg-muted rounded-full flex items-center justify-center">
-              <span className="text-sm font-medium">
+            <div className="w-8 h-8 bg-white/10 rounded-full flex items-center justify-center">
+              <span className="text-sm font-medium text-white">
                 {userName.charAt(0).toUpperCase()}
               </span>
             </div>
             <button
-              onClick={onLogout}
-              className="p-2 text-muted-foreground hover:text-foreground hover:bg-accent rounded-lg transition-colors"
+              onClick={logout}
+              className="p-2 text-white/70 hover:text-white hover:bg-white/10 rounded-lg transition-colors"
               title="Sair"
             >
               <LogOut className="w-4 h-4" />

@@ -4,7 +4,7 @@ import { Toaster } from 'react-hot-toast';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { TenantProvider } from './contexts/TenantContext';
 import { ProtectedRoute } from './components/ProtectedRoute';
-import { Navigation } from './components/Navigation';
+import { Sidebar } from './components/ui/sidebar';
 import { NotificationBell } from './components/NotificationBell';
 import { ContactsPage } from './pages/ContactsPage';
 import { WhatsAppConnectionsPage } from './pages/WhatsAppConnectionsPage';
@@ -112,7 +112,7 @@ function AppContent() {
 
   return (
     <div className="min-h-screen bg-slate-50 flex">
-      <Navigation />
+      <Sidebar />
 
       <main className="main-content flex-1 flex flex-col relative z-10">
         {/* Top bar com notificações */}
