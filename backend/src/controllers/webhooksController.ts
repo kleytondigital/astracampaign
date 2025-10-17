@@ -170,19 +170,9 @@ async function handleWAHAMessage(payload: any) {
       }
     }
 
-    // Mapear tipo de mensagem
-    // WAHA envia o tipo em _data.type (não em messageData.type direto)
-    const messageType = messageData._data?.type || messageData.type || 'text';
-    const mediaType = messageData._data?.Info?.MediaType; // "image", "video", etc.
-    const mappedType = mapWAHAMessageType(messageType, mediaType);
-    
-    console.log(`📝 DEBUG TIPO MENSAGEM:`);
-    console.log(`   - messageData.type: ${messageData.type}`);
-    console.log(`   - messageData._data?.type: ${messageData._data?.type}`);
-    console.log(`   - messageData._data?.Info?.Type: ${messageData._data?.Info?.Type}`);
-    console.log(`   - messageData._data?.Info?.MediaType: ${mediaType}`);
-    console.log(`   - messageType final: ${messageType}`);
-    console.log(`   - mappedType: ${mappedType}`);
+    // Mapear tipo de mensagem (agnóstico ao engine: GOWS, WEBJS, etc)
+    // Usa apenas hasMedia, mimetype e PTT
+    const mappedType = mapWAHAMessageType(messageData);
 
     // Salvar mensagem
     const message = await prisma.message.create({
@@ -652,32 +642,41 @@ function normalizePhone(phone: string): string {
   return cleaned.startsWith('+') ? cleaned : `+${cleaned}`;
 }
 
-function mapWAHAMessageType(type: string, mediaType?: string): any {
-  const typeMap: any = {
-    chat: 'TEXT',
-    text: 'TEXT',
-    image: 'IMAGE',
-    media: 'IMAGE', // WAHA usa "media" genérico
-    video: 'VIDEO',
-    audio: 'AUDIO',
-    ptt: 'VOICE',
-    document: 'DOCUMENT',
-    sticker: 'STICKER',
-    location: 'LOCATION',
-    vcard: 'CONTACT',
-    link: 'LINK'
-  };
-
-  // Se tipo é "media", verificar mediaType específico
-  if (type === 'media' && mediaType) {
-    if (mediaType === 'image') return 'IMAGE';
-    if (mediaType === 'video') return 'VIDEO';
-    if (mediaType === 'audio') return 'AUDIO';
-    if (mediaType === 'ptt') return 'VOICE'; // Push To Talk = áudio de voz
-    if (mediaType === 'document') return 'DOCUMENT';
+/**
+ * Mapeia tipo de mensagem de forma agnóstica ao engine (GOWS, WEBJS, etc)
+ * Usa apenas campos comuns: hasMedia, mimetype, PTT
+ */
+function mapWAHAMessageType(messageData: any): string {
+  // Se não tem mídia, é texto
+  if (!messageData.hasMedia) {
+    return 'TEXT';
   }
 
-  return typeMap[type] || 'OTHER';
+  // Detectar áudio de voz (PTT - Push To Talk)
+  const isPTT = messageData._data?.Message?.audioMessage?.PTT === true;
+  
+  // Obter mimetype da mídia
+  const mimetype = messageData.media?.mimetype || '';
+  
+  console.log('🔍 Detecção de tipo (agnóstica ao engine):');
+  console.log('   - hasMedia:', messageData.hasMedia);
+  console.log('   - mimetype:', mimetype);
+  console.log('   - isPTT:', isPTT);
+
+  // Se é PTT, sempre retornar VOICE
+  if (isPTT) {
+    return 'VOICE';
+  }
+
+  // Mapear por mimetype
+  if (mimetype.startsWith('image/')) return 'IMAGE';
+  if (mimetype.startsWith('video/')) return 'VIDEO';
+  if (mimetype.startsWith('audio/')) return 'AUDIO';
+  if (mimetype.includes('pdf') || mimetype.includes('document')) return 'DOCUMENT';
+  if (mimetype.includes('application/')) return 'DOCUMENT';
+  
+  // Fallback para mídia genérica
+  return 'OTHER';
 }
 
 function mapEvolutionMessageType(message: any): any {
