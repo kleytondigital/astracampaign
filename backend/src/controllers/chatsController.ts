@@ -437,7 +437,9 @@ export const sendMessage = async (req: AuthenticatedRequest, res: Response) => {
         mediaUrl: finalMediaUrl,
         timestamp: new Date(),
         ack: 1, // Enviado
-        messageId: sentResult?.id || sentResult?.key?.id,
+        messageId: typeof sentResult?.key?.id === 'object' 
+          ? sentResult?.key?.id?._serialized || sentResult?.key?.id?.id || sentResult?.id || null
+          : sentResult?.id || sentResult?.key?.id || null,
         // Campos de assinatura
         sentBy: userId,
         departmentName: departmentName,

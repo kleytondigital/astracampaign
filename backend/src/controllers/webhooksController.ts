@@ -171,12 +171,14 @@ async function handleWAHAMessage(payload: any) {
     }
 
     // Mapear tipo de mensagem
-    const messageType = messageData.type || messageData._data?.Info?.Type || 'text';
+    // WAHA envia o tipo em _data.type (não em messageData.type direto)
+    const messageType = messageData._data?.type || messageData.type || 'text';
     const mediaType = messageData._data?.Info?.MediaType; // "image", "video", etc.
     const mappedType = mapWAHAMessageType(messageType, mediaType);
     
     console.log(`📝 DEBUG TIPO MENSAGEM:`);
     console.log(`   - messageData.type: ${messageData.type}`);
+    console.log(`   - messageData._data?.type: ${messageData._data?.type}`);
     console.log(`   - messageData._data?.Info?.Type: ${messageData._data?.Info?.Type}`);
     console.log(`   - messageData._data?.Info?.MediaType: ${mediaType}`);
     console.log(`   - messageType final: ${messageType}`);
