@@ -323,6 +323,18 @@ export const getTenants = async (
       prisma.tenant.count({ where })
     ]);
 
+    console.log('📊 DEBUG getTenants - Resultado:', {
+      tenantsCount: tenants.length,
+      total,
+      tenants: tenants.map(t => ({
+        id: t.id,
+        name: t.name,
+        slug: t.slug,
+        active: t.active,
+        _count: t._count
+      }))
+    });
+
     res.json({
       success: true,
       data: tenants,

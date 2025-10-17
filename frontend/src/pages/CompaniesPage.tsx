@@ -62,10 +62,20 @@ export default function CompaniesPage() {
           search,
         });
         console.log('📊 Resposta tenants:', response);
+        console.log('📊 response.data:', response.data);
+        console.log('📊 response.pagination:', response.pagination);
+        console.log('📊 typeof response.data:', typeof response.data);
+        console.log('📊 Array.isArray(response.data):', Array.isArray(response.data));
+        
         setTenants(response.data);
         setTotalItems(response.pagination?.total || 0);
         setTotalPages(response.pagination?.totalPages || 0);
         console.log('✅ Tenants carregados:', response.data.length, 'total:', response.pagination?.total);
+        
+        // Log adicional após setState
+        setTimeout(() => {
+          console.log('🔄 Estado após setState - tenants:', tenants);
+        }, 100);
       } else {
         // Tenant: carregar companies
         const response = await companiesService.getCompanies({
