@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useAuth } from '../hooks/useAuth';
+import { useAuth } from '../contexts/AuthContext';
 import { metaService } from '../services/metaService';
 import { MetaGlobalSettings, MetaGlobalSettingsForm } from '../types/meta';
 import { toast } from 'react-hot-toast';

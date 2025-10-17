@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { useAuth } from '../hooks/useAuth';
-import { useTenant } from '../hooks/useTenant';
+import { useAuth } from '../contexts/AuthContext';
+import { useTenant } from '../contexts/TenantContext';
 import { metaService } from '../services/metaService';
 import { 
   MetaConnectionStatus, 
