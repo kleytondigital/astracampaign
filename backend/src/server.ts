@@ -41,6 +41,7 @@ import webhookManagementRoutes from './routes/webhookManagement';
 import instanceManagementRoutes from './routes/instanceManagement';
 import preRegisteredMediaRoutes from './routes/preRegisteredMedia';
 import metaRoutes from './routes/meta'; // Meta Ads integration
+import superadminRoutes from './routes/superadmin'; // SuperAdmin management
 // import integrationsRoutes from './routes/integrations';
 // import cacheRoutes from './routes/cache';
 import { authMiddleware } from './middleware/auth';
@@ -221,6 +222,7 @@ app.use('/api/metrics', authMiddleware, metricsRoutes); // Metrics and analytics
 app.use('/api/data-sources', authMiddleware, dataSourcesRoutes); // Data sources management (Google Sheets, etc)
 app.use('/api/reports', authMiddleware, reportsRoutes); // Reports and dashboards system
 app.use('/api/meta', metaRoutes); // Meta Ads integration (mixed auth - some public, some protected)
+app.use('/api/superadmin', authMiddleware, superadminRoutes); // SuperAdmin management (tenant/company creation)
 app.use('/api/webhooks', webhooksRoutes); // Webhooks públicos (WAHA, Evolution, etc) - SEM autenticação
 app.use('/api/webhook-management', authMiddleware, webhookManagementRoutes); // Gerenciamento de webhooks - COM autenticação
 app.use('/api/instance-management', authMiddleware, instanceManagementRoutes); // Gerenciamento de instâncias (logout, delete, restart, websocket) - COM autenticação
