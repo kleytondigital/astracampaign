@@ -6,6 +6,7 @@ export interface MetaGlobalSettings {
   id?: number;
   appId: string;
   redirectUri: string;
+  suggestedRedirectUri?: string; // URL sugerida automaticamente pelo backend
   scopes: string;
   active: boolean;
   createdAt?: string;

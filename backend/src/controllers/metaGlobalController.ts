@@ -37,11 +37,16 @@ export const getGlobalSettings = async (req: AuthenticatedRequest, res: Response
       });
     }
 
+    // Gerar URL sugerida de callback
+    const backendUrl = process.env.BACKEND_URL || process.env.API_URL || 'http://localhost:3000';
+    const suggestedRedirectUri = `${backendUrl}/api/meta/callback`;
+
     // Retornar dados sem o secret criptografado
     const responseData = {
       id: settings.id,
       appId: settings.appId,
       redirectUri: settings.redirectUri,
+      suggestedRedirectUri, // URL sugerida para o usuário
       scopes: settings.scopes,
       active: settings.active,
       createdAt: settings.createdAt,
@@ -64,17 +69,24 @@ export const getGlobalSettings = async (req: AuthenticatedRequest, res: Response
 export const setGlobalSettings = async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { user } = req;
-    const { appId, appSecret, redirectUri, scopes } = req.body;
+    let { appId, appSecret, redirectUri, scopes } = req.body;
     
     if (!user || user.role !== 'SUPERADMIN') {
       return res.status(403).json({ error: 'Acesso negado. Apenas Super Admin.' });
     }
 
     // Validações
-    if (!appId || !appSecret || !redirectUri) {
+    if (!appId || !appSecret) {
       return res.status(400).json({ 
-        error: 'App ID, App Secret e Redirect URI são obrigatórios' 
+        error: 'App ID e App Secret são obrigatórios' 
       });
+    }
+
+    // Se não forneceu Redirect URI, gerar automaticamente
+    if (!redirectUri) {
+      const backendUrl = process.env.BACKEND_URL || process.env.API_URL || 'http://localhost:3000';
+      redirectUri = `${backendUrl}/api/meta/callback`;
+      console.log(`📍 Redirect URI gerada automaticamente: ${redirectUri}`);
     }
 
     // Validar se as credenciais funcionam

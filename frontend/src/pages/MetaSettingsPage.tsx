@@ -48,9 +48,17 @@ const MetaSettingsPage: React.FC = () => {
         setFormData({
           appId: data.appId,
           appSecret: '', // Não carregar secret por segurança
-          redirectUri: data.redirectUri,
+          redirectUri: data.redirectUri || data.suggestedRedirectUri || '',
           scopes: data.scopes
         });
+      } else {
+        // Se não há configuração, preencher com URL sugerida
+        const backendUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
+        const suggestedUri = backendUrl.replace('/api', '') + '/api/meta/callback';
+        setFormData(prev => ({
+          ...prev,
+          redirectUri: suggestedUri
+        }));
       }
     } catch (error) {
       console.error('Erro ao carregar configurações:', error);
@@ -75,8 +83,8 @@ const MetaSettingsPage: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!formData.appId || !formData.appSecret || !formData.redirectUri) {
-      toast.error('Todos os campos são obrigatórios');
+    if (!formData.appId || !formData.appSecret) {
+      toast.error('App ID e App Secret são obrigatórios');
       return;
     }
 
@@ -86,8 +94,16 @@ const MetaSettingsPage: React.FC = () => {
       setSettings(newSettings);
       toast.success('Configurações Meta salvas com sucesso!');
       
-      // Limpar secret após salvar
-      setFormData(prev => ({ ...prev, appSecret: '' }));
+      // Atualizar com a URL retornada (caso tenha sido gerada automaticamente)
+      if (newSettings.redirectUri) {
+        setFormData(prev => ({ 
+          ...prev, 
+          appSecret: '', // Limpar secret após salvar
+          redirectUri: newSettings.redirectUri 
+        }));
+      } else {
+        setFormData(prev => ({ ...prev, appSecret: '' }));
+      }
     } catch (error: any) {
       console.error('Erro ao salvar configurações:', error);
       toast.error(error.message || 'Erro ao salvar configurações');
@@ -201,7 +217,7 @@ const MetaSettingsPage: React.FC = () => {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Redirect URI
+                    Redirect URI (Opcional)
                   </label>
                   <input
                     type="url"
@@ -209,10 +225,13 @@ const MetaSettingsPage: React.FC = () => {
                     onChange={(e) => handleInputChange('redirectUri', e.target.value)}
                     placeholder="https://seu-dominio.com/api/meta/callback"
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    required
                   />
                   <p className="text-xs text-gray-500 mt-1">
-                    URL de callback configurada no Facebook Developers.
+                    💡 <strong>URL de callback configurada no Facebook Developers.</strong>
+                    {' '}Se deixar vazio, será gerada automaticamente: <code className="bg-gray-100 px-1 rounded">{formData.redirectUri || 'aguardando...'}</code>
+                  </p>
+                  <p className="text-xs text-blue-600 mt-1">
+                    ℹ️ Configure esta URL no Facebook App Dashboard → Produtos → Facebook Login → Configurações → URIs de redirecionamento OAuth válidos
                   </p>
                 </div>
 
