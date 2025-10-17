@@ -48,6 +48,13 @@ model Tenant {
   campaignData         CampaignData[] // Dados de campanhas
   reports              Report[] // Relatórios gerados
   reportSchedules      ReportSchedule[] // Agendamentos de relatórios
+  metaConnections      MetaTenantConnection[] // Conexões Meta Ads
+  metaAccounts         MetaAccount[] // Contas Meta Ads
+  metaCampaigns        MetaCampaign[] // Campanhas Meta Ads
+  metaAdSets           MetaAdSet[] // Conjuntos de anúncios Meta
+  metaAds              MetaAd[] // Anúncios Meta
+  metaInsights         MetaInsight[] // Insights Meta Ads
+  metaLogs             MetaLog[] // Logs Meta Ads
 
   @@map("tenants")
 }
@@ -1177,4 +1184,214 @@ model ReportSchedule {
   @@index([dataSourceId])
   @@index([isActive])
   @@map("report_schedules")
+}
+
+// ============================================================================
+// META ADS INTEGRATION MODELS
+// ============================================================================
+
+model MetaGlobalSetting {
+  id           Int      @id @default(autoincrement())
+  appId        String   @map("app_id")
+  appSecretEnc String   @map("app_secret_enc") // encrypted
+  redirectUri  String   @map("redirect_uri")
+  scopes       String   @default("ads_read,ads_management,business_management,pages_show_list")
+  active       Boolean  @default(true)
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  @@map("meta_global_settings")
+}
+
+model MetaTenantConnection {
+  id              Int      @id @default(autoincrement())
+  tenantId        String   @map("tenant_id")
+  fbUserId        String?  @map("fb_user_id") // Facebook user that consented (opcional)
+  accessTokenEnc  String   @map("access_token_enc") // encrypted short/long token
+  tokenType       String?  @map("token_type")
+  expiresAt       DateTime? @map("expires_at") // when token expires
+  lastUsedAt      DateTime? @map("last_used_at")
+  active          Boolean  @default(true)
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  tenant          Tenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  accounts        MetaAccount[]
+  logs            MetaLog[]
+
+  @@unique([tenantId])
+  @@index([tenantId])
+  @@index([active])
+  @@map("meta_tenant_connections")
+}
+
+model MetaAccount {
+  id            Int      @id @default(autoincrement())
+  tenantId      String   @map("tenant_id")
+  connectionId  Int      @map("connection_id")
+  accountId     String   @map("account_id") // act_<ID>
+  name          String
+  currency      String?
+  timezone      String?
+  status        String?
+  lastSyncedAt  DateTime? @map("last_synced_at")
+  syncStatus    String   @default("PENDING") @map("sync_status") // PENDING, SUCCESS, ERROR
+  errorMessage  String?  @map("error_message")
+  active        Boolean  @default(true)
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  tenant        Tenant            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  connection    MetaTenantConnection @relation(fields: [connectionId], references: [id], onDelete: Cascade)
+  campaigns     MetaCampaign[]
+  adSets        MetaAdSet[]
+  ads           MetaAd[]
+  insights      MetaInsight[]
+
+  @@unique([tenantId, accountId])
+  @@index([tenantId])
+  @@index([connectionId])
+  @@index([active])
+  @@map("meta_accounts")
+}
+
+model MetaCampaign {
+  id           Int      @id @default(autoincrement())
+  tenantId     String   @map("tenant_id")
+  accountId    Int      @map("account_id") // FK para MetaAccount.id
+  campaignId   String   @map("campaign_id")
+  name         String?
+  status       String?
+  objective    String?
+  dailyBudget  Float?   @map("daily_budget")
+  lifetimeBudget Float? @map("lifetime_budget")
+  startTime    DateTime? @map("start_time")
+  stopTime     DateTime? @map("stop_time")
+  lastSyncedAt DateTime? @map("last_synced_at")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  tenant       Tenant            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  account      MetaAccount       @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  adSets       MetaAdSet[]
+  ads          MetaAd[]
+  insights     MetaInsight[]
+
+  @@unique([accountId, campaignId])
+  @@index([tenantId])
+  @@index([accountId])
+  @@map("meta_campaigns")
+}
+
+model MetaAdSet {
+  id           Int      @id @default(autoincrement())
+  tenantId     String   @map("tenant_id")
+  accountId    Int      @map("account_id")
+  campaignId   Int      @map("campaign_id")
+  adSetId      String   @map("ad_set_id")
+  name         String?
+  status       String?
+  optimizationGoal String? @map("optimization_goal")
+  dailyBudget  Float?   @map("daily_budget")
+  lifetimeBudget Float? @map("lifetime_budget")
+  startTime    DateTime? @map("start_time")
+  endTime      DateTime? @map("end_time")
+  lastSyncedAt DateTime? @map("last_synced_at")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  tenant       Tenant            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  account      MetaAccount       @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  campaign     MetaCampaign      @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  ads          MetaAd[]
+  insights     MetaInsight[]
+
+  @@unique([accountId, adSetId])
+  @@index([tenantId])
+  @@index([accountId])
+  @@index([campaignId])
+  @@map("meta_ad_sets")
+}
+
+model MetaAd {
+  id           Int      @id @default(autoincrement())
+  tenantId     String   @map("tenant_id")
+  accountId    Int      @map("account_id")
+  campaignId   Int      @map("campaign_id")
+  adSetId      Int      @map("ad_set_id")
+  adId         String   @map("ad_id")
+  name         String?
+  status       String?
+  creative     Json?    // Creative object from API
+  lastSyncedAt DateTime? @map("last_synced_at")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  tenant       Tenant            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  account      MetaAccount       @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  campaign     MetaCampaign      @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  adSet        MetaAdSet         @relation(fields: [adSetId], references: [id], onDelete: Cascade)
+  insights     MetaInsight[]
+
+  @@unique([accountId, adId])
+  @@index([tenantId])
+  @@index([accountId])
+  @@index([campaignId])
+  @@index([adSetId])
+  @@map("meta_ads")
+}
+
+model MetaInsight {
+  id            Int      @id @default(autoincrement())
+  tenantId      String   @map("tenant_id")
+  accountId     Int      @map("account_id")
+  campaignId    Int?     @map("campaign_id")
+  adSetId       Int?     @map("ad_set_id")
+  adId          Int?     @map("ad_id")
+  date          DateTime @db.Date
+  impressions   Int      @default(0)
+  clicks        Int      @default(0)
+  spend         Float    @default(0)
+  reach         Int      @default(0)
+  frequency     Float    @default(0)
+  ctr           Float    @default(0) // Click-through rate
+  cpc           Float    @default(0) // Cost per click
+  cpm           Float    @default(0) // Cost per mille
+  cpp           Float    @default(0) // Cost per purchase
+  conversions   Int      @default(0)
+  conversionRate Float   @default(0) @map("conversion_rate")
+  roas          Float    @default(0) // Return on ad spend
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  tenant        Tenant            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  account       MetaAccount       @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  campaign      MetaCampaign?     @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  adSet         MetaAdSet?        @relation(fields: [adSetId], references: [id], onDelete: Cascade)
+  ad            MetaAd?           @relation(fields: [adId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, accountId, campaignId, adSetId, adId, date])
+  @@index([tenantId])
+  @@index([accountId])
+  @@index([date])
+  @@map("meta_insights")
+}
+
+model MetaLog {
+  id          Int      @id @default(autoincrement())
+  tenantId    String   @map("tenant_id")
+  connectionId Int     @map("connection_id")
+  type        String   // TOKEN_CREATED, TOKEN_REFRESHED, SYNC_SUCCESS, SYNC_ERROR, API_RATE_LIMIT
+  message     String
+  details     Json?    // Additional details
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  tenant      Tenant               @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  connection  MetaTenantConnection @relation(fields: [connectionId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([connectionId])
+  @@index([type])
+  @@index([createdAt])
+  @@map("meta_logs")
 }
