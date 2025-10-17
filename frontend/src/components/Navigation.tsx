@@ -387,14 +387,18 @@ export function Navigation() {
   const menuItems = user?.role === 'SUPERADMIN' ? superAdminMenuItems : regularMenuItems;
 
   return (
-    <nav
-      className={`sidebar-navigation shadow-lg flex flex-col h-screen transition-all duration-300 relative ${
-        isExpanded ? 'w-64' : 'w-20'
-      }`}
-      style={{ background: 'var(--sidebar-bg)' }}
-      onMouseEnter={() => setIsExpanded(true)}
-      onMouseLeave={() => setIsExpanded(false)}
-    >
+      <nav
+        className={`sidebar-navigation shadow-lg flex flex-col h-screen transition-all duration-300 relative ${
+          isExpanded ? 'w-64' : 'w-16'
+        }`}
+        style={{
+          background: 'var(--sidebar-bg)',
+          alignItems: isExpanded ? 'stretch' : 'center',
+        }}
+        onMouseEnter={() => setIsExpanded(true)}
+        onMouseLeave={() => setIsExpanded(false)}
+      >
+
       {/* Header - Logo/Ícone + Título - Fixo */}
       <div className="p-4 flex-shrink-0">
         <div className="flex items-center gap-3">
