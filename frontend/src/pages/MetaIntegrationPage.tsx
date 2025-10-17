@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useTenant } from '../contexts/TenantContext';
 import { metaService } from '../services/metaService';
+import { useSearchParams } from 'react-router-dom';
 import { 
   MetaConnectionStatus, 
   MetaAdAccountFromAPI, 
@@ -26,6 +27,7 @@ import {
 const MetaIntegrationPage: React.FC = () => {
   const { user } = useAuth();
   const { currentTenant } = useTenant();
+  const [searchParams] = useSearchParams();
   const [connectionStatus, setConnectionStatus] = useState<MetaConnectionStatus | null>(null);
   const [accounts, setAccounts] = useState<MetaAdAccountFromAPI[]>([]);
   const [loading, setLoading] = useState(false);
@@ -38,6 +40,31 @@ const MetaIntegrationPage: React.FC = () => {
       loadConnectionStatus();
     }
   }, [currentTenant]);
+
+  // Tratar parâmetros de URL do callback OAuth
+  useEffect(() => {
+    const success = searchParams.get('success');
+    const error = searchParams.get('error');
+    const step = searchParams.get('step');
+
+    console.log('🔍 Parâmetros URL detectados:', { success, error, step });
+
+    if (success === 'true' && step === 'accounts') {
+      console.log('✅ OAuth bem-sucedido, carregando contas...');
+      toast.success('Conexão com Meta estabelecida! Agora selecione as contas de anúncios.');
+      // Recarregar status da conexão
+      if (currentTenant?.id) {
+        loadConnectionStatus();
+      }
+      // Limpar parâmetros da URL
+      window.history.replaceState({}, document.title, window.location.pathname);
+    } else if (error) {
+      console.error('❌ Erro do OAuth:', error);
+      toast.error(`Erro na conexão: ${decodeURIComponent(error)}`);
+      // Limpar parâmetros da URL
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
+  }, [searchParams, currentTenant]);
 
   const loadConnectionStatus = async () => {
     if (!currentTenant?.id) return;

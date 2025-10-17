@@ -1,6 +1,6 @@
 // Configuração runtime - injetada pelo Docker
 window.APP_CONFIG = {
-    API_URL: 'https://n8n-back-crm.h3ag2x.easypanel.host/api'
+    API_URL: 'https://backendcrm.aoseudispor.com.br/api'
 };
 
 // Debug: confirmar que config foi carregado

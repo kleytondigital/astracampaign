@@ -97,14 +97,24 @@ export const tenantRedirect = async (req: AuthenticatedRequest, res: Response) =
 export const oauthCallback = async (req: Request, res: Response) => {
   try {
     const { code, state, error, error_description } = req.query;
+    
+    console.log('🔄 Meta OAuth Callback recebido:', {
+      hasCode: !!code,
+      hasState: !!state,
+      hasError: !!error,
+      error,
+      error_description,
+      query: req.query
+    });
 
     if (error) {
       console.error('❌ Erro no callback OAuth:', error, error_description);
-      return res.redirect(`${process.env.FRONTEND_URL}/integrations/meta?error=${encodeURIComponent(error_description as string)}`);
+      return res.redirect(`${process.env.FRONTEND_URL}/meta-integration?error=${encodeURIComponent(error_description as string)}`);
     }
 
     if (!code || !state) {
-      return res.redirect(`${process.env.FRONTEND_URL}/integrations/meta?error=Parâmetros inválidos no callback`);
+      console.error('❌ Parâmetros inválidos no callback:', { code: !!code, state: !!state });
+      return res.redirect(`${process.env.FRONTEND_URL}/meta-integration?error=Parâmetros inválidos no callback`);
     }
 
     // Decodificar state
@@ -113,7 +123,7 @@ export const oauthCallback = async (req: Request, res: Response) => {
       stateData = JSON.parse(Buffer.from(state as string, 'base64').toString('utf8'));
     } catch (error) {
       console.error('❌ Erro ao decodificar state:', error);
-      return res.redirect(`${process.env.FRONTEND_URL}/integrations/meta?error=State inválido`);
+      return res.redirect(`${process.env.FRONTEND_URL}/meta-integration?error=State inválido`);
     }
 
     // Validar state (CSRF protection)
@@ -121,11 +131,11 @@ export const oauthCallback = async (req: Request, res: Response) => {
     const maxAge = 10 * 60 * 1000; // 10 minutos
 
     if (!tenantId || !userId || !nonce || !timestamp) {
-      return res.redirect(`${process.env.FRONTEND_URL}/integrations/meta?error=State malformado`);
+      return res.redirect(`${process.env.FRONTEND_URL}/meta-integration?error=State malformado`);
     }
 
     if (Date.now() - timestamp > maxAge) {
-      return res.redirect(`${process.env.FRONTEND_URL}/integrations/meta?error=State expirado`);
+      return res.redirect(`${process.env.FRONTEND_URL}/meta-integration?error=State expirado`);
     }
 
     // Verificar se tenant existe
@@ -134,7 +144,7 @@ export const oauthCallback = async (req: Request, res: Response) => {
     });
 
     if (!tenant) {
-      return res.redirect(`${process.env.FRONTEND_URL}/integrations/meta?error=Tenant não encontrado`);
+      return res.redirect(`${process.env.FRONTEND_URL}/meta-integration?error=Tenant não encontrado`);
     }
 
     // Obter configurações globais
@@ -143,7 +153,7 @@ export const oauthCallback = async (req: Request, res: Response) => {
     });
 
     if (!globalSettings) {
-      return res.redirect(`${process.env.FRONTEND_URL}/integrations/meta?error=Configurações Meta não encontradas`);
+      return res.redirect(`${process.env.FRONTEND_URL}/meta-integration?error=Configurações Meta não encontradas`);
     }
 
     // Trocar código por token
@@ -208,10 +218,10 @@ export const oauthCallback = async (req: Request, res: Response) => {
     });
 
     // Redirecionar para página de seleção de contas
-    res.redirect(`${process.env.FRONTEND_URL}/integrations/meta?success=true&step=accounts`);
+    res.redirect(`${process.env.FRONTEND_URL}/meta-integration?success=true&step=accounts`);
   } catch (error) {
     console.error('❌ Erro no callback OAuth Meta:', error);
-    res.redirect(`${process.env.FRONTEND_URL}/integrations/meta?error=Erro interno no callback`);
+    res.redirect(`${process.env.FRONTEND_URL}/meta-integration?error=Erro interno no callback`);
   }
 };
 
