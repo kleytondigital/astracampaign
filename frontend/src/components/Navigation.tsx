@@ -1,7 +1,7 @@
 import { Link, useLocation } from 'react-router-dom';
 import { useGlobalSettings } from '../hooks/useGlobalSettings';
 import { useAuth } from '../contexts/AuthContext';
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { canAccessRoute, UserRole } from '../utils/permissions';
 
 // Componente para renderizar item de menu (suporta submenus)
@@ -21,7 +21,7 @@ function MenuItem({ item, isExpanded, location, userRole }: { item: any; isExpan
           to={item.path}
           className={`group relative flex items-center gap-3 ${
             isExpanded ? 'justify-start px-3' : 'justify-center'
-          } h-12 rounded-xl transition-all duration-200 ${
+          } h-14 rounded-xl transition-all duration-200 ${
             location.pathname === item.path
               ? 'bg-white shadow-lg'
               : 'text-white/70 hover:text-white hover:bg-white/10'
@@ -31,7 +31,7 @@ function MenuItem({ item, isExpanded, location, userRole }: { item: any; isExpan
           }
           title={!isExpanded ? item.label : undefined}
         >
-          <div className="flex-shrink-0 flex items-center justify-center w-5 h-5">{item.icon}</div>
+          <div className="flex-shrink-0 flex items-center justify-center w-6 h-6">{item.icon}</div>
 
           {/* Título (visível quando expandido) */}
           {isExpanded && (
@@ -62,14 +62,14 @@ function MenuItem({ item, isExpanded, location, userRole }: { item: any; isExpan
           onClick={() => setIsSubmenuOpen(!isSubmenuOpen)}
           className={`group relative flex items-center gap-3 ${
             isExpanded ? 'justify-start px-3' : 'justify-center'
-          } h-12 rounded-xl transition-all duration-200 ${
+          } h-14 rounded-xl transition-all duration-200 ${
             hasActiveChild
               ? 'bg-white/20 shadow-lg'
               : 'text-white/70 hover:text-white hover:bg-white/10'
           }`}
           title={!isExpanded ? item.label : undefined}
         >
-          <div className="flex-shrink-0 flex items-center justify-center w-5 h-5">{item.icon}</div>
+          <div className="flex-shrink-0 flex items-center justify-center w-6 h-6">{item.icon}</div>
 
           {/* Título (visível quando expandido) */}
           {isExpanded && (
@@ -437,8 +437,8 @@ export function Navigation() {
 
       {/* Menu Items - Scrollable */}
       <div className="flex-1 overflow-y-auto overflow-x-hidden px-4 scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent hover:scrollbar-thumb-white/20">
-        <ul className="space-y-2 pb-4">
-          {menuItems.map((item, index) => (
+        <ul className="space-y-3 pb-4">
+          {menuItems.map((item) => (
             <MenuItem key={item.path || item.label} item={item} isExpanded={isExpanded} location={location} userRole={user?.role as UserRole || 'USER'} />
           ))}
         </ul>
@@ -450,7 +450,7 @@ export function Navigation() {
           onClick={logout}
           className={`group relative flex items-center gap-3 ${
             isExpanded ? 'justify-start px-3 w-full' : 'justify-center w-12 mx-auto'
-          } h-12 rounded-xl transition-all duration-200 text-white/70 hover:text-white hover:bg-red-500/20`}
+          } h-14 rounded-xl transition-all duration-200 text-white/70 hover:text-white hover:bg-red-500/20`}
           title={!isExpanded ? 'Sair' : undefined}
         >
           <svg
