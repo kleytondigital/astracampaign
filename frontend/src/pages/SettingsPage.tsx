@@ -197,30 +197,30 @@ export function SettingsPage() {
             </p>
 
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {/* OpenAI Button */}
-              <div className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition-colors">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-3">
-                    <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
-                      <span className="text-green-600 font-semibold">🤖</span>
+            <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+              {/* OpenAI Card */}
+              <div className="bg-white border border-gray-200 rounded-xl p-6 hover:shadow-md transition-all duration-200 hover:border-gray-300">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                  <div className="flex items-center space-x-4">
+                    <div className="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center flex-shrink-0">
+                      <span className="text-green-600 text-xl">🤖</span>
                     </div>
-                    <div>
-                      <h3 className="font-medium text-gray-900">OpenAI</h3>
-                      <p className="text-sm text-gray-500">ChatGPT, GPT-4</p>
+                    <div className="min-w-0 flex-1">
+                      <h3 className="font-semibold text-gray-900 text-lg">OpenAI</h3>
+                      <p className="text-sm text-gray-600 mt-1">ChatGPT, GPT-4</p>
                     </div>
                   </div>
-                  <div className="flex items-center space-x-2">
-                    <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 w-full sm:w-auto">
+                    <span className={`inline-flex px-3 py-1.5 text-xs font-medium rounded-full ${
                       settings?.openaiApiKey
                         ? 'bg-green-100 text-green-800'
-                        : 'bg-gray-100 text-gray-800'
+                        : 'bg-gray-100 text-gray-700'
                     }`}>
                       {settings?.openaiApiKey ? 'Configurado' : 'Não configurado'}
                     </span>
                     <button
                       onClick={() => setActiveModal('openai')}
-                      className="px-3 py-1 bg-gray-800 text-white text-sm rounded hover:bg-gray-900"
+                      className="w-full sm:w-auto px-4 py-2 bg-gray-800 text-white text-sm font-medium rounded-lg hover:bg-gray-900 transition-colors"
                     >
                       Configurar
                     </button>
@@ -228,31 +228,57 @@ export function SettingsPage() {
                 </div>
               </div>
 
-              {/* Groq Button */}
-              <div className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition-colors">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-3">
-                    <div className="w-10 h-10 bg-orange-100 rounded-lg flex items-center justify-center">
-                      <span className="text-orange-600 font-semibold">⚡</span>
+              {/* Groq Card */}
+              <div className="bg-white border border-gray-200 rounded-xl p-6 hover:shadow-md transition-all duration-200 hover:border-gray-300">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                  <div className="flex items-center space-x-4">
+                    <div className="w-12 h-12 bg-orange-100 rounded-xl flex items-center justify-center flex-shrink-0">
+                      <span className="text-orange-600 text-xl">⚡</span>
                     </div>
-                    <div>
-                      <h3 className="font-medium text-gray-900">Groq</h3>
-                      <p className="text-sm text-gray-500">LLaMA, Mixtral (ultra-rápido)</p>
+                    <div className="min-w-0 flex-1">
+                      <h3 className="font-semibold text-gray-900 text-lg">Groq</h3>
+                      <p className="text-sm text-gray-600 mt-1">LLaMA, Mixtral (ultra-rápido)</p>
                     </div>
                   </div>
-                  <div className="flex items-center space-x-2">
-                    <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 w-full sm:w-auto">
+                    <span className={`inline-flex px-3 py-1.5 text-xs font-medium rounded-full ${
                       settings?.groqApiKey
                         ? 'bg-green-100 text-green-800'
-                        : 'bg-gray-100 text-gray-800'
+                        : 'bg-gray-100 text-gray-700'
                     }`}>
                       {settings?.groqApiKey ? 'Configurado' : 'Não configurado'}
                     </span>
                     <button
                       onClick={() => setActiveModal('groq')}
-                      className="px-3 py-1 bg-orange-600 text-white text-sm rounded hover:bg-orange-700"
+                      className="w-full sm:w-auto px-4 py-2 bg-orange-600 text-white text-sm font-medium rounded-lg hover:bg-orange-700 transition-colors"
                     >
                       Configurar
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Meta Ads Card */}
+              <div className="bg-white border border-gray-200 rounded-xl p-6 hover:shadow-md transition-all duration-200 hover:border-gray-300">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                  <div className="flex items-center space-x-4">
+                    <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center flex-shrink-0">
+                      <span className="text-blue-600 text-xl">📊</span>
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <h3 className="font-semibold text-gray-900 text-lg">Meta Ads</h3>
+                      <p className="text-sm text-gray-600 mt-1">Facebook, Instagram Ads</p>
+                    </div>
+                  </div>
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 w-full sm:w-auto">
+                    <span className="inline-flex px-3 py-1.5 text-xs font-medium rounded-full bg-blue-100 text-blue-800">
+                      Configurável
+                    </span>
+                    <button
+                      onClick={() => window.location.href = '/meta-integration'}
+                      className="w-full sm:w-auto px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors"
+                    >
+                      Gerenciar
                     </button>
                   </div>
                 </div>

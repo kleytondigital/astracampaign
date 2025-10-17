@@ -80,16 +80,25 @@ const MetaIntegrationPage: React.FC = () => {
   };
 
   const handleConnect = async () => {
-    if (!currentTenant?.id) return;
+    console.log('🔗 Iniciando conexão com Meta Ads...', { tenantId: currentTenant?.id });
+    
+    if (!currentTenant?.id) {
+      console.error('❌ Tenant ID não encontrado');
+      toast.error('Erro: Tenant não encontrado');
+      return;
+    }
     
     try {
       setLoading(true);
+      console.log('📡 Chamando startOAuthFlow...');
       const result = await metaService.startOAuthFlow(currentTenant.id);
+      console.log('✅ OAuth flow iniciado:', result);
       
       // Redirecionar para OAuth
+      console.log('🔄 Redirecionando para:', result.authUrl);
       metaService.redirectToMetaOAuth(result.authUrl);
     } catch (error: any) {
-      console.error('Erro ao iniciar OAuth:', error);
+      console.error('❌ Erro ao iniciar OAuth:', error);
       toast.error(error.message || 'Erro ao conectar com Meta');
     } finally {
       setLoading(false);
