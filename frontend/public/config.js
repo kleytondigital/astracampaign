@@ -1,6 +1,6 @@
 // Configuração runtime - injetada pelo Docker
 window.APP_CONFIG = {
-    API_URL: 'VITE_API_URL_PLACEHOLDER/api'
+    API_URL: 'https://n8n-back-crm.h3ag2x.easypanel.host/api'
 };
 
 // Debug: confirmar que config foi carregado
