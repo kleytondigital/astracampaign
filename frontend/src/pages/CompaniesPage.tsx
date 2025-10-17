@@ -55,14 +55,17 @@ export default function CompaniesPage() {
       
       if (isSuperAdmin) {
         // SUPERADMIN: carregar tenants
+        console.log('🔍 SUPERADMIN carregando tenants...', { currentPage, pageSize, search });
         const response = await superadminService.getTenants({
           page: currentPage,
           pageSize,
           search,
         });
+        console.log('📊 Resposta tenants:', response);
         setTenants(response.data);
         setTotalItems(response.pagination?.total || 0);
         setTotalPages(response.pagination?.totalPages || 0);
+        console.log('✅ Tenants carregados:', response.data.length, 'total:', response.pagination?.total);
       } else {
         // Tenant: carregar companies
         const response = await companiesService.getCompanies({
@@ -224,13 +227,23 @@ export default function CompaniesPage() {
         </button>
       </div>
 
+      {/* Debug Info */}
+      {process.env.NODE_ENV === 'development' && (
+        <div className="mb-4 p-2 bg-yellow-100 text-xs">
+          <strong>DEBUG:</strong> isSuperAdmin: {isSuperAdmin.toString()}, 
+          tenants.length: {tenants.length}, 
+          companies.length: {companies.length}, 
+          totalItems: {totalItems}
+        </div>
+      )}
+
       {/* Lista de Empresas */}
       {loading ? (
         <div className="text-center py-12">
           <div className="inline-block animate-spin rounded-full h-8 w-8 border-4 border-gray-300 border-t-blue-600"></div>
           <p className="mt-2 text-gray-600">Carregando empresas...</p>
         </div>
-      ) : companies.length === 0 ? (
+      ) : (isSuperAdmin ? tenants.length === 0 : companies.length === 0) ? (
         <div className="text-center py-12 bg-gray-50 rounded-lg">
           <svg
             className="mx-auto h-12 w-12 text-gray-400"
