@@ -1195,6 +1195,7 @@ model MetaGlobalSetting {
   appId        String   @map("app_id")
   appSecretEnc String   @map("app_secret_enc") // encrypted
   redirectUri  String   @map("redirect_uri")
+  apiVersion   String   @default("v21.0") @map("api_version") // Graph API version (v19.0 to v24.0)
   scopes       String   @default("ads_read,ads_management,business_management,pages_show_list")
   active       Boolean  @default(true)
   createdAt    DateTime @default(now()) @map("created_at")

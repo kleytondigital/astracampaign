@@ -5,6 +5,7 @@ export interface MetaGlobalSettings {
   appId: string;
   appSecretEnc: string;
   redirectUri: string;
+  apiVersion?: string; // Versão da Graph API (v19.0 até v24.0)
   scopes: string;
 }
 
@@ -78,13 +79,15 @@ export class MetaApiService {
 
   constructor(globalSettings: MetaGlobalSettings) {
     this.globalSettings = globalSettings;
+    const apiVersion = globalSettings.apiVersion || 'v21.0';
     this.client = axios.create({
-      baseURL: 'https://graph.facebook.com/v19.0',
+      baseURL: `https://graph.facebook.com/${apiVersion}`,
       timeout: 30000,
       headers: {
         'Content-Type': 'application/json',
       },
     });
+    console.log(`🌐 MetaApiService criado com Graph API ${apiVersion}`);
   }
 
   /**

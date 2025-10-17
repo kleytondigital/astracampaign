@@ -7,6 +7,7 @@ export interface MetaGlobalSettings {
   appId: string;
   redirectUri: string;
   suggestedRedirectUri?: string; // URL sugerida automaticamente pelo backend
+  apiVersion: string; // Versão da Graph API (v19.0 até v24.0)
   scopes: string;
   active: boolean;
   createdAt?: string;
@@ -172,6 +173,7 @@ export interface MetaGlobalSettingsForm {
   appId: string;
   appSecret: string;
   redirectUri: string;
+  apiVersion: string;
   scopes: string;
 }
 

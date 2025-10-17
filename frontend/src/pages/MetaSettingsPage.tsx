@@ -23,6 +23,7 @@ const MetaSettingsPage: React.FC = () => {
     appId: '',
     appSecret: '',
     redirectUri: '',
+    apiVersion: 'v21.0',
     scopes: 'ads_read,ads_management,business_management,pages_show_list'
   });
   const [showSecret, setShowSecret] = useState(false);
@@ -49,6 +50,7 @@ const MetaSettingsPage: React.FC = () => {
           appId: data.appId,
           appSecret: '', // Não carregar secret por segurança
           redirectUri: data.redirectUri || data.suggestedRedirectUri || '',
+          apiVersion: data.apiVersion || 'v21.0',
           scopes: data.scopes
         });
       } else {
@@ -232,6 +234,30 @@ const MetaSettingsPage: React.FC = () => {
                   </p>
                   <p className="text-xs text-blue-600 mt-1">
                     ℹ️ Configure esta URL no Facebook App Dashboard → Produtos → Facebook Login → Configurações → URIs de redirecionamento OAuth válidos
+                  </p>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Versão da Graph API
+                  </label>
+                  <select
+                    value={formData.apiVersion}
+                    onChange={(e) => handleInputChange('apiVersion', e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  >
+                    <option value="v19.0">v19.0</option>
+                    <option value="v20.0">v20.0</option>
+                    <option value="v21.0">v21.0 (Recomendado)</option>
+                    <option value="v22.0">v22.0</option>
+                    <option value="v23.0">v23.0</option>
+                    <option value="v24.0">v24.0 (Mais recente)</option>
+                  </select>
+                  <p className="text-xs text-gray-500 mt-1">
+                    📊 Versão da API do Facebook para fazer requisições. Recomendamos usar v21.0 ou superior.
+                  </p>
+                  <p className="text-xs text-blue-600 mt-1">
+                    ℹ️ Versões mais recentes podem ter recursos adicionais, mas certifique-se de que seu App Meta suporta a versão escolhida.
                   </p>
                 </div>
 

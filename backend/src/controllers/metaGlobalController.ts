@@ -47,6 +47,7 @@ export const getGlobalSettings = async (req: AuthenticatedRequest, res: Response
       appId: settings.appId,
       redirectUri: settings.redirectUri,
       suggestedRedirectUri, // URL sugerida para o usuário
+      apiVersion: settings.apiVersion,
       scopes: settings.scopes,
       active: settings.active,
       createdAt: settings.createdAt,
@@ -69,7 +70,7 @@ export const getGlobalSettings = async (req: AuthenticatedRequest, res: Response
 export const setGlobalSettings = async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { user } = req;
-    let { appId, appSecret, redirectUri, scopes } = req.body;
+    let { appId, appSecret, redirectUri, apiVersion, scopes } = req.body;
     
     if (!user || user.role !== 'SUPERADMIN') {
       return res.status(403).json({ error: 'Acesso negado. Apenas Super Admin.' });
@@ -87,6 +88,20 @@ export const setGlobalSettings = async (req: AuthenticatedRequest, res: Response
       const backendUrl = process.env.BACKEND_URL || process.env.API_URL || 'http://localhost:3000';
       redirectUri = `${backendUrl}/api/meta/callback`;
       console.log(`📍 Redirect URI gerada automaticamente: ${redirectUri}`);
+    }
+
+    // Se não forneceu versão da API, usar padrão
+    if (!apiVersion) {
+      apiVersion = 'v21.0';
+      console.log(`📍 API Version não fornecida, usando padrão: ${apiVersion}`);
+    }
+
+    // Validar versão da API (v19.0 até v24.0)
+    const validVersions = ['v19.0', 'v20.0', 'v21.0', 'v22.0', 'v23.0', 'v24.0'];
+    if (!validVersions.includes(apiVersion)) {
+      return res.status(400).json({ 
+        error: `Versão da API inválida. Versões suportadas: ${validVersions.join(', ')}` 
+      });
     }
 
     // Validar se as credenciais funcionam
@@ -118,6 +133,7 @@ export const setGlobalSettings = async (req: AuthenticatedRequest, res: Response
         appId,
         appSecretEnc: encrypt(appSecret),
         redirectUri,
+        apiVersion,
         scopes: scopes || 'ads_read,ads_management,business_management,pages_show_list',
         active: true
       }
@@ -127,7 +143,8 @@ export const setGlobalSettings = async (req: AuthenticatedRequest, res: Response
     console.log('✅ Configurações globais Meta criadas:', {
       id: newSettings.id,
       appId: newSettings.appId,
-      redirectUri: newSettings.redirectUri
+      redirectUri: newSettings.redirectUri,
+      apiVersion: newSettings.apiVersion
     });
 
     res.json({
