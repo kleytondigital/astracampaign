@@ -46,6 +46,7 @@ export default function AtendimentoPage() {
   const [recordingTime, setRecordingTime] = useState(0);
   const [finalRecordingTime, setFinalRecordingTime] = useState(0);
   const recordingIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const recordingTimeRef = useRef<number>(0); // Ref para ter sempre o valor mais recente
 
   // Estados para modal de transferência
   const [transferModalOpen, setTransferModalOpen] = useState(false);
@@ -388,14 +389,13 @@ export default function AtendimentoPage() {
       setAudioRecorder(recorder);
       setIsRecording(true);
       setRecordingTime(0);
+      recordingTimeRef.current = 0;
 
       // Timer de gravação
       recordingIntervalRef.current = setInterval(() => {
-        setRecordingTime((prev) => {
-          const newTime = prev + 1;
-          console.log('⏱️ Timer incrementando:', prev, '->', newTime);
-          return newTime;
-        });
+        recordingTimeRef.current += 1;
+        setRecordingTime(recordingTimeRef.current);
+        console.log('⏱️ Timer incrementando:', recordingTimeRef.current);
       }, 1000);
 
       toast.success('🎤 Gravação iniciada!');
@@ -410,10 +410,11 @@ export default function AtendimentoPage() {
       audioRecorder.stop();
       setIsRecording(false);
       
-      // Salvar o tempo final antes de limpar o timer
-      console.log('🛑 Parando gravação - tempo atual:', recordingTime);
-      setFinalRecordingTime(recordingTime);
-      console.log('💾 Tempo final salvo:', recordingTime);
+      // Salvar o tempo final usando o ref (sempre tem o valor mais recente)
+      const finalTime = recordingTimeRef.current;
+      console.log('🛑 Parando gravação - tempo atual:', finalTime);
+      setFinalRecordingTime(finalTime);
+      console.log('💾 Tempo final salvo:', finalTime);
 
       if (recordingIntervalRef.current) {
         clearInterval(recordingIntervalRef.current);
@@ -432,8 +433,9 @@ export default function AtendimentoPage() {
       toast.loading('Enviando áudio gravado...', { id: 'audio-upload' });
 
       // Criar arquivo a partir do blob
-      const audioFile = new File([recordedAudio], `audio-${Date.now()}.webm`, {
-        type: 'audio/webm',
+      // WAHA precisa de audio/ogg com codec opus
+      const audioFile = new File([recordedAudio], `audio-${Date.now()}.ogg`, {
+        type: 'audio/ogg; codecs=opus',
       });
 
       const uploadResponse = await chatsService.uploadMedia(audioFile);
@@ -452,6 +454,7 @@ export default function AtendimentoPage() {
       setRecordedAudio(null);
       setRecordingTime(0);
       setFinalRecordingTime(0);
+      recordingTimeRef.current = 0;
       toast.success('Áudio enviado com sucesso!', { id: 'audio-upload' });
     } catch (error: any) {
       console.error('Erro ao enviar áudio gravado:', error);
@@ -469,6 +472,7 @@ export default function AtendimentoPage() {
     setRecordedAudio(null);
     setRecordingTime(0);
     setFinalRecordingTime(0);
+    recordingTimeRef.current = 0;
 
     if (recordingIntervalRef.current) {
       clearInterval(recordingIntervalRef.current);

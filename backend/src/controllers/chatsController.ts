@@ -391,6 +391,10 @@ export const sendMessage = async (req: AuthenticatedRequest, res: Response) => {
       }
 
       console.log('✅ Mensagem enviada via WhatsApp:', sentResult);
+      console.log('📊 Tipo de sentResult:', typeof sentResult);
+      console.log('📊 sentResult.id:', sentResult?.id);
+      console.log('📊 sentResult.key:', sentResult?.key);
+      console.log('📊 sentResult.key.id:', sentResult?.key?.id);
       console.log('📊 Tipo de mensagem enviada:', finalType);
       console.log('🔗 URL da mídia:', finalMediaUrl);
       console.log('📝 Conteúdo da mensagem:', finalBody);
@@ -426,6 +430,25 @@ export const sendMessage = async (req: AuthenticatedRequest, res: Response) => {
 
     const departmentName = userWithDepartment?.departments?.[0]?.department?.name || null;
 
+    // Extrair messageId de forma segura (sempre como string)
+    let extractedMessageId: string | null = null;
+    if (sentResult) {
+      if (typeof sentResult === 'string') {
+        extractedMessageId = sentResult;
+      } else if (sentResult.id && typeof sentResult.id === 'string') {
+        extractedMessageId = sentResult.id;
+      } else if (sentResult.key) {
+        const keyId = sentResult.key.id;
+        if (typeof keyId === 'string') {
+          extractedMessageId = keyId;
+        } else if (typeof keyId === 'object' && keyId !== null) {
+          extractedMessageId = keyId._serialized || keyId.id || null;
+        }
+      }
+    }
+    
+    console.log('🔑 MessageId extraído:', extractedMessageId, 'tipo:', typeof extractedMessageId);
+
     // Criar mensagem no banco
     const message = await prisma.message.create({
       data: {
@@ -437,9 +460,7 @@ export const sendMessage = async (req: AuthenticatedRequest, res: Response) => {
         mediaUrl: finalMediaUrl,
         timestamp: new Date(),
         ack: 1, // Enviado
-        messageId: typeof sentResult?.key?.id === 'object' 
-          ? sentResult?.key?.id?._serialized || sentResult?.key?.id?.id || sentResult?.id || null
-          : sentResult?.id || sentResult?.key?.id || null,
+        messageId: extractedMessageId,
         // Campos de assinatura
         sentBy: userId,
         departmentName: departmentName,
