@@ -1,12 +1,18 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { companiesService } from '../services/opportunitiesService';
+import { superadminService, Tenant } from '../services/superadminService';
 import { Company } from '../types';
 import { Pagination } from '../components/Pagination';
+import { useAuth } from '../contexts/AuthContext';
 import toast from 'react-hot-toast';
 
 export default function CompaniesPage() {
+  const { user } = useAuth();
+  const isSuperAdmin = user?.role === 'SUPERADMIN';
+  
   const [companies, setCompanies] = useState<Company[]>([]);
+  const [tenants, setTenants] = useState<Tenant[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [showModal, setShowModal] = useState(false);
@@ -20,31 +26,54 @@ export default function CompaniesPage() {
 
   // Formulário
   const [formData, setFormData] = useState({
+    // Dados da Empresa
     name: '',
+    slug: '',
     industry: '',
     size: 'SMALL' as 'SMALL' | 'MEDIUM' | 'LARGE' | 'ENTERPRISE' | 'STARTUP',
     website: '',
     phone: '',
     email: '',
+    address: '',
     description: '',
     tags: [] as string[],
+    // Dados do Admin (apenas para SUPERADMIN criar novo tenant)
+    adminName: '',
+    adminEmail: '',
+    adminPassword: '',
+    maxUsers: 10,
+    maxWhatsappSessions: 5,
   });
 
   useEffect(() => {
     loadCompanies();
-  }, [search, currentPage, pageSize]);
+  }, [search, currentPage, pageSize, isSuperAdmin]);
 
   const loadCompanies = async () => {
     try {
       setLoading(true);
-      const response = await companiesService.getCompanies({
-        page: currentPage,
-        pageSize,
-        search,
-      });
-      setCompanies(response.data);
-      setTotalItems(response.pagination?.total || 0);
-      setTotalPages(response.pagination?.totalPages || 0);
+      
+      if (isSuperAdmin) {
+        // SUPERADMIN: carregar tenants
+        const response = await superadminService.getTenants({
+          page: currentPage,
+          pageSize,
+          search,
+        });
+        setTenants(response.data);
+        setTotalItems(response.pagination?.total || 0);
+        setTotalPages(response.pagination?.totalPages || 0);
+      } else {
+        // Tenant: carregar companies
+        const response = await companiesService.getCompanies({
+          page: currentPage,
+          pageSize,
+          search,
+        });
+        setCompanies(response.data);
+        setTotalItems(response.pagination?.total || 0);
+        setTotalPages(response.pagination?.totalPages || 0);
+      }
     } catch (error: any) {
       console.error('Erro ao carregar empresas:', error);
       toast.error(error.message || 'Erro ao carregar empresas');
@@ -57,10 +86,32 @@ export default function CompaniesPage() {
     e.preventDefault();
 
     try {
-      if (editingCompany) {
+      if (isSuperAdmin && !editingCompany) {
+        // SUPERADMIN criando novo tenant
+        await superadminService.createTenant({
+          companyName: formData.name,
+          slug: formData.slug,
+          industry: formData.industry || undefined,
+          size: formData.size,
+          website: formData.website || undefined,
+          phone: formData.phone || undefined,
+          email: formData.email || undefined,
+          address: formData.address || undefined,
+          description: formData.description || undefined,
+          adminName: formData.adminName,
+          adminEmail: formData.adminEmail,
+          adminPassword: formData.adminPassword,
+          maxUsers: formData.maxUsers,
+          maxWhatsappSessions: formData.maxWhatsappSessions,
+          tags: formData.tags,
+        });
+        toast.success('Empresa/Tenant criado com sucesso!');
+      } else if (editingCompany) {
+        // Editar empresa existente
         await companiesService.updateCompany(editingCompany.id, formData);
         toast.success('Empresa atualizada com sucesso!');
       } else {
+        // Tenant criando company
         await companiesService.createCompany(formData);
         toast.success('Empresa criada com sucesso!');
       }
@@ -105,13 +156,20 @@ export default function CompaniesPage() {
   const resetForm = () => {
     setFormData({
       name: '',
+      slug: '',
       industry: '',
       size: 'SMALL',
       website: '',
       phone: '',
       email: '',
+      address: '',
       description: '',
       tags: [],
+      adminName: '',
+      adminEmail: '',
+      adminPassword: '',
+      maxUsers: 10,
+      maxWhatsappSessions: 5,
     });
     setEditingCompany(null);
   };
@@ -136,8 +194,14 @@ export default function CompaniesPage() {
     <div className="p-6">
       {/* Header */}
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Gestão de Empresas</h1>
-        <p className="text-gray-600">Gerencie suas empresas e contas</p>
+        <h1 className="text-2xl font-bold text-gray-900">
+          {isSuperAdmin ? 'Gestão de Tenants/Empresas' : 'Gestão de Empresas'}
+        </h1>
+        <p className="text-gray-600">
+          {isSuperAdmin 
+            ? 'Gerencie todos os tenants e empresas do sistema' 
+            : 'Gerencie suas empresas e contas'}
+        </p>
       </div>
 
       {/* Filtros e Ações */}
@@ -194,7 +258,80 @@ export default function CompaniesPage() {
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {companies.map((company) => (
+          {/* SUPERADMIN: mostrar tenants */}
+          {isSuperAdmin && tenants.map((tenant) => (
+            <div
+              key={tenant.id}
+              className="bg-white border border-gray-200 rounded-lg p-6 hover:shadow-lg transition-shadow"
+            >
+              {/* Nome e Status */}
+              <div className="mb-4 flex items-start justify-between">
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900">
+                    {tenant.nome}
+                  </h3>
+                  <p className="text-sm text-gray-500 mt-1">
+                    Slug: <code className="bg-gray-100 px-2 py-0.5 rounded">{tenant.slug}</code>
+                  </p>
+                </div>
+                <span className={`px-2 py-1 text-xs font-medium rounded-full ${
+                  tenant.ativo 
+                    ? 'bg-green-100 text-green-800' 
+                    : 'bg-red-100 text-red-800'
+                }`}>
+                  {tenant.ativo ? 'Ativo' : 'Inativo'}
+                </span>
+              </div>
+
+              {/* Estatísticas */}
+              <div className="grid grid-cols-2 gap-4 mb-4 pb-4 border-b border-gray-100">
+                <div>
+                  <p className="text-xs text-gray-500">Usuários</p>
+                  <p className="text-lg font-semibold text-gray-900">
+                    {tenant._count?.users || 0} / {tenant.maxUsers}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-500">Sessões WhatsApp</p>
+                  <p className="text-lg font-semibold text-gray-900">
+                    {tenant._count?.whatsappSessions || 0} / {tenant.maxWhatsappSessions}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-500">Contatos</p>
+                  <p className="text-lg font-semibold text-gray-900">
+                    {tenant._count?.contacts || 0}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-500">Leads</p>
+                  <p className="text-lg font-semibold text-gray-900">
+                    {tenant._count?.leads || 0}
+                  </p>
+                </div>
+              </div>
+
+              {/* Ações */}
+              <div className="flex gap-2">
+                <button
+                  onClick={() => superadminService.toggleTenantStatus(tenant.id, !tenant.ativo).then(() => {
+                    toast.success(`Tenant ${tenant.ativo ? 'desativado' : 'ativado'} com sucesso!`);
+                    loadCompanies();
+                  })}
+                  className={`flex-1 px-3 py-2 text-sm rounded transition-colors ${
+                    tenant.ativo
+                      ? 'bg-red-50 text-red-600 hover:bg-red-100'
+                      : 'bg-green-50 text-green-600 hover:bg-green-100'
+                  }`}
+                >
+                  {tenant.ativo ? 'Desativar' : 'Ativar'}
+                </button>
+              </div>
+            </div>
+          ))}
+
+          {/* Tenants: mostrar companies */}
+          {!isSuperAdmin && companies.map((company) => (
             <div
               key={company.id}
               className="bg-white border border-gray-200 rounded-lg p-6 hover:shadow-lg transition-shadow"
@@ -357,10 +494,15 @@ export default function CompaniesPage() {
           <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
             <div className="p-6">
               <h2 className="text-xl font-bold mb-4">
-                {editingCompany ? 'Editar Empresa' : 'Nova Empresa'}
+                {editingCompany 
+                  ? 'Editar Empresa' 
+                  : isSuperAdmin 
+                    ? 'Criar Novo Tenant/Empresa' 
+                    : 'Nova Empresa'}
               </h2>
 
               <form onSubmit={handleSubmit} className="space-y-4">
+                {/* Nome da Empresa */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     Nome da Empresa *
@@ -371,8 +513,34 @@ export default function CompaniesPage() {
                     value={formData.name}
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    placeholder="Ex: Minha Empresa LTDA"
                   />
                 </div>
+
+                {/* Slug (apenas para SUPERADMIN criando tenant) */}
+                {isSuperAdmin && !editingCompany && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Slug (identificador único) *
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={formData.slug}
+                      onChange={(e) => {
+                        // Garantir formato correto: apenas letras minúsculas, números e hífens
+                        const slug = e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '-');
+                        setFormData({ ...formData, slug });
+                      }}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                      placeholder="minha-empresa"
+                      pattern="[a-z0-9-]+"
+                    />
+                    <p className="text-xs text-gray-500 mt-1">
+                      Apenas letras minúsculas, números e hífens. Ex: minha-empresa
+                    </p>
+                  </div>
+                )}
 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
@@ -446,6 +614,91 @@ export default function CompaniesPage() {
                   />
                 </div>
 
+                {/* Campos do Administrador (apenas para SUPERADMIN criando tenant) */}
+                {isSuperAdmin && !editingCompany && (
+                  <>
+                    <div className="pt-4 border-t border-gray-200">
+                      <h3 className="text-lg font-semibold text-gray-900 mb-3">
+                        Dados do Administrador
+                      </h3>
+                      <p className="text-sm text-gray-600 mb-4">
+                        Crie o usuário administrador que gerenciará esta empresa
+                      </p>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Nome do Administrador *
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        value={formData.adminName}
+                        onChange={(e) => setFormData({ ...formData, adminName: e.target.value })}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                        placeholder="João Silva"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Email do Administrador *
+                      </label>
+                      <input
+                        type="email"
+                        required
+                        value={formData.adminEmail}
+                        onChange={(e) => setFormData({ ...formData, adminEmail: e.target.value })}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                        placeholder="admin@empresa.com"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Senha do Administrador *
+                      </label>
+                      <input
+                        type="password"
+                        required
+                        minLength={6}
+                        value={formData.adminPassword}
+                        onChange={(e) => setFormData({ ...formData, adminPassword: e.target.value })}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                        placeholder="Mínimo 6 caracteres"
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Máximo de Usuários
+                        </label>
+                        <input
+                          type="number"
+                          min="1"
+                          value={formData.maxUsers}
+                          onChange={(e) => setFormData({ ...formData, maxUsers: parseInt(e.target.value) })}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Máximo de Sessões WhatsApp
+                        </label>
+                        <input
+                          type="number"
+                          min="1"
+                          value={formData.maxWhatsappSessions}
+                          onChange={(e) => setFormData({ ...formData, maxWhatsappSessions: parseInt(e.target.value) })}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                        />
+                      </div>
+                    </div>
+                  </>
+                )}
+
                 <div className="flex gap-3 pt-4">
                   <button
                     type="button"
@@ -461,7 +714,11 @@ export default function CompaniesPage() {
                     type="submit"
                     className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
                   >
-                    {editingCompany ? 'Salvar Alterações' : 'Criar Empresa'}
+                    {editingCompany 
+                      ? 'Salvar Alterações' 
+                      : isSuperAdmin 
+                        ? 'Criar Tenant/Empresa' 
+                        : 'Criar Empresa'}
                   </button>
                 </div>
               </form>
