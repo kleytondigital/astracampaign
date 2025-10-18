@@ -32,7 +32,7 @@ function cn(...classes: (string | undefined | null | false)[]): string {
 interface SidebarItemProps {
   icon: React.ReactNode;
   label: string;
-  href: string;
+  to: string;
   badge?: string | number;
   isActive?: boolean;
   onClick?: () => void;
@@ -54,14 +54,14 @@ interface SidebarProps {
 const SidebarItem: React.FC<SidebarItemProps> = ({ 
   icon, 
   label, 
-  href, 
+  to, 
   badge, 
   isActive, 
   onClick 
 }) => {
   return (
     <Link
-      href={href}
+      to={to}
       onClick={onClick}
       className={cn(
         "group relative flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 text-sm font-medium",
@@ -123,82 +123,82 @@ export const Sidebar: React.FC<SidebarProps> = ({ className }) => {
     if (userRole === 'SUPERADMIN') {
       return [
         {
-          href: '/empresas',
+          to: '/empresas',
           icon: <Building2 className="w-5 h-5" />,
           label: 'Empresas'
         },
         {
-          href: '/meta-settings',
+          to: '/meta-settings',
           icon: <Settings className="w-5 h-5" />,
           label: 'Meta Settings'
         },
         {
-          href: '/admin-dashboard',
+          to: '/admin-dashboard',
           icon: <Home className="w-5 h-5" />,
           label: 'Dashboard'
         },
         {
-          href: '/departamentos',
+          to: '/departamentos',
           icon: <Building2 className="w-5 h-5" />,
           label: 'Departamentos'
         },
         {
-          href: '/usuarios',
+          to: '/usuarios',
           icon: <Users className="w-5 h-5" />,
           label: 'Usuários'
         },
         {
-          href: '/whatsapp',
+          to: '/whatsapp',
           icon: <Phone className="w-5 h-5" />,
           label: 'Conexões'
         },
         {
-          href: '/atendimento',
+          to: '/atendimento',
           icon: <MessageSquare className="w-5 h-5" />,
           label: 'Atendimento'
         },
         {
-          href: '/campanhas',
+          to: '/campanhas',
           icon: <Megaphone className="w-5 h-5" />,
           label: 'Campanhas'
         },
         {
-          href: '/contatos',
+          to: '/contatos',
           icon: <UserCheck className="w-5 h-5" />,
           label: 'Contatos'
         },
         {
-          href: '/leads',
+          to: '/leads',
           icon: <Lightbulb className="w-5 h-5" />,
           label: 'Leads'
         },
         {
-          href: '/oportunidades',
+          to: '/oportunidades',
           icon: <TrendingUp className="w-5 h-5" />,
           label: 'Oportunidades'
         },
         {
-          href: '/atividades',
+          to: '/atividades',
           icon: <FileText className="w-5 h-5" />,
           label: 'Atividades'
         },
         {
-          href: '/vendas-dashboard',
+          to: '/vendas-dashboard',
           icon: <BarChart3 className="w-5 h-5" />,
           label: 'Vendas'
         },
         {
-          href: '/automacoes-vendas',
+          to: '/automacoes-vendas',
           icon: <Settings className="w-5 h-5" />,
           label: 'Automações'
         },
         {
-          href: '/meta-integration',
+          to: '/meta-integration',
           icon: <BarChart3 className="w-5 h-5" />,
           label: 'Meta Ads'
         },
         {
-          href: '/relatorios',
+          to: '/relatorios',
           icon: <FileText className="w-5 h-5" />,
           label: 'Relatórios'
         }
@@ -209,72 +209,72 @@ export const Sidebar: React.FC<SidebarProps> = ({ className }) => {
     if (userRole === 'ADMIN') {
       return [
         {
-          href: '/admin-dashboard',
+          to: '/admin-dashboard',
           icon: <Home className="w-5 h-5" />,
           label: 'Dashboard'
         },
         {
-          href: '/departamentos',
+          to: '/departamentos',
           icon: <Building2 className="w-5 h-5" />,
           label: 'Departamentos'
         },
         {
-          href: '/usuarios',
+          to: '/usuarios',
           icon: <Users className="w-5 h-5" />,
           label: 'Usuários'
         },
         {
-          href: '/whatsapp',
+          to: '/whatsapp',
           icon: <Phone className="w-5 h-5" />,
           label: 'Conexões'
         },
         {
-          href: '/atendimento',
+          to: '/atendimento',
           icon: <MessageSquare className="w-5 h-5" />,
           label: 'Atendimento'
         },
         {
-          href: '/campanhas',
+          to: '/campanhas',
           icon: <Megaphone className="w-5 h-5" />,
           label: 'Campanhas'
         },
         {
-          href: '/contatos',
+          to: '/contatos',
           icon: <UserCheck className="w-5 h-5" />,
           label: 'Contatos'
         },
         {
-          href: '/leads',
+          to: '/leads',
           icon: <Lightbulb className="w-5 h-5" />,
           label: 'Leads'
         },
         {
-          href: '/oportunidades',
+          to: '/oportunidades',
           icon: <TrendingUp className="w-5 h-5" />,
           label: 'Oportunidades'
         },
         {
-          href: '/atividades',
+          to: '/atividades',
           icon: <FileText className="w-5 h-5" />,
           label: 'Atividades'
         },
         {
-          href: '/vendas-dashboard',
+          to: '/vendas-dashboard',
           icon: <BarChart3 className="w-5 h-5" />,
           label: 'Vendas'
         },
         {
-          href: '/automacoes-vendas',
+          to: '/automacoes-vendas',
           icon: <Settings className="w-5 h-5" />,
           label: 'Automações'
         },
         {
-          href: '/meta-integration',
+          to: '/meta-integration',
           icon: <BarChart3 className="w-5 h-5" />,
           label: 'Meta Ads'
         },
         {
-          href: '/relatorios',
+          to: '/relatorios',
           icon: <FileText className="w-5 h-5" />,
           label: 'Relatórios'
         }
@@ -285,47 +285,47 @@ export const Sidebar: React.FC<SidebarProps> = ({ className }) => {
     if (userRole === 'TENANT_ADMIN') {
       return [
         {
-          href: '/departamentos',
+          to: '/departamentos',
           icon: <Building2 className="w-5 h-5" />,
           label: 'Departamentos'
         },
         {
-          href: '/whatsapp',
+          to: '/whatsapp',
           icon: <Phone className="w-5 h-5" />,
           label: 'Conexões'
         },
         {
-          href: '/atendimento',
+          to: '/atendimento',
           icon: <MessageSquare className="w-5 h-5" />,
           label: 'Atendimento'
         },
         {
-          href: '/campanhas',
+          to: '/campanhas',
           icon: <Megaphone className="w-5 h-5" />,
           label: 'Campanhas'
         },
         {
-          href: '/contatos',
+          to: '/contatos',
           icon: <UserCheck className="w-5 h-5" />,
           label: 'Contatos'
         },
         {
-          href: '/leads',
+          to: '/leads',
           icon: <Lightbulb className="w-5 h-5" />,
           label: 'Leads'
         },
         {
-          href: '/oportunidades',
+          to: '/oportunidades',
           icon: <TrendingUp className="w-5 h-5" />,
           label: 'Oportunidades'
         },
         {
-          href: '/atividades',
+          to: '/atividades',
           icon: <FileText className="w-5 h-5" />,
           label: 'Atividades'
         },
         {
-          href: '/relatorios',
+          to: '/relatorios',
           icon: <FileText className="w-5 h-5" />,
           label: 'Relatórios'
         }
@@ -335,37 +335,37 @@ export const Sidebar: React.FC<SidebarProps> = ({ className }) => {
     // Itens para USER (usuário comum)
     return [
       {
-        href: '/departamentos',
+        to: '/departamentos',
         icon: <Building2 className="w-5 h-5" />,
         label: 'Departamentos'
       },
       {
-        href: '/atendimento',
+        to: '/atendimento',
         icon: <MessageSquare className="w-5 h-5" />,
         label: 'Atendimento'
       },
       {
-        href: '/contatos',
+        to: '/contatos',
         icon: <UserCheck className="w-5 h-5" />,
         label: 'Contatos'
       },
       {
-        href: '/leads',
+        to: '/leads',
         icon: <Lightbulb className="w-5 h-5" />,
         label: 'Leads'
       },
       {
-        href: '/oportunidades',
+        to: '/oportunidades',
         icon: <TrendingUp className="w-5 h-5" />,
         label: 'Oportunidades'
       },
       {
-        href: '/atividades',
+        to: '/atividades',
         icon: <FileText className="w-5 h-5" />,
         label: 'Atividades'
       },
       {
-        href: '/relatorios',
+        to: '/relatorios',
         icon: <FileText className="w-5 h-5" />,
         label: 'Relatórios'
       }
