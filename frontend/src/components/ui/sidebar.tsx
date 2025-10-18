@@ -7,7 +7,7 @@ import {
   Building2, 
   BarChart3, 
   MessageSquare, 
-  Phone, 
+  ChartSpline, 
   Megaphone, 
   UserCheck, 
   Lightbulb, 
@@ -15,7 +15,8 @@ import {
   FileText, 
   ChevronLeft, 
   ChevronRight,
-  LogOut
+  LogOut,
+  PlugZapIcon
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useGlobalSettings } from '../../hooks/useGlobalSettings';
@@ -111,7 +112,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ className }) => {
   const userRole = (user?.role as UserRole) || 'USER';
   const userName = user?.nome || 'Usuário';
   const userEmail = user?.email || 'usuario@exemplo.com';
-  const companyName = settings?.companyName || 'Astra CRM';
+  const companyName = settings?.companyName || 'B2X CRM';
   const logoUrl = settings?.iconUrl;
 
 
@@ -129,7 +130,23 @@ export const Sidebar: React.FC<SidebarProps> = ({ className }) => {
           to: '/configuracoes',
           icon: <Settings className="w-5 h-5" />,
           label: 'Configurações'
-        }
+        },
+        {
+          type: 'item',
+          to: '/meta-settings',
+          label: 'Meta Ads',
+      icon: <ChartSpline className="w-5 h-5" />,
+    },
+    {
+      type: 'item',
+      path: '/usuarios',
+      label: 'Usuários',
+      icon: (
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
+        </svg>
+      ),
+    },
       ];
     }
 
@@ -153,7 +170,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ className }) => {
         },
         {
           to: '/whatsapp',
-          icon: <Phone className="w-5 h-5" />,
+          icon: <PlugZapIcon className="w-5 h-5" />,
           label: 'Conexões'
         },
         {
@@ -234,7 +251,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ className }) => {
         },
         {
           to: '/whatsapp',
-          icon: <Phone className="w-5 h-5" />,
+          icon: <PlugZapIcon className="w-5 h-5" />,
           label: 'Conexões'
         },
         {
@@ -263,11 +280,6 @@ export const Sidebar: React.FC<SidebarProps> = ({ className }) => {
           label: 'Oportunidades'
         },
         {
-          to: '/empresas',
-          icon: <Building2 className="w-5 h-5" />,
-          label: 'Empresas'
-        },
-        {
           to: '/atividades',
           icon: <FileText className="w-5 h-5" />,
           label: 'Atividades'
@@ -291,22 +303,23 @@ export const Sidebar: React.FC<SidebarProps> = ({ className }) => {
         to: '/contatos',
         icon: <UserCheck className="w-5 h-5" />,
         label: 'Contatos'
-      },
-      {
-        to: '/leads',
-        icon: <Lightbulb className="w-5 h-5" />,
-        label: 'Leads'
-      },
-      {
-        to: '/oportunidades',
-        icon: <TrendingUp className="w-5 h-5" />,
-        label: 'Oportunidades'
-      },
-      {
-        to: '/atividades',
-        icon: <FileText className="w-5 h-5" />,
-        label: 'Atividades'
       }
+      // },
+      // {
+      //   to: '/leads',
+      //   icon: <Lightbulb className="w-5 h-5" />,
+      //   label: 'Leads'
+      // },
+      // {
+      //   to: '/oportunidades',
+      //   icon: <TrendingUp className="w-5 h-5" />,
+      //   label: 'Oportunidades'
+      // },
+      // {
+      //   to: '/atividades',
+      //   icon: <FileText className="w-5 h-5" />,
+      //   label: 'Atividades'
+      // }
     ];
   };
 
