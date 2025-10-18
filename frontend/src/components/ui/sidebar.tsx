@@ -21,7 +21,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useGlobalSettings } from '../../hooks/useGlobalSettings';
-import { canAccessRoute, UserRole } from '../../utils/permissions';
+import { UserRole } from '../../utils/permissions';
 
 // Função utilitária para classes CSS
 function cn(...classes: (string | undefined | null | false)[]): string {
@@ -119,117 +119,257 @@ export const Sidebar: React.FC<SidebarProps> = ({ className }) => {
 
   // Itens do menu baseados no role
   const getMenuItems = () => {
-    const baseItems = [
-      {
-        href: '/admin-dashboard',
-        icon: <Home className="w-5 h-5" />,
-        label: 'Dashboard',
-        roles: ['SUPERADMIN', 'ADMIN', 'TENANT_ADMIN']
-      },
+    // Itens específicos para SUPERADMIN
+    if (userRole === 'SUPERADMIN') {
+      return [
+        {
+          href: '/empresas',
+          icon: <Building2 className="w-5 h-5" />,
+          label: 'Empresas'
+        },
+        {
+          href: '/meta-settings',
+          icon: <Settings className="w-5 h-5" />,
+          label: 'Meta Settings'
+        },
+        {
+          href: '/admin-dashboard',
+          icon: <Home className="w-5 h-5" />,
+          label: 'Dashboard'
+        },
+        {
+          href: '/departamentos',
+          icon: <Building2 className="w-5 h-5" />,
+          label: 'Departamentos'
+        },
+        {
+          href: '/usuarios',
+          icon: <Users className="w-5 h-5" />,
+          label: 'Usuários'
+        },
+        {
+          href: '/whatsapp',
+          icon: <Phone className="w-5 h-5" />,
+          label: 'Conexões'
+        },
+        {
+          href: '/atendimento',
+          icon: <MessageSquare className="w-5 h-5" />,
+          label: 'Atendimento'
+        },
+        {
+          href: '/campanhas',
+          icon: <Megaphone className="w-5 h-5" />,
+          label: 'Campanhas'
+        },
+        {
+          href: '/contatos',
+          icon: <UserCheck className="w-5 h-5" />,
+          label: 'Contatos'
+        },
+        {
+          href: '/leads',
+          icon: <Lightbulb className="w-5 h-5" />,
+          label: 'Leads'
+        },
+        {
+          href: '/oportunidades',
+          icon: <TrendingUp className="w-5 h-5" />,
+          label: 'Oportunidades'
+        },
+        {
+          href: '/atividades',
+          icon: <FileText className="w-5 h-5" />,
+          label: 'Atividades'
+        },
+        {
+          href: '/vendas-dashboard',
+          icon: <BarChart3 className="w-5 h-5" />,
+          label: 'Vendas'
+        },
+        {
+          href: '/automacoes-vendas',
+          icon: <Settings className="w-5 h-5" />,
+          label: 'Automações'
+        },
+        {
+          href: '/meta-integration',
+          icon: <BarChart3 className="w-5 h-5" />,
+          label: 'Meta Ads'
+        },
+        {
+          href: '/relatorios',
+          icon: <FileText className="w-5 h-5" />,
+          label: 'Relatórios'
+        }
+      ];
+    }
+
+    // Itens para ADMIN
+    if (userRole === 'ADMIN') {
+      return [
+        {
+          href: '/admin-dashboard',
+          icon: <Home className="w-5 h-5" />,
+          label: 'Dashboard'
+        },
+        {
+          href: '/departamentos',
+          icon: <Building2 className="w-5 h-5" />,
+          label: 'Departamentos'
+        },
+        {
+          href: '/usuarios',
+          icon: <Users className="w-5 h-5" />,
+          label: 'Usuários'
+        },
+        {
+          href: '/whatsapp',
+          icon: <Phone className="w-5 h-5" />,
+          label: 'Conexões'
+        },
+        {
+          href: '/atendimento',
+          icon: <MessageSquare className="w-5 h-5" />,
+          label: 'Atendimento'
+        },
+        {
+          href: '/campanhas',
+          icon: <Megaphone className="w-5 h-5" />,
+          label: 'Campanhas'
+        },
+        {
+          href: '/contatos',
+          icon: <UserCheck className="w-5 h-5" />,
+          label: 'Contatos'
+        },
+        {
+          href: '/leads',
+          icon: <Lightbulb className="w-5 h-5" />,
+          label: 'Leads'
+        },
+        {
+          href: '/oportunidades',
+          icon: <TrendingUp className="w-5 h-5" />,
+          label: 'Oportunidades'
+        },
+        {
+          href: '/atividades',
+          icon: <FileText className="w-5 h-5" />,
+          label: 'Atividades'
+        },
+        {
+          href: '/vendas-dashboard',
+          icon: <BarChart3 className="w-5 h-5" />,
+          label: 'Vendas'
+        },
+        {
+          href: '/automacoes-vendas',
+          icon: <Settings className="w-5 h-5" />,
+          label: 'Automações'
+        },
+        {
+          href: '/meta-integration',
+          icon: <BarChart3 className="w-5 h-5" />,
+          label: 'Meta Ads'
+        },
+        {
+          href: '/relatorios',
+          icon: <FileText className="w-5 h-5" />,
+          label: 'Relatórios'
+        }
+      ];
+    }
+
+    // Itens para TENANT_ADMIN
+    if (userRole === 'TENANT_ADMIN') {
+      return [
+        {
+          href: '/departamentos',
+          icon: <Building2 className="w-5 h-5" />,
+          label: 'Departamentos'
+        },
+        {
+          href: '/whatsapp',
+          icon: <Phone className="w-5 h-5" />,
+          label: 'Conexões'
+        },
+        {
+          href: '/atendimento',
+          icon: <MessageSquare className="w-5 h-5" />,
+          label: 'Atendimento'
+        },
+        {
+          href: '/campanhas',
+          icon: <Megaphone className="w-5 h-5" />,
+          label: 'Campanhas'
+        },
+        {
+          href: '/contatos',
+          icon: <UserCheck className="w-5 h-5" />,
+          label: 'Contatos'
+        },
+        {
+          href: '/leads',
+          icon: <Lightbulb className="w-5 h-5" />,
+          label: 'Leads'
+        },
+        {
+          href: '/oportunidades',
+          icon: <TrendingUp className="w-5 h-5" />,
+          label: 'Oportunidades'
+        },
+        {
+          href: '/atividades',
+          icon: <FileText className="w-5 h-5" />,
+          label: 'Atividades'
+        },
+        {
+          href: '/relatorios',
+          icon: <FileText className="w-5 h-5" />,
+          label: 'Relatórios'
+        }
+      ];
+    }
+
+    // Itens para USER (usuário comum)
+    return [
       {
         href: '/departamentos',
         icon: <Building2 className="w-5 h-5" />,
-        label: 'Departamentos',
-        roles: ['SUPERADMIN', 'ADMIN', 'TENANT_ADMIN', 'USER']
-      },
-      {
-        href: '/usuarios',
-        icon: <Users className="w-5 h-5" />,
-        label: 'Usuários',
-        roles: ['SUPERADMIN', 'ADMIN', 'TENANT_ADMIN']
-      },
-      {
-        href: '/whatsapp',
-        icon: <Phone className="w-5 h-5" />,
-        label: 'Conexões',
-        roles: ['SUPERADMIN', 'ADMIN', 'TENANT_ADMIN', 'USER']
+        label: 'Departamentos'
       },
       {
         href: '/atendimento',
         icon: <MessageSquare className="w-5 h-5" />,
-        label: 'Atendimento',
-        roles: ['SUPERADMIN', 'ADMIN', 'TENANT_ADMIN', 'USER']
-      },
-      {
-        href: '/campanhas',
-        icon: <Megaphone className="w-5 h-5" />,
-        label: 'Campanhas',
-        roles: ['SUPERADMIN', 'ADMIN', 'TENANT_ADMIN', 'USER']
+        label: 'Atendimento'
       },
       {
         href: '/contatos',
         icon: <UserCheck className="w-5 h-5" />,
-        label: 'Contatos',
-        roles: ['SUPERADMIN', 'ADMIN', 'TENANT_ADMIN', 'USER']
+        label: 'Contatos'
       },
       {
         href: '/leads',
         icon: <Lightbulb className="w-5 h-5" />,
-        label: 'Leads',
-        roles: ['SUPERADMIN', 'ADMIN', 'TENANT_ADMIN', 'USER']
+        label: 'Leads'
       },
       {
         href: '/oportunidades',
         icon: <TrendingUp className="w-5 h-5" />,
-        label: 'Oportunidades',
-        roles: ['SUPERADMIN', 'ADMIN', 'TENANT_ADMIN', 'USER']
+        label: 'Oportunidades'
       },
       {
         href: '/atividades',
         icon: <FileText className="w-5 h-5" />,
-        label: 'Atividades',
-        roles: ['SUPERADMIN', 'ADMIN', 'TENANT_ADMIN', 'USER']
-      },
-      {
-        href: '/vendas-dashboard',
-        icon: <BarChart3 className="w-5 h-5" />,
-        label: 'Vendas',
-        roles: ['SUPERADMIN', 'ADMIN', 'TENANT_ADMIN']
-      },
-      {
-        href: '/automacoes-vendas',
-        icon: <Settings className="w-5 h-5" />,
-        label: 'Automações',
-        roles: ['SUPERADMIN', 'ADMIN', 'TENANT_ADMIN']
-      },
-      {
-        href: '/meta-integration',
-        icon: <BarChart3 className="w-5 h-5" />,
-        label: 'Meta Ads',
-        roles: ['SUPERADMIN', 'ADMIN', 'TENANT_ADMIN']
+        label: 'Atividades'
       },
       {
         href: '/relatorios',
         icon: <FileText className="w-5 h-5" />,
-        label: 'Relatórios',
-        roles: ['SUPERADMIN', 'ADMIN', 'TENANT_ADMIN', 'USER']
+        label: 'Relatórios'
       }
     ];
-
-    // Itens específicos para SUPERADMIN
-    const superAdminItems = [
-      {
-        href: '/empresas',
-        icon: <Building2 className="w-5 h-5" />,
-        label: 'Empresas',
-        roles: ['SUPERADMIN']
-      },
-      {
-        href: '/meta-settings',
-        icon: <Settings className="w-5 h-5" />,
-        label: 'Meta Settings',
-        roles: ['SUPERADMIN']
-      }
-    ];
-
-    // Combinar itens baseados no role
-    const allItems = userRole === 'SUPERADMIN' 
-      ? [...superAdminItems, ...baseItems]
-      : baseItems;
-
-    return allItems.filter(item => 
-      item.roles.includes(userRole) && canAccessRoute(item.href)
-    );
   };
 
   const menuItems = getMenuItems();
