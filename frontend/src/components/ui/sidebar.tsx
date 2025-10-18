@@ -16,7 +16,9 @@ import {
   ChevronLeft, 
   ChevronRight,
   LogOut,
-  PlugZapIcon
+  PlugZapIcon,
+  Wrench,
+  LayoutGrid
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useGlobalSettings } from '../../hooks/useGlobalSettings';
@@ -122,31 +124,37 @@ export const Sidebar: React.FC<SidebarProps> = ({ className }) => {
     if (userRole === 'SUPERADMIN') {
       return [
         {
+          to: '/superadmin/dashboard',
+          icon: <LayoutGrid className="w-5 h-5" />,
+          label: 'Dashboard'
+        },
+        {
           to: '/empresas',
           icon: <Building2 className="w-5 h-5" />,
           label: 'Empresas'
         },
         {
+          to: '/usuarios',
+          label: 'Usuários',
+          icon: <Users className="w-5 h-5" />
+        },
+        {
+          to: '/meta-settings',
+          label: 'Meta Ads',
+          icon: <ChartSpline className="w-5 h-5" />,
+        },
+        {
           to: '/configuracoes',
-          icon: <Settings className="w-5 h-5" />,
+          icon: <Wrench className="w-5 h-5" />,
           label: 'Configurações'
         },
         {
-          type: 'item',
-          to: '/meta-settings',
-          label: 'Meta Ads',
-      icon: <ChartSpline className="w-5 h-5" />,
-    },
-    {
-      type: 'item',
-      path: '/usuarios',
-      label: 'Usuários',
-      icon: (
-        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
-        </svg>
-      ),
-    },
+          to: '/super-admin',
+          icon: <Settings className="w-5 h-5" />,
+          label: 'Configurações'
+        },
+
+
       ];
     }
 
