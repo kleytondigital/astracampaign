@@ -432,11 +432,11 @@ export const Sidebar: React.FC<SidebarProps> = ({ className }) => {
         <SidebarSection>
           {menuItems.map((item) => (
             <SidebarItem
-              key={item.href}
+              key={item.to}
               icon={item.icon}
               label={item.label}
-              href={item.href}
-              isActive={location.pathname === item.href}
+              href={item.to}
+              isActive={location.pathname === item.to}
             />
           ))}
         </SidebarSection>
