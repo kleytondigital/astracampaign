@@ -1001,7 +1001,7 @@ export function SuperAdminManagerPage() {
     <div className="p-8">
       <div className="flex justify-between items-center mb-8">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Super Admin</h1>
+          <h1 className="text-3xl font-bold text-gray-900">Configurações Globais</h1>
           <p className="text-gray-600 mt-2">Gerenciamento completo do sistema</p>
         </div>
       </div>
@@ -1037,7 +1037,7 @@ export function SuperAdminManagerPage() {
                 : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
             }`}
           >
-            🔗 Integrações
+            🔗 APIs Externas
           </button>
           <button
             onClick={() => setActiveTab('tenants')}
@@ -1742,7 +1742,7 @@ export function SuperAdminManagerPage() {
         <div className="bg-white rounded-lg shadow">
           <div className="px-6 py-4 border-b border-gray-200">
             <div>
-              <h2 className="text-lg font-semibold text-gray-900">Integrações</h2>
+              <h2 className="text-lg font-semibold text-gray-900">APIs Externas</h2>
               <p className="text-sm text-gray-600 mt-1">Configurações das APIs externas (WAHA e Evolution API)</p>
             </div>
           </div>

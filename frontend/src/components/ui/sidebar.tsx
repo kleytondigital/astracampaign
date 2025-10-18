@@ -146,7 +146,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ className }) => {
         {
           to: '/configuracoes',
           icon: <Wrench className="w-5 h-5" />,
-          label: 'Configurações'
+          label: 'Integrações'
         },
         {
           to: '/super-admin',
@@ -233,8 +233,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ className }) => {
         },
         {
           to: '/configuracoes',
-          icon: <Settings className="w-5 h-5" />,
-          label: 'Configurações'
+          icon: <Wrench className="w-5 h-5" />,
+          label: 'Integrações'
         }
       ];
     }
@@ -311,23 +311,22 @@ export const Sidebar: React.FC<SidebarProps> = ({ className }) => {
         to: '/contatos',
         icon: <UserCheck className="w-5 h-5" />,
         label: 'Contatos'
+      },
+      {
+        to: '/leads',
+        icon: <Lightbulb className="w-5 h-5" />,
+        label: 'Leads'
+      },
+      {
+        to: '/oportunidades',
+        icon: <TrendingUp className="w-5 h-5" />,
+        label: 'Oportunidades'
+      },
+      {
+        to: '/atividades',
+        icon: <FileText className="w-5 h-5" />,
+        label: 'Atividades'
       }
-      // },
-      // {
-      //   to: '/leads',
-      //   icon: <Lightbulb className="w-5 h-5" />,
-      //   label: 'Leads'
-      // },
-      // {
-      //   to: '/oportunidades',
-      //   icon: <TrendingUp className="w-5 h-5" />,
-      //   label: 'Oportunidades'
-      // },
-      // {
-      //   to: '/atividades',
-      //   icon: <FileText className="w-5 h-5" />,
-      //   label: 'Atividades'
-      // }
     ];
   };
 

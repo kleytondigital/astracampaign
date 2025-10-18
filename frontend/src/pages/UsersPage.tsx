@@ -5,6 +5,7 @@ import { UserForm } from '../components/UserForm';
 import { User, UserInput } from '../types';
 import toast from 'react-hot-toast';
 import { Header } from '../components/Header';
+import { apiFetch } from '../config/api';
 
 export function UsersPage() {
   const [search, setSearch] = useState('');
@@ -13,24 +14,6 @@ export function UsersPage() {
   const [editingUser, setEditingUser] = useState<User | undefined>();
 
   const pageSize = 20;
-
-  // Helper para fazer requisições autenticadas
-  const authenticatedFetch = async (url: string, options: RequestInit = {}) => {
-    const token = localStorage.getItem('auth_token');
-    const headers: HeadersInit = {
-      'Content-Type': 'application/json',
-      ...options.headers,
-    };
-
-    if (token) {
-      (headers as Record<string, string>).Authorization = `Bearer ${token}`;
-    }
-
-    return fetch(url, {
-      ...options,
-      headers,
-    });
-  };
 
   const { users, totalPages, loading, error, refresh, deleteUser } = useUsers({
     search: search || undefined,
@@ -45,7 +28,7 @@ export function UsersPage() {
 
   const handleCreateUser = async (data: UserInput) => {
     try {
-      const response = await authenticatedFetch('/api/users', {
+      const response = await apiFetch('/users', {
         method: 'POST',
         body: JSON.stringify(data),
       });
@@ -69,7 +52,7 @@ export function UsersPage() {
     if (!editingUser) return;
 
     try {
-      const response = await authenticatedFetch(`/api/users/${editingUser.id}`, {
+      const response = await apiFetch(`/users/${editingUser.id}`, {
         method: 'PUT',
         body: JSON.stringify(data),
       });
