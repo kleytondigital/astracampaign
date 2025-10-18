@@ -15,9 +15,7 @@ import {
   FileText, 
   ChevronLeft, 
   ChevronRight,
-  LogOut,
-  Menu,
-  X
+  LogOut
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useGlobalSettings } from '../../hooks/useGlobalSettings';
@@ -119,7 +117,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ className }) => {
 
   // Itens do menu baseados no role
   const getMenuItems = () => {
-    // Itens específicos para SUPERADMIN
+    // SUPERADMIN - Acesso total ao sistema
     if (userRole === 'SUPERADMIN') {
       return [
         {
@@ -128,84 +126,14 @@ export const Sidebar: React.FC<SidebarProps> = ({ className }) => {
           label: 'Empresas'
         },
         {
-          to: '/meta-settings',
+          to: '/configuracoes',
           icon: <Settings className="w-5 h-5" />,
-          label: 'Meta Settings'
-        },
-        {
-          to: '/admin-dashboard',
-          icon: <Home className="w-5 h-5" />,
-          label: 'Dashboard'
-        },
-        {
-          to: '/departamentos',
-          icon: <Building2 className="w-5 h-5" />,
-          label: 'Departamentos'
-        },
-        {
-          to: '/usuarios',
-          icon: <Users className="w-5 h-5" />,
-          label: 'Usuários'
-        },
-        {
-          to: '/whatsapp',
-          icon: <Phone className="w-5 h-5" />,
-          label: 'Conexões'
-        },
-        {
-          to: '/atendimento',
-          icon: <MessageSquare className="w-5 h-5" />,
-          label: 'Atendimento'
-        },
-        {
-          to: '/campanhas',
-          icon: <Megaphone className="w-5 h-5" />,
-          label: 'Campanhas'
-        },
-        {
-          to: '/contatos',
-          icon: <UserCheck className="w-5 h-5" />,
-          label: 'Contatos'
-        },
-        {
-          to: '/leads',
-          icon: <Lightbulb className="w-5 h-5" />,
-          label: 'Leads'
-        },
-        {
-          to: '/oportunidades',
-          icon: <TrendingUp className="w-5 h-5" />,
-          label: 'Oportunidades'
-        },
-        {
-          to: '/atividades',
-          icon: <FileText className="w-5 h-5" />,
-          label: 'Atividades'
-        },
-        {
-          to: '/vendas-dashboard',
-          icon: <BarChart3 className="w-5 h-5" />,
-          label: 'Vendas'
-        },
-        {
-          to: '/automacoes-vendas',
-          icon: <Settings className="w-5 h-5" />,
-          label: 'Automações'
-        },
-        {
-          to: '/meta-integration',
-          icon: <BarChart3 className="w-5 h-5" />,
-          label: 'Meta Ads'
-        },
-        {
-          to: '/relatorios',
-          icon: <FileText className="w-5 h-5" />,
-          label: 'Relatórios'
+          label: 'Configurações'
         }
       ];
     }
 
-    // Itens para ADMIN
+    // ADMIN - Gestão completa do tenant
     if (userRole === 'ADMIN') {
       return [
         {
@@ -254,6 +182,11 @@ export const Sidebar: React.FC<SidebarProps> = ({ className }) => {
           label: 'Oportunidades'
         },
         {
+          to: '/empresas',
+          icon: <Building2 className="w-5 h-5" />,
+          label: 'Empresas'
+        },
+        {
           to: '/atividades',
           icon: <FileText className="w-5 h-5" />,
           label: 'Atividades'
@@ -269,25 +202,35 @@ export const Sidebar: React.FC<SidebarProps> = ({ className }) => {
           label: 'Automações'
         },
         {
-          to: '/meta-integration',
-          icon: <BarChart3 className="w-5 h-5" />,
-          label: 'Meta Ads'
-        },
-        {
           to: '/relatorios',
           icon: <FileText className="w-5 h-5" />,
           label: 'Relatórios'
+        },
+        {
+          to: '/configuracoes',
+          icon: <Settings className="w-5 h-5" />,
+          label: 'Configurações'
         }
       ];
     }
 
-    // Itens para TENANT_ADMIN
+    // TENANT_ADMIN - Gestão operacional
     if (userRole === 'TENANT_ADMIN') {
       return [
+        {
+          to: '/admin-dashboard',
+          icon: <Home className="w-5 h-5" />,
+          label: 'Dashboard'
+        },
         {
           to: '/departamentos',
           icon: <Building2 className="w-5 h-5" />,
           label: 'Departamentos'
+        },
+        {
+          to: '/usuarios',
+          icon: <Users className="w-5 h-5" />,
+          label: 'Usuários'
         },
         {
           to: '/whatsapp',
@@ -320,6 +263,11 @@ export const Sidebar: React.FC<SidebarProps> = ({ className }) => {
           label: 'Oportunidades'
         },
         {
+          to: '/empresas',
+          icon: <Building2 className="w-5 h-5" />,
+          label: 'Empresas'
+        },
+        {
           to: '/atividades',
           icon: <FileText className="w-5 h-5" />,
           label: 'Atividades'
@@ -332,13 +280,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ className }) => {
       ];
     }
 
-    // Itens para USER (usuário comum)
+    // USER - Operação básica
     return [
-      {
-        to: '/departamentos',
-        icon: <Building2 className="w-5 h-5" />,
-        label: 'Departamentos'
-      },
       {
         to: '/atendimento',
         icon: <MessageSquare className="w-5 h-5" />,
@@ -363,11 +306,6 @@ export const Sidebar: React.FC<SidebarProps> = ({ className }) => {
         to: '/atividades',
         icon: <FileText className="w-5 h-5" />,
         label: 'Atividades'
-      },
-      {
-        to: '/relatorios',
-        icon: <FileText className="w-5 h-5" />,
-        label: 'Relatórios'
       }
     ];
   };
