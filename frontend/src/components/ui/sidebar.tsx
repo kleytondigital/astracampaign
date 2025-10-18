@@ -435,7 +435,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ className }) => {
               key={item.to}
               icon={item.icon}
               label={item.label}
-              href={item.to}
+              to={item.to}
               isActive={location.pathname === item.to}
             />
           ))}
