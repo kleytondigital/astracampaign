@@ -455,14 +455,23 @@ export const createUser = async (req: AuthenticatedRequest, res: Response): Prom
     // Hash password
     const hashedPassword = await bcrypt.hash(senha, 12);
 
-    // Create user
+    // Create user with UserTenant relationship
     const user = await prisma.user.create({
       data: {
         nome,
         email,
         senha: hashedPassword,
         role,
-        tenantId: finalTenantId
+        tenantId: finalTenantId,
+        // Criar relacionamento N:N se não for SUPERADMIN
+        ...(finalTenantId && {
+          tenants: {
+            create: {
+              tenantId: finalTenantId,
+              role: role // Usar o role do usuário como role no tenant
+            }
+          }
+        })
       },
       include: {
         tenant: {
@@ -471,6 +480,17 @@ export const createUser = async (req: AuthenticatedRequest, res: Response): Prom
             name: true,
             slug: true,
             active: true
+          }
+        },
+        tenants: {
+          include: {
+            tenant: {
+              select: {
+                id: true,
+                name: true,
+                slug: true
+              }
+            }
           }
         }
       }

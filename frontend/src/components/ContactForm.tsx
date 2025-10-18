@@ -6,6 +6,7 @@ import toast from 'react-hot-toast';
 import { ContactInput, Contact } from '../types';
 import { apiService } from '../services/api';
 import { validatePhone } from '../utils/phoneUtils';
+import { apiFetch } from '../config/api';
 
 interface Category {
   id: string;
@@ -55,13 +56,7 @@ export function ContactForm({ contact, onSuccess, onCancel }: ContactFormProps) 
 
   const loadCategories = async () => {
     try {
-      const token = localStorage.getItem('auth_token');
-      const response = await fetch('/api/categorias', {
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
-      });
+      const response = await apiFetch('/categorias');
       if (response.ok) {
         const data = await response.json();
         setCategories(data.categories || []);
