@@ -140,7 +140,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ className }) => {
     menuGroups.push(
       {
         title: 'Administração',
-        icon: <Settings size={18} />,
+        icon: <Settings size={22} />,
         items: [
           { to: '/superadmin/dashboard', icon: <LayoutGrid size={16} />, label: 'Dashboard' },
           { to: '/empresas', icon: <Building2 size={16} />, label: 'Empresas' },
@@ -156,7 +156,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ className }) => {
     menuGroups.push(
       {
         title: 'Comercial',
-        icon: <TrendingUp size={18} />,
+        icon: <TrendingUp size={22} />,
         items: [
           { to: '/leads', icon: <Lightbulb size={16} />, label: 'Leads' },
           { to: '/oportunidades', icon: <TrendingUp size={16} />, label: 'Oportunidades' },
@@ -166,7 +166,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ className }) => {
       },
       {
         title: 'Comunicação',
-        icon: <MessageSquare size={18} />,
+        icon: <MessageSquare size={22} />,
         items: [
           { to: '/whatsapp', icon: <PlugZapIcon size={16} />, label: 'Conexões' },
           { to: '/atendimento', icon: <MessageSquare size={16} />, label: 'Atendimento' },
@@ -175,7 +175,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ className }) => {
       },
       {
         title: 'Gestão',
-        icon: <Users size={18} />,
+        icon: <Users size={22} />,
         items: [
           { to: '/departamentos', icon: <Building2 size={16} />, label: 'Departamentos' },
           { to: '/usuarios', icon: <UserCheck size={16} />, label: 'Usuários' },
@@ -188,7 +188,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ className }) => {
   if (userRole === 'USER') {
     menuGroups.push({
       title: 'Minhas Atividades',
-      icon: <FileText size={18} />,
+      icon: <FileText size={22} />,
       items: [
         { to: '/atendimento', icon: <MessageSquare size={16} />, label: 'Atendimento' },
         { to: '/contatos', icon: <UserCheck size={16} />, label: 'Contatos' },
