@@ -106,10 +106,20 @@ const SidebarSection: React.FC<SidebarSectionProps> = ({
 
 // Componente principal do Sidebar
 export const Sidebar: React.FC<SidebarProps> = ({ className }) => {
-  const [isCollapsed, setIsCollapsed] = useState(false);
+  const [isCollapsed, setIsCollapsed] = useState(() => {
+    return localStorage.getItem('sidebar-collapsed') === 'true';
+  });
   const location = useLocation();
   const { user, logout } = useAuth();
   const { settings } = useGlobalSettings();
+  
+  // Salvar estado no localStorage quando mudar
+  const handleToggleCollapse = () => {
+    const newState = !isCollapsed;
+    setIsCollapsed(newState);
+    localStorage.setItem('sidebar-collapsed', String(newState));
+    window.dispatchEvent(new CustomEvent('sidebar-collapse', { detail: { collapsed: newState } }));
+  };
   
   const userRole = (user?.role as UserRole) || 'USER';
   const userName = user?.nome || 'Usuário';
@@ -376,7 +386,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ className }) => {
         
         {/* Botão de toggle */}
         <button
-          onClick={() => setIsCollapsed(!isCollapsed)}
+          onClick={handleToggleCollapse}
           className="p-1.5 rounded-md hover:bg-white/10 transition-colors text-white/70 hover:text-white"
         >
           {isCollapsed ? (

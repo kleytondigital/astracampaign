@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
@@ -36,6 +36,21 @@ import './styles/globals.css';
 function AppContent() {
   const { isAuthenticated, isLoading } = useAuth();
   const { settings } = useGlobalSettings();
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(() => {
+    return localStorage.getItem('sidebar-collapsed') === 'true';
+  });
+
+  // Escutar mudanças no estado da sidebar
+  useEffect(() => {
+    const handleSidebarCollapse = (event: CustomEvent<{ collapsed: boolean }>) => {
+      setIsSidebarCollapsed(event.detail.collapsed);
+    };
+    
+    window.addEventListener('sidebar-collapse', handleSidebarCollapse as EventListener);
+    return () => {
+      window.removeEventListener('sidebar-collapse', handleSidebarCollapse as EventListener);
+    };
+  }, []);
 
   // Aplicar meta tags dinâmicas (título e favicon)
   useEffect(() => {
@@ -111,10 +126,10 @@ function AppContent() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 flex">
+    <div className="min-h-screen bg-slate-50">
       <Sidebar />
 
-      <main className="main-content flex-1 flex flex-col relative z-10">
+      <main className={`main-content flex-1 flex flex-col relative z-10 transition-all duration-300 ${isSidebarCollapsed ? 'ml-16' : 'ml-64'}`}>
         {/* Top bar com notificações */}
         <div className="bg-white border-b border-gray-200 px-6 py-3 flex items-center justify-end">
           <NotificationBell />
