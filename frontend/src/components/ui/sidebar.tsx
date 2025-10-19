@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import {
   Home,
@@ -43,6 +43,7 @@ interface SidebarGroupProps {
   title: string;
   icon: React.ReactNode;
   items: SidebarItemProps[];
+  isCollapsed: boolean;
 }
 
 interface SidebarProps {
@@ -64,6 +65,7 @@ const SidebarItem: React.FC<SidebarItemProps> = ({
         'group relative flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 text-sm font-medium cursor-pointer',
         isActive ? 'bg-white text-gray-900 shadow-sm' : 'text-white/70 hover:text-white hover:bg-white/10'
       )}
+      title={label} // Tooltip para quando colapsado
     >
       <div className="flex-shrink-0 w-5 h-5 flex items-center justify-center">
         {icon}
@@ -80,9 +82,31 @@ const SidebarItem: React.FC<SidebarItemProps> = ({
   return to ? <Link to={to}>{Item}</Link> : Item;
 };
 
-const SidebarGroup: React.FC<SidebarGroupProps> = ({ title, icon, items }) => {
+const SidebarGroup: React.FC<SidebarGroupProps> = ({ title, icon, items, isCollapsed }) => {
   const [open, setOpen] = useState(true);
   const location = useLocation();
+
+  // Fechar submenu quando sidebar colapsar
+  useEffect(() => {
+    if (isCollapsed) {
+      setOpen(false);
+    }
+  }, [isCollapsed]);
+
+  // Se colapsado, mostrar apenas ícones dos itens principais
+  if (isCollapsed) {
+    return (
+      <div className="space-y-1">
+        {items.slice(0, 3).map((item) => (
+          <SidebarItem
+            key={item.label}
+            {...item}
+            isActive={location.pathname === item.to}
+          />
+        ))}
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-1">
@@ -91,7 +115,9 @@ const SidebarGroup: React.FC<SidebarGroupProps> = ({ title, icon, items }) => {
         className="flex items-center justify-between w-full px-3 py-2.5 rounded-lg text-sm font-semibold text-white/80 hover:bg-white/10 transition-all"
       >
         <div className="flex items-center gap-3">
-          {icon}
+          <div className="flex-shrink-0 w-5 h-5 flex items-center justify-center">
+            {icon}
+          </div>
           <span>{title}</span>
         </div>
         {open ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
@@ -116,9 +142,13 @@ export const Sidebar: React.FC<SidebarProps> = ({ className }) => {
   const [isCollapsed, setIsCollapsed] = useState(
     localStorage.getItem('sidebar-collapsed') === 'true'
   );
+  const [isHovered, setIsHovered] = useState(false);
   const location = useLocation();
   const { user, logout } = useAuth();
   const { settings } = useGlobalSettings();
+
+  // Expandir automaticamente no hover quando colapsado
+  const shouldExpand = isHovered && isCollapsed;
 
   const handleToggleCollapse = () => {
     const newState = !isCollapsed;
@@ -201,14 +231,16 @@ export const Sidebar: React.FC<SidebarProps> = ({ className }) => {
   return (
     <div
       className={cn(
-        'fixed top-0 left-0 flex flex-col h-screen transition-all duration-300',
-        isCollapsed ? 'w-16' : 'w-64',
+        'fixed top-0 left-0 flex flex-col h-screen transition-all duration-300 z-50',
+        shouldExpand ? 'w-64' : isCollapsed ? 'w-16' : 'w-64',
         className
       )}
       style={{
         background: 'var(--sidebar-bg)',
         borderRight: '1px solid rgba(255, 255, 255, 0.1)',
       }}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
     >
       {/* Header */}
       <div className="flex items-center justify-between p-4 border-b border-white/10">
@@ -220,7 +252,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ className }) => {
               <span className="text-white font-bold text-sm">{companyName.charAt(0)}</span>
             )}
           </div>
-          {!isCollapsed && (
+          {(!isCollapsed || shouldExpand) && (
             <div className="flex flex-col">
               <span className="font-semibold text-sm truncate text-white">{companyName}</span>
               <span className="text-xs text-white/60 truncate">
@@ -236,24 +268,30 @@ export const Sidebar: React.FC<SidebarProps> = ({ className }) => {
           )}
         </div>
 
-        <button
-          onClick={handleToggleCollapse}
-          className="p-1.5 rounded-md hover:bg-white/10 transition-colors text-white/70 hover:text-white"
-        >
-          {isCollapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
-        </button>
+        {(!isCollapsed || shouldExpand) && (
+          <button
+            onClick={handleToggleCollapse}
+            className="p-1.5 rounded-md hover:bg-white/10 transition-colors text-white/70 hover:text-white"
+          >
+            {isCollapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
+          </button>
+        )}
       </div>
 
       {/* Conteúdo do menu */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
         {menuGroups.map((group) => (
-          <SidebarGroup key={group.title} {...group} />
+          <SidebarGroup 
+            key={group.title} 
+            {...group} 
+            isCollapsed={isCollapsed && !shouldExpand}
+          />
         ))}
       </div>
 
       {/* Footer */}
       <div className="border-t border-white/10 p-4">
-        {!isCollapsed ? (
+        {(!isCollapsed || shouldExpand) ? (
           <div className="space-y-3">
             <div className="flex items-center gap-3">
               <div className="w-8 h-8 bg-white/10 rounded-full flex items-center justify-center">
