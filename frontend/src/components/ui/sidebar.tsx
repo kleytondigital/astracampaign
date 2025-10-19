@@ -43,7 +43,7 @@ interface SidebarGroupProps {
   title: string;
   icon: React.ReactNode;
   items: SidebarItemProps[];
-  isCollapsed: boolean;
+  isCollapsed?: boolean;
 }
 
 interface SidebarProps {
@@ -62,20 +62,22 @@ const SidebarItem: React.FC<SidebarItemProps> = ({
     <div
       onClick={onClick}
       className={cn(
-        'group relative flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 text-sm font-medium cursor-pointer',
+        'group relative flex items-center justify-center px-3 py-3 rounded-lg transition-all duration-200 text-sm font-medium cursor-pointer',
         isActive ? 'bg-white text-gray-900 shadow-sm' : 'text-white/70 hover:text-white hover:bg-white/10'
       )}
       title={label} // Tooltip para quando colapsado
     >
-      <div className="flex-shrink-0 w-5 h-5 flex items-center justify-center">
-        {icon}
+      <div className="flex items-center gap-3 w-full">
+        <div className="flex-shrink-0 w-5 h-5 flex items-center justify-center">
+          {icon}
+        </div>
+        <span className="truncate flex-1">{label}</span>
+        {badge && (
+          <span className="ml-auto bg-red-500 text-white text-xs px-2 py-0.5 rounded-full min-w-[20px] text-center">
+            {badge}
+          </span>
+        )}
       </div>
-      <span className="truncate">{label}</span>
-      {badge && (
-        <span className="ml-auto bg-red-500 text-white text-xs px-2 py-0.5 rounded-full min-w-[20px] text-center">
-          {badge}
-        </span>
-      )}
     </div>
   );
 
@@ -98,11 +100,18 @@ const SidebarGroup: React.FC<SidebarGroupProps> = ({ title, icon, items, isColla
     return (
       <div className="space-y-1">
         {items.slice(0, 3).map((item) => (
-          <SidebarItem
+          <div
             key={item.label}
-            {...item}
-            isActive={location.pathname === item.to}
-          />
+            className={cn(
+              'flex items-center justify-center p-3 rounded-lg transition-all duration-200 cursor-pointer',
+              location.pathname === item.to ? 'bg-white text-gray-900 shadow-sm' : 'text-white/70 hover:text-white hover:bg-white/10'
+            )}
+            title={item.label}
+          >
+            <div className="w-5 h-5 flex items-center justify-center">
+              {item.icon}
+            </div>
+          </div>
         ))}
       </div>
     );
@@ -243,7 +252,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ className }) => {
       onMouseLeave={() => setIsHovered(false)}
     >
       {/* Header */}
-      <div className="flex items-center justify-between p-4 border-b border-white/10">
+      <div className="flex items-center justify-between p-1 border-b border-white/10">
         <div className="flex items-center gap-3">
           <div className="w-8 h-8 bg-white/10 rounded-lg flex items-center justify-center flex-shrink-0">
             {logoUrl ? (
@@ -279,7 +288,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ className }) => {
       </div>
 
       {/* Conteúdo do menu */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-4">
+      <div className="flex-1 overflow-y-auto p-2 space-y-2">
         {menuGroups.map((group) => (
           <SidebarGroup 
             key={group.title} 
