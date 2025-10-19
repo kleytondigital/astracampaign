@@ -114,7 +114,7 @@ function AppContent() {
     <div className="min-h-screen bg-slate-50 flex">
       <Sidebar />
 
-      <main className={`main-content flex-1 flex flex-col relative z-10 ${isCollapsed ? "ml-16" : "ml-64"}`}>
+      <main className="main-content flex-1 flex flex-col relative z-10">
         {/* Top bar com notificações */}
         <div className="bg-white border-b border-gray-200 px-6 py-3 flex items-center justify-end">
           <NotificationBell />
