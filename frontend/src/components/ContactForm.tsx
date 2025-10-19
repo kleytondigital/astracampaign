@@ -7,6 +7,7 @@ import { ContactInput, Contact } from '../types';
 import { apiService } from '../services/api';
 import { validatePhone } from '../utils/phoneUtils';
 import { apiFetch } from '../config/api';
+import { buttonClasses } from '../utils/buttonClasses';
 
 interface Category {
   id: string;
@@ -222,7 +223,7 @@ export function ContactForm({ contact, onSuccess, onCancel }: ContactFormProps) 
             <button
               type="submit"
               disabled={isSubmitting}
-              className="btn-primary flex-1 py-3 px-6 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              className={`${buttonClasses.primary} flex-1 py-3 px-6 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2`}
             >
               {isSubmitting ? (
                 <>
