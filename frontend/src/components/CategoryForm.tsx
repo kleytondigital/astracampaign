@@ -4,6 +4,7 @@ import { z } from 'zod';
 import toast from 'react-hot-toast';
 import { CategoryInput, Category } from '../types';
 import { apiService } from '../services/api';
+import { inputClasses } from '../utils/buttonClasses';
 
 const categorySchema = z.object({
   nome: z.string().min(1, 'Nome é obrigatório'),
@@ -99,7 +100,7 @@ export function CategoryForm({ category, onSuccess, onCancel }: CategoryFormProp
               id="nome"
               type="text"
               {...register('nome')}
-              className="input-field"
+              className={inputClasses.field}
               placeholder="Digite o nome da categoria"
               aria-invalid={errors.nome ? 'true' : 'false'}
               aria-describedby={errors.nome ? 'nome-error' : undefined}
@@ -158,7 +159,7 @@ export function CategoryForm({ category, onSuccess, onCancel }: CategoryFormProp
               id="descricao"
               {...register('descricao')}
               rows={4}
-              className="input-field resize-none"
+              className={`${inputClasses.field} resize-none`}
               placeholder="Digite uma descrição para a categoria (opcional)"
             />
           </div>

@@ -7,7 +7,7 @@ import { ContactInput, Contact } from '../types';
 import { apiService } from '../services/api';
 import { validatePhone } from '../utils/phoneUtils';
 import { apiFetch } from '../config/api';
-import { buttonClasses } from '../utils/buttonClasses';
+import { buttonClasses, inputClasses } from '../utils/buttonClasses';
 
 interface Category {
   id: string;
@@ -129,7 +129,7 @@ export function ContactForm({ contact, onSuccess, onCancel }: ContactFormProps) 
               id="nome"
               type="text"
               {...register('nome')}
-              className="input-field"
+              className={inputClasses.field}
               placeholder="Digite o nome completo"
             />
             {errors.nome && (
@@ -148,7 +148,7 @@ export function ContactForm({ contact, onSuccess, onCancel }: ContactFormProps) 
               type="tel"
               {...register('telefone')}
               placeholder="+55 11 99999-9999"
-              className="input-field"
+              className={inputClasses.field}
             />
             {errors.telefone && (
               <p className="text-red-500 text-sm mt-1">
@@ -165,7 +165,7 @@ export function ContactForm({ contact, onSuccess, onCancel }: ContactFormProps) 
               id="email"
               type="email"
               {...register('email')}
-              className="input-field"
+              className={inputClasses.field}
               placeholder="Digite o email"
             />
             {errors.email && (
@@ -183,7 +183,7 @@ export function ContactForm({ contact, onSuccess, onCancel }: ContactFormProps) 
             <select
               id="categoriaId"
               {...register('categoriaId')}
-              className="input-field"
+              className={inputClasses.field}
               disabled={loadingCategories}
             >
               <option value="">Selecione uma categoria</option>
@@ -207,7 +207,7 @@ export function ContactForm({ contact, onSuccess, onCancel }: ContactFormProps) 
               id="observacoes"
               {...register('observacoes')}
               rows={4}
-              className="input-field resize-none"
+              className={`${inputClasses.field} resize-none`}
               placeholder="Digite observações adicionais"
             />
           </div>

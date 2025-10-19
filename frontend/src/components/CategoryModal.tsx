@@ -3,6 +3,7 @@ import { Category } from '../types';
 import { CategoryList } from './CategoryList';
 import { CategoryForm } from './CategoryForm';
 import { useCategories } from '../hooks/useCategories';
+import { inputClasses } from '../utils/buttonClasses';
 
 interface CategoryModalProps {
   isOpen: boolean;
@@ -149,7 +150,7 @@ export function CategoryModal({ isOpen, onClose }: CategoryModalProps) {
                 placeholder="Buscar categorias..."
                 value={search}
                 onChange={(e) => handleSearchChange(e.target.value)}
-                className="input-field pl-10"
+                className={`${inputClasses.field} pl-10`}
               />
             </div>
             {search && (
