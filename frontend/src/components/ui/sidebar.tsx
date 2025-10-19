@@ -335,7 +335,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ className }) => {
   return (
     <div
       className={cn(
-        "flex flex-col h-screen transition-all duration-300",
+        "flex flex-col min-h-screen h-full max-h-screen transition-all duration-300",
         isCollapsed ? "w-16" : "w-64",
         className
       )}
@@ -344,6 +344,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ className }) => {
         borderRight: '1px solid rgba(255, 255, 255, 0.1)'
       }}
     >
+  
       {/* Header com Logo */}
       <div className="flex items-center justify-between p-4 border-b border-white/10">
         <div className="flex items-center gap-3">
@@ -385,8 +386,9 @@ export const Sidebar: React.FC<SidebarProps> = ({ className }) => {
         </button>
       </div>
 
+      
       {/* Menu Items */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-6">
+      <div className="flex-1 overflow-y-auto p-4 space-y-6 custom-scrollbar">
         <SidebarSection>
           {menuItems.map((item) => (
             <SidebarItem
@@ -399,6 +401,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ className }) => {
           ))}
         </SidebarSection>
       </div>
+
 
       {/* Footer com usuário e logout */}
       <div className="border-t border-white/10 p-4">
