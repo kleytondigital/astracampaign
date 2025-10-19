@@ -129,13 +129,15 @@ function AppContent() {
     <div className="min-h-screen bg-slate-50">
       <Sidebar />
 
-      <main className={`main-content flex-1 flex flex-col relative z-10 transition-all duration-300 ${isSidebarCollapsed ? 'ml-16' : 'ml-64'}`}>
+      <main className={`fixed top-0 right-0 bottom-0 flex flex-col transition-all duration-300 ${isSidebarCollapsed ? 'left-16' : 'left-64'}`}>
         {/* Top bar com notificações */}
-        <div className="bg-white border-b border-gray-200 px-6 py-3 flex items-center justify-end">
+        <div className="bg-white border-b border-gray-200 px-6 py-3 flex items-center justify-end flex-shrink-0">
           <NotificationBell />
         </div>
 
-        <Routes>
+        {/* Conteúdo scrollável */}
+        <div className="flex-1 overflow-y-auto">
+          <Routes>
           <Route path="/login" element={<Navigate to="/contatos" replace />} />
           <Route path="/" element={<Navigate to="/contatos" replace />} />
           <Route
@@ -322,7 +324,8 @@ function AppContent() {
               </ProtectedRoute>
             }
           />
-        </Routes>
+          </Routes>
+        </div>
       </main>
     </div>
   );
