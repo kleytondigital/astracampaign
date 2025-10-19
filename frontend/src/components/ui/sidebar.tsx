@@ -333,17 +333,18 @@ export const Sidebar: React.FC<SidebarProps> = ({ className }) => {
   const menuItems = getMenuItems();
 
   return (
-    <div
-      className={cn(
-        "flex flex-col min-h-screen h-full max-h-screen transition-all duration-300",
-        isCollapsed ? "w-16" : "w-64",
-        className
-      )}
-      style={{ 
-        background: 'var(--sidebar-bg)',
-        borderRight: '1px solid rgba(255, 255, 255, 0.1)'
-      }}
-    >
+      <div
+        className={cn(
+          "flex flex-col min-h-screen h-auto transition-all duration-300",
+          isCollapsed ? "w-18" : "w-64",
+          className
+        )}
+        style={{
+          background: 'var(--sidebar-bg)',
+          borderRight: '1px solid rgba(255, 255, 255, 0.1)',
+        }}
+      >
+
   
       {/* Header com Logo */}
       <div className="flex items-center justify-between p-4 border-b border-white/10">
@@ -388,7 +389,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ className }) => {
 
       
       {/* Menu Items */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-6 custom-scrollbar">
+      <div className="flex-1 overflow-y-auto p-4 space-y-6">
         <SidebarSection>
           {menuItems.map((item) => (
             <SidebarItem
@@ -401,6 +402,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ className }) => {
           ))}
         </SidebarSection>
       </div>
+
 
 
       {/* Footer com usuário e logout */}
