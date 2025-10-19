@@ -21,6 +21,7 @@ import {
   PlugZapIcon,
   Wrench,
   LayoutGrid,
+  UserCircle,
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useGlobalSettings } from '../../hooks/useGlobalSettings';
@@ -197,6 +198,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ className }) => {
         title: 'Comercial',
         icon: <TrendingUp size={22} />,
         items: [
+          { to: '/contatos', icon: <UserCircle size={16} />, label: 'Contatos' },
           { to: '/leads', icon: <Lightbulb size={16} />, label: 'Leads' },
           { to: '/oportunidades', icon: <TrendingUp size={16} />, label: 'Oportunidades' },
           { to: '/vendas-dashboard', icon: <BarChart3 size={16} />, label: 'Vendas' },
