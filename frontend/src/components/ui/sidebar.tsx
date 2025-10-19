@@ -335,8 +335,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ className }) => {
   return (
       <div
         className={cn(
-          "flex flex-col min-h-screen h-auto transition-all duration-300",
-          isCollapsed ? "w-18" : "w-64",
+          "fixed top-0 left-0 flex flex-col h-screen transition-all duration-300",
+          isCollapsed ? "w-16" : "w-64",
           className
         )}
         style={{
